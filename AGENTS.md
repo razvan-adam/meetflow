@@ -8,7 +8,7 @@ MeetFlow is a web application that helps companies run meetings and, above all, 
 
 It is not a note-taking app. When in doubt, favor features and designs that make commitments visible, owned and trackable.
 
-- Product idea: `idea.txt`
+- Product idea: `idea.md`
 - High-level plan: `docs/roadmap.md`
 
 ## Current status

@@ -6,7 +6,7 @@ This document is the input for the MVP user stories (roadmap step 2) and the wir
 
 ## Actors
 
-- **Team admin** – manages the team: invites and removes members, makes other members admins, reassigns the organizer of a series and reassigns or deletes the open tasks of members being removed. The user who creates a team is its first admin.
+- **Team admin** – manages the team: invites and removes members, makes other members admins, reassigns the organizer of a series and reassigns or deletes the open tasks of members being removed. The user who creates a team is its first admin, and a team always has at least one admin.
 - **Team member** – belongs to a team and can see its meetings, decisions and tasks.
 - **Organizer** – the team member who runs a meeting series. Each series has exactly one organizer.
 - **Participant** – a team member invited to a meeting.
@@ -22,8 +22,8 @@ Each series has one organizer. A team admin can reassign the organizer to anothe
 
 ## 0. Setup (once per team)
 
-1. A user signs up and creates a team, becoming its first team admin.
-2. The admin invites colleagues to the team by email.
+1. A user signs up with name, email and password, and creates a team, becoming its first team admin. The final authentication method is decided with the tech stack (roadmap step 4).
+2. The admin invites colleagues to the team by email. Invitation links are single-use and expire after 7 days.
 3. Invited colleagues sign up (or log in) and join the team as members.
 4. A team member creates a meeting series (e.g. "Weekly ops sync") and becomes its organizer.
 
@@ -52,7 +52,7 @@ The organizer runs the meeting in the app and works through the agenda:
    - an owner, who must be a participant of this meeting
    - a deadline
 5. Agenda items not covered are marked as such, so they carry over.
-6. The organizer closes the meeting.
+6. The organizer closes the meeting. After closing, its notes, decisions and tasks can no longer be added or edited; task status can still be updated.
 
 **MVP features:** 3 – Recording of agreements, 4 – Task assignment with owners.
 
@@ -61,9 +61,9 @@ The organizer runs the meeting in the app and works through the agenda:
 1. When the meeting is closed, **minutes** are generated automatically: participants, agenda, notes, decisions, new tasks (owner, deadline) and the status of carried-over tasks.
 2. The minutes are emailed to all participants and stay available in the app. Minutes cannot be edited once they are generated.
 3. Each task owner receives **one email** after the meeting listing their tasks from it. There are no further reminders (no deadline or overdue emails), to avoid spamming users. This email cannot be turned off.
-4. Each user sees their tasks on the **pending-tasks dashboard**, across all their teams, sorted by deadline, with overdue tasks highlighted.
-5. Task owners update status between meetings (open → in progress → done).
-6. Past meetings, their decisions and minutes are listed in the team's **meeting history**, grouped by series.
+4. Each user sees their tasks on the **pending-tasks dashboard**, across all their teams, sorted by deadline, with overdue tasks highlighted. The dashboard is the landing page after login and can be filtered by team.
+5. Task owners update status between meetings (open → in progress → done), including directly from the dashboard.
+6. Past meetings, their decisions and minutes are listed in the team's **meeting history**, grouped by series and searchable by keyword across series names and decision text.
 
 **MVP features:** 5 – Pending-tasks dashboard, 6 – Meeting history, 7 – Minutes generation.
 
@@ -89,7 +89,7 @@ When the organizer creates the next meeting of the series, the cycle starts agai
 - **done** – completed. A done task can be reopened if needed.
 - **Overdue** is not a separate status: it is any task that is not done and whose deadline has passed. It is highlighted in the dashboard, the agenda and the minutes.
 - Only the task owner and the organizer of the task's meeting series can update a task. The owner can change its status; the organizer can change its status, owner and deadline.
-- A task can never be left without an owner. Before a member is removed from the team, a team admin must reassign each of their open tasks to another team member or delete it. The removal cannot be completed until this is done.
+- A task can never be left without an owner. Before a member is removed from the team, a team admin must reassign each of their open tasks to another team member or delete it, and reassign the organizer of any series the member runs. The removal cannot be completed until this is done.
 - Every change is stored with who made it and when (status history), so the minutes and the meeting history can show how a commitment evolved.
 
 ## Permissions summary
@@ -137,4 +137,5 @@ Resolved during roadmap step 2 (MF-2):
 5. **Minutes** – cannot be edited in the MVP.
 6. **Roles** – teams have admins who manage membership.
 7. **Organizer** – one per series; a team admin can reassign it.
-8. **Removed members** – before a member is removed, a team admin must reassign each of their open tasks to another team member or delete it.
+8. **Removed members** – before a member is removed, a team admin must reassign or delete each of their open tasks and reassign any series they organize.
+9. **Closed meetings** – notes, decisions and tasks are locked once a meeting is closed; task status remains updatable.

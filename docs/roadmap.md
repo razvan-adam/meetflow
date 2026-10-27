@@ -33,7 +33,7 @@ Implement sign-up and login, team management and invitations, meeting creation w
 **Outcome:** a team can create and run a meeting in the app.
 
 ## 7. Build commitment tracking (the differentiator)
-Implement tasks with owners and deadlines, status updates, the per-person pending-tasks dashboard, email reminders as deadlines approach, and automatic carry-over of open items to the next meeting's agenda.
+Implement tasks with owners and deadlines, status updates, the per-person pending-tasks dashboard, a single email to each owner after the meeting listing their tasks (no deadline reminders, to avoid spamming), and automatic carry-over of open items to the next meeting's agenda.
 
 **Outcome:** commitments are followed from the meeting until they are done.
 

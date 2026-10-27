@@ -60,4 +60,7 @@ Desktop.ini
 # --- Private discovery notes (market research, customer interviews) ---
 docs/discovery/
 
+# --- Personal planning notes ---
+NEXT-STEPS.md
+
 # --- Stack-specific rules (add after step 4) ---

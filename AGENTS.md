@@ -13,6 +13,7 @@ It is not a note-taking app. When in doubt, favor features and designs that make
 - MVP backlog order (source of truth for priority, not the Jira board order): `docs/mvp-backlog.md`
 - User journeys and key screens: `docs/user-journeys.md`
 - Wireframes (open in a browser): `docs/wireframes/index.html`
+- Basic visual style (colors, type, components): `docs/visual-style.md`
 
 ## Current status
 

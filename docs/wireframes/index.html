@@ -187,6 +187,38 @@ tr.is-overdue td { background: var(--overdue-soft); }
 mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-radius: 2px; }
 .empty { color: var(--muted); font-size: 14px; border: 1px dashed var(--line); border-radius: 6px; padding: 14px; }
 
+/* Sign up */
+.auth { max-width: 380px; width: 100%; margin: 12px auto; display: grid; gap: 14px; }
+.auth h2 { font-size: 22px; }
+.input[readonly] { background: var(--fill); color: var(--muted); }
+.states { display: grid; gap: 8px; }
+
+/* Team, series and members */
+.list { display: grid; border: 1px solid var(--line); border-radius: 6px; }
+.list-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; padding: 10px 12px; border-top: 1px solid var(--line); align-items: center; }
+.list-row:first-child { border-top: 0; }
+.list-row .t-meta { margin-top: 2px; }
+.list-row > .t-side { justify-content: flex-end; }
+@media (max-width: 560px) { .list-row { grid-template-columns: minmax(0, 1fr); } .list-row > .t-side { justify-content: flex-start; } }
+a.list-row { color: var(--ink); text-decoration: none; }
+a.list-row:hover { background: var(--fill); }
+.role { font-size: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; color: var(--muted); white-space: nowrap; }
+.role.admin { border-color: var(--wire); color: var(--wire); }
+.removal { border: 1px solid var(--overdue); border-radius: 6px; padding: 14px; display: grid; gap: 12px; }
+.removal h3 { font-size: 16px; }
+.resolve { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px); gap: 8px 14px; align-items: center; font-size: 14px; }
+@media (max-width: 560px) { .resolve { grid-template-columns: minmax(0, 1fr); } }
+
+/* Emails */
+.mail { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--frame); }
+.mail-head { background: var(--fill); padding: 10px 16px; display: grid; gap: 2px; font-size: 13px; color: var(--muted); border-bottom: 1px solid var(--line); }
+.mail-head b { color: var(--ink); font-size: 15px; }
+.mail-body { padding: 20px 16px 24px; display: grid; gap: 14px; max-width: 560px; font-size: 15px; }
+.mail-body p { margin: 0; }
+.mail-body .foot { color: var(--muted); font-size: 13px; }
+.mail-body ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; }
+.mails { display: grid; gap: 18px; padding: 16px; }
+
 /* Design notes beside each frame */
 .notes { display: grid; gap: 10px; min-width: 0; }
 .sticky { background: var(--note); color: var(--note-ink); border-radius: 4px; padding: 12px 14px; font-size: 14px; display: grid; gap: 6px; }
@@ -204,13 +236,18 @@ mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-r
   </header>
 
   <nav class="tabs" aria-label="Screens">
+    <a href="#signup"><span class="mono">S1</span>Sign up</a>
     <a href="#dashboard"><span class="mono">S2</span>My tasks</a>
+    <a href="#team"><span class="mono">S3</span>Team</a>
+    <a href="#series"><span class="mono">S4</span>Series</a>
     <a href="#schedule"><span class="mono">S5</span>Schedule meeting</a>
     <a href="#agenda"><span class="mono">S6</span>Agenda</a>
     <a href="#live"><span class="mono">S7</span>Live meeting</a>
     <a href="#task"><span class="mono">S8</span>Task</a>
     <a href="#minutes"><span class="mono">S9</span>Minutes</a>
     <a href="#history"><span class="mono">S10</span>History</a>
+    <a href="#members"><span class="mono">S11</span>Members</a>
+    <a href="#emails"><span class="mono">E1–3</span>Emails</a>
   </nav>
 
   <!-- S2 Pending-tasks dashboard -->
@@ -218,7 +255,7 @@ mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-r
     <div class="frame">
       <div class="appbar">
         <span class="logo">MeetFlow</span>
-        <nav class="appnav"><a class="on" href="#dashboard">My tasks</a><a href="#agenda">Ops team</a><a href="#history">History</a></nav>
+        <nav class="appnav"><a class="on" href="#dashboard">My tasks</a><a href="#team">Ops team</a><a href="#history">History</a></nav>
         <span class="avatar" title="Marta Ruiz">MR</span>
       </div>
       <div class="page">
@@ -302,7 +339,7 @@ mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-r
     <div class="frame">
       <div class="appbar">
         <span class="logo">MeetFlow</span>
-        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#agenda">Ops team</a><a href="#history">History</a></nav>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#team">Ops team</a><a href="#history">History</a></nav>
         <span class="avatar" title="Marta Ruiz">MR</span>
       </div>
       <div class="page">
@@ -349,7 +386,7 @@ mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-r
     <div class="frame">
       <div class="appbar">
         <span class="logo">MeetFlow</span>
-        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#agenda">Ops team</a><a href="#history">History</a></nav>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#team">Ops team</a><a href="#history">History</a></nav>
         <span class="avatar" title="Marta Ruiz">MR</span>
       </div>
       <div class="page">
@@ -420,7 +457,7 @@ mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-r
     <div class="frame">
       <div class="appbar">
         <span class="logo">MeetFlow</span>
-        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#agenda">Ops team</a><a href="#history">History</a></nav>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#team">Ops team</a><a href="#history">History</a></nav>
         <span class="avatar" title="Marta Ruiz">MR</span>
       </div>
       <div class="page">
@@ -533,7 +570,7 @@ mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-r
     <div class="frame">
       <div class="appbar">
         <span class="logo">MeetFlow</span>
-        <nav class="appnav"><a class="on" href="#dashboard">My tasks</a><a href="#agenda">Ops team</a><a href="#history">History</a></nav>
+        <nav class="appnav"><a class="on" href="#dashboard">My tasks</a><a href="#team">Ops team</a><a href="#history">History</a></nav>
         <span class="avatar" title="Marta Ruiz">MR</span>
       </div>
       <div class="page">
@@ -585,7 +622,7 @@ mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-r
     <div class="frame">
       <div class="appbar">
         <span class="logo">MeetFlow</span>
-        <nav class="appnav"><a href="#dashboard">My tasks</a><a href="#agenda">Ops team</a><a class="on" href="#history">History</a></nav>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a href="#team">Ops team</a><a class="on" href="#history">History</a></nav>
         <span class="avatar" title="Marta Ruiz">MR</span>
       </div>
       <div class="page">
@@ -649,7 +686,7 @@ mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-r
     <div class="frame">
       <div class="appbar">
         <span class="logo">MeetFlow</span>
-        <nav class="appnav"><a href="#dashboard">My tasks</a><a href="#agenda">Ops team</a><a class="on" href="#history">History</a></nav>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a href="#team">Ops team</a><a class="on" href="#history">History</a></nav>
         <span class="avatar" title="Marta Ruiz">MR</span>
       </div>
       <div class="page">
@@ -685,11 +722,291 @@ mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-r
       </ul></div>
     </aside>
   </section>
+
+  <!-- S1 Sign up / log in -->
+  <section class="screen" id="v-signup" data-view="signup" hidden>
+    <div class="frame">
+      <div class="appbar"><span class="logo">MeetFlow</span></div>
+      <div class="page">
+        <form class="auth" id="signup-form">
+          <div>
+            <h2>Join Ops team</h2>
+            <p class="sub">Marta Ruiz invited you. Create your account to see the team's meetings and your tasks.</p>
+          </div>
+          <label class="field"><span>Name <span class="req">*</span></span><input class="input" id="su-name" value="Sofia Martin"></label>
+          <label class="field"><span>Work email</span><input class="input" id="su-email" value="sofia.martin@example.com" readonly></label>
+          <label class="field"><span>Password <span class="req">*</span></span><input class="input" id="su-pass" type="password" value="example-pass"></label>
+          <button class="btn primary" type="submit">Create account and join</button>
+          <p class="sub">Already have an account? <a href="#dashboard">Log in to join</a></p>
+          <p class="sub" style="font-size:13px">We only store your name and email.</p>
+        </form>
+        <div class="states">
+          <p class="section-label">Other states</p>
+          <div class="callout warn"><b>This invitation has expired.</b> Invitations work for 7 days. Ask a team admin to send you a new one.</div>
+          <div class="callout warn"><b>This invitation was already used.</b> Log in with the account that accepted it, or ask a team admin for a new one.</div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>S1 · Sign up / log in</h3><p>Journeys J1, J2 · MF-8, MF-10</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>Opened from an invitation: the team and inviter are named, and the email is fixed.</li>
+        <li>Only name, email and password are collected (GDPR).</li>
+        <li>Existing users log in and join the same way.</li>
+        <li>Expired and used links say what happened and what to do.</li>
+        <li>Without an invitation, the same form starts J1 and ends on an empty dashboard that asks to create a team.</li>
+      </ul></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>Would you expect to sign in with your work Microsoft or Google account?</li>
+      </ul></div>
+    </aside>
+  </section>
+
+  <!-- S3 Team -->
+  <section class="screen" id="v-team" data-view="team" hidden>
+    <div class="frame">
+      <div class="appbar">
+        <span class="logo">MeetFlow</span>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#team">Ops team</a><a href="#history">History</a></nav>
+        <span class="avatar" title="Marta Ruiz">MR</span>
+      </div>
+      <div class="page">
+        <div class="page-head">
+          <div>
+            <h2>Ops team</h2>
+            <p class="sub">6 members · you are an admin · <a href="#members">Manage members</a></p>
+          </div>
+        </div>
+        <div>
+          <p class="section-label">Meeting series</p>
+          <div class="list">
+            <a class="list-row" href="#series">
+              <div><div class="t-desc">Weekly ops sync</div><div class="t-meta"><span>Organizer: Marta Ruiz</span><span>3 open tasks, 1 overdue</span></div></div>
+              <div class="t-side"><span class="due">Next: Mon 2 Nov, 09:30</span></div>
+            </a>
+            <a class="list-row" href="#series">
+              <div><div class="t-desc">Monthly carrier review</div><div class="t-meta"><span>Organizer: Jonas Berg</span><span>2 open tasks</span></div></div>
+              <div class="t-side"><span class="due">Next: Thu 5 Nov, 14:00</span></div>
+            </a>
+          </div>
+        </div>
+        <form class="add-row" id="series-form">
+          <input class="input" id="series-new" placeholder="New series name, e.g. Quarterly safety review" aria-label="New series name">
+          <button class="btn" type="submit">Create series</button>
+        </form>
+        <div class="card">
+          <div>
+            <h3 style="font-size:16px">Invite colleagues</h3>
+            <p class="sub">They get an email with a link that works once and expires after 7 days.</p>
+          </div>
+          <form class="add-row" id="invite-form">
+            <input class="input" id="invite-email" type="email" placeholder="colleague@company.com" aria-label="Email to invite">
+            <button class="btn primary" type="submit">Send invitation</button>
+          </form>
+          <div>
+            <p class="section-label">Pending invitations</p>
+            <div class="list" id="invites">
+              <div class="list-row">
+                <div><div class="t-desc">sofia.martin@example.com</div><div class="t-meta"><span>Sent 27 Oct by Marta Ruiz · expires in 7 days</span></div></div>
+                <div class="t-side"><button class="btn" type="button">Cancel</button></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>S3 · Team</h3><p>Journeys J1, J2 · MF-9, MF-10, MF-12</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>Each series shows its organizer, open work and next meeting.</li>
+        <li>Any member can create a series and becomes its organizer.</li>
+        <li>Only admins see the invitation card and "Manage members".</li>
+        <li>Users with several teams switch between them in the top bar.</li>
+      </ul></div>
+      <div class="sticky"><h3>Try it</h3><p>Send an invitation, then cancel it.</p></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>How many series would your team have?</li>
+      </ul></div>
+    </aside>
+  </section>
+
+  <!-- S4 Meeting series -->
+  <section class="screen" id="v-series" data-view="series" hidden>
+    <div class="frame">
+      <div class="appbar">
+        <span class="logo">MeetFlow</span>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#team">Ops team</a><a href="#history">History</a></nav>
+        <span class="avatar" title="Marta Ruiz">MR</span>
+      </div>
+      <div class="page">
+        <div class="page-head">
+          <div>
+            <div class="crumb"><a href="#team">Ops team</a></div>
+            <h2>Weekly ops sync</h2>
+            <p class="sub">Organized by you</p>
+          </div>
+          <a class="btn primary" href="#schedule" style="text-decoration:none">Schedule next meeting</a>
+        </div>
+        <a class="list-row card" href="#agenda" style="display:grid">
+          <div><div class="t-desc">Mon 2 Nov 2026, 09:30</div><div class="t-meta"><span>4 participants</span><span>3 open tasks and 4 agenda items</span></div></div>
+          <div class="t-side"><span class="tag carry">next meeting</span></div>
+        </a>
+        <div>
+          <p class="section-label">Open tasks in this series</p>
+          <div class="tasks">
+            <div class="task is-overdue">
+              <div><div class="t-desc"><a href="#task">Renegotiate pallet rates with Translog</a></div><div class="t-meta"><span>Marta Ruiz</span><span>In progress</span></div></div>
+              <div class="t-side"><span class="due overdue">Due 23 Oct · overdue</span></div>
+            </div>
+            <div class="task">
+              <div><div class="t-desc"><a href="#task">Fix scanner sync errors at dock 3</a></div><div class="t-meta"><span>Jonas Berg</span><span>Open</span></div></div>
+              <div class="t-side"><span class="due">Due Wed 28 Oct</span></div>
+            </div>
+            <div class="task">
+              <div><div class="t-desc"><a href="#task">Confirm holiday cover for the Valencia depot</a></div><div class="t-meta"><span>Marta Ruiz</span><span>Open</span></div></div>
+              <div class="t-side"><span class="due">Due Fri 30 Oct</span></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="section-label">Past meetings</p>
+          <div class="list">
+            <a class="list-row" href="#minutes"><div><div class="t-desc">Mon 26 Oct</div><div class="t-meta"><span>1 decision · 1 task</span></div></div><div class="t-side"><span class="tag">minutes</span></div></a>
+            <a class="list-row" href="#minutes"><div><div class="t-desc">Mon 19 Oct</div><div class="t-meta"><span>2 decisions · 2 tasks</span></div></div><div class="t-side"><span class="tag">minutes</span></div></a>
+            <a class="list-row" href="#history"><div><div class="t-desc">All meetings in this series</div></div><div class="t-side"></div></a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>S4 · Meeting series</h3><p>Journeys J1, J3 · MF-12, MF-13, MF-19</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>The series is the home of carry-over: its open tasks are listed here and reappear at every meeting until done.</li>
+        <li>Only the organizer sees "Schedule next meeting".</li>
+        <li>Admins see a "Change organizer" action (not shown).</li>
+      </ul></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>Is this page useful between meetings, or do you go straight to My tasks?</li>
+      </ul></div>
+    </aside>
+  </section>
+
+  <!-- S11 Team members -->
+  <section class="screen" id="v-members" data-view="members" hidden>
+    <div class="frame">
+      <div class="appbar">
+        <span class="logo">MeetFlow</span>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#team">Ops team</a><a href="#history">History</a></nav>
+        <span class="avatar" title="Marta Ruiz">MR</span>
+      </div>
+      <div class="page">
+        <div>
+          <div class="crumb"><a href="#team">Ops team</a></div>
+          <h2>Members</h2>
+          <p class="sub">A team always keeps at least one admin.</p>
+        </div>
+        <div class="callout" id="removed-msg" hidden>Jonas Berg was removed. Their task went to Ana Costa and Monthly carrier review is now organized by Luis Pérez.</div>
+        <div class="list">
+          <div class="list-row"><div><div class="t-desc">Marta Ruiz (you)</div><div class="t-meta"><span>Organizes Weekly ops sync</span></div></div><div class="t-side"><span class="role admin">admin</span></div></div>
+          <div class="list-row" id="row-jonas"><div><div class="t-desc">Jonas Berg</div><div class="t-meta"><span>Organizes Monthly carrier review</span><span>1 open task</span></div></div><div class="t-side"><span class="role">member</span><button class="btn" type="button">Make admin</button><button class="btn danger" type="button" id="remove-start">Remove</button></div></div>
+          <div class="list-row"><div><div class="t-desc">Ana Costa</div><div class="t-meta"><span>2 open tasks</span></div></div><div class="t-side"><span class="role admin">admin</span><button class="btn" type="button">Remove admin</button><button class="btn danger" type="button">Remove</button></div></div>
+          <div class="list-row"><div><div class="t-desc">Luis Pérez</div><div class="t-meta"><span>1 open task</span></div></div><div class="t-side"><span class="role">member</span><button class="btn" type="button">Make admin</button><button class="btn danger" type="button">Remove</button></div></div>
+          <div class="list-row"><div><div class="t-desc">Priya Nair</div><div class="t-meta"><span>No open tasks</span></div></div><div class="t-side"><span class="role">member</span><button class="btn" type="button">Make admin</button><button class="btn danger" type="button">Remove</button></div></div>
+          <div class="list-row"><div><div class="t-desc">Tom Weber</div><div class="t-meta"><span>No open tasks</span></div></div><div class="t-side"><span class="role">member</span><button class="btn" type="button">Make admin</button><button class="btn danger" type="button">Remove</button></div></div>
+        </div>
+        <div class="removal" id="removal" hidden>
+          <div>
+            <h3>Remove Jonas Berg from Ops team</h3>
+            <p class="sub">Hand over their work first. Nothing can be left without an owner.</p>
+          </div>
+          <div class="resolve">
+            <span><b>Task:</b> Fix scanner sync errors at dock 3 <span class="due">· due 28 Oct</span></span>
+            <select class="input" id="rm-task" aria-label="What to do with this task">
+              <option value="">Choose…</option><option>Reassign to Ana Costa</option><option>Reassign to Luis Pérez</option><option>Reassign to Marta Ruiz</option><option>Delete task</option>
+            </select>
+            <span><b>Organizer of:</b> Monthly carrier review</span>
+            <select class="input" id="rm-series" aria-label="New organizer">
+              <option value="">Choose new organizer…</option><option>Luis Pérez</option><option>Ana Costa</option><option>Marta Ruiz</option>
+            </select>
+          </div>
+          <p class="sub" id="remove-left">2 items left to resolve.</p>
+          <div class="chips"><button class="btn danger" id="remove-yes" type="button" disabled>Remove Jonas Berg</button><button class="btn" id="remove-no" type="button">Cancel</button></div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>S11 · Team members</h3><p>Journey J7 · MF-11, MF-12</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>Admins only.</li>
+        <li>Removing a member is blocked until each open task is reassigned or deleted and each series they organize has a new organizer.</li>
+        <li>The removed member loses access immediately.</li>
+        <li>The last admin cannot lose admin rights.</li>
+      </ul></div>
+      <div class="sticky"><h3>Try it</h3><p>Remove Jonas Berg. The button unlocks once both items are resolved.</p></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>Who in your company would do this, and how often?</li>
+      </ul></div>
+    </aside>
+  </section>
+
+  <!-- E1–E3 Emails -->
+  <section class="screen" id="v-emails" data-view="emails" hidden>
+    <div class="frame">
+      <div class="mails">
+        <div class="mail">
+          <div class="mail-head"><span>E1 · Invitation · to sofia.martin@example.com</span><b>Marta Ruiz invited you to Ops team on MeetFlow</b></div>
+          <div class="mail-body">
+            <p>Marta Ruiz invited you to join <b>Ops team</b>. You'll see the team's meetings, the decisions taken and the tasks you own.</p>
+            <div><a class="btn primary" href="#signup" style="text-decoration:none; display:inline-block">Join Ops team</a></div>
+            <p class="foot">The link works once and expires on Tue 3 Nov 2026. If you weren't expecting this, you can ignore it.</p>
+          </div>
+        </div>
+        <div class="mail">
+          <div class="mail-head"><span>E2 · Minutes · to all 4 participants</span><b>Minutes: Weekly ops sync, Mon 26 Oct 2026</b></div>
+          <div class="mail-body">
+            <p><b>Decisions</b></p>
+            <ul><li>Cover Valencia from the Madrid team rather than with agency staff.</li></ul>
+            <p><b>New tasks</b></p>
+            <ul><li>Confirm holiday cover for the Valencia depot · Marta Ruiz · due Fri 30 Oct</li></ul>
+            <p><b>Open commitments</b></p>
+            <ul>
+              <li><span class="due overdue">Overdue:</span> Renegotiate pallet rates with Translog · Marta Ruiz · due 23 Oct · in progress</li>
+              <li>Fix scanner sync errors at dock 3 · Jonas Berg · due 28 Oct · open</li>
+            </ul>
+            <p><b>Carried over:</b> Returns process backlog (not covered).</p>
+            <div><a class="btn" href="#minutes" style="text-decoration:none; display:inline-block">Open full minutes</a></div>
+          </div>
+        </div>
+        <div class="mail">
+          <div class="mail-head"><span>E3 · Task email · to Marta Ruiz</span><b>Your tasks from Weekly ops sync, Mon 26 Oct</b></div>
+          <div class="mail-body">
+            <p>You agreed to these tasks in today's meeting:</p>
+            <ul><li><a href="#task">Confirm holiday cover for the Valencia depot</a> · due Fri 30 Oct</li></ul>
+            <p>They'll come back at the next meeting until they're done. Update them any time from My tasks.</p>
+            <div><a class="btn primary" href="#dashboard" style="text-decoration:none; display:inline-block">Open My tasks</a></div>
+            <p class="foot">This is the only email about these tasks. MeetFlow doesn't send deadline reminders.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>E1–E3 · Emails</h3><p>Journeys J2, J5 · MF-10, MF-22, MF-20</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>E1: single-use link, expiry date stated.</li>
+        <li>E2: sent to every participant on close. A short summary that links to the full minutes.</li>
+        <li>E3: one email per owner per meeting, only their tasks from that meeting. Cannot be turned off, no reminders.</li>
+        <li>No data from teams the recipient doesn't belong to.</li>
+      </ul></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>Would the minutes email alone be enough, without the task email?</li>
+      </ul></div>
+    </aside>
+  </section>
 </div>
 
 <script>
 (function () {
-  var views = ['dashboard', 'schedule', 'agenda', 'live', 'task', 'minutes', 'history'];
+  var views = ['signup', 'dashboard', 'team', 'series', 'schedule', 'agenda', 'live', 'task', 'minutes', 'history', 'members', 'emails'];
 
   function route() {
     var name = location.hash.replace('#', '');
@@ -834,6 +1151,51 @@ mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-r
       g.hidden = !Array.prototype.some.call(g.querySelectorAll('.meeting-row'), function (r) { return !r.hidden; });
     });
     document.getElementById('hist-empty').hidden = any;
+  });
+
+  // S11: a member can only be removed once their tasks and series are handed over
+  var resolveSelects = document.querySelectorAll('#removal .resolve select');
+  var removeYes = document.getElementById('remove-yes');
+  resolveSelects.forEach(function (sel) {
+    sel.addEventListener('change', function () {
+      var left = Array.prototype.filter.call(resolveSelects, function (s) { return !s.value; }).length;
+      removeYes.disabled = left > 0;
+      document.getElementById('remove-left').textContent = left
+        ? left + (left === 1 ? ' item' : ' items') + ' left to resolve.'
+        : 'Ready. Jonas will lose access to Ops team immediately.';
+    });
+  });
+  document.getElementById('remove-start').addEventListener('click', function () {
+    document.getElementById('removal').hidden = false;
+  });
+  document.getElementById('remove-no').addEventListener('click', function () {
+    document.getElementById('removal').hidden = true;
+  });
+  removeYes.addEventListener('click', function () {
+    document.getElementById('removal').hidden = true;
+    document.getElementById('row-jonas').remove();
+    document.getElementById('removed-msg').hidden = false;
+  });
+
+  // S1, S3: forms that just move to the next screen
+  document.getElementById('signup-form').addEventListener('submit', function (e) { e.preventDefault(); location.hash = 'dashboard'; });
+  document.getElementById('series-form').addEventListener('submit', function (e) { e.preventDefault(); location.hash = 'series'; });
+
+  // S3: invitations
+  document.getElementById('invite-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = document.getElementById('invite-email');
+    var email = input.value.trim();
+    if (!email) return;
+    var row = document.createElement('div');
+    row.className = 'list-row';
+    row.innerHTML = '<div><div class="t-desc"></div><div class="t-meta"><span>Sent just now · expires in 7 days</span></div></div><div class="t-side"><button class="btn" type="button">Cancel</button></div>';
+    row.querySelector('.t-desc').textContent = email;
+    document.getElementById('invites').appendChild(row);
+    input.value = '';
+  });
+  document.getElementById('invites').addEventListener('click', function (e) {
+    if (e.target.tagName === 'BUTTON') e.target.closest('.list-row').remove();
   });
 })();
 </script>

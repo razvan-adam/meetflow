@@ -11,6 +11,8 @@ It is not a note-taking app. When in doubt, favor features and designs that make
 - High-level plan: `docs/roadmap.md`
 - Core meeting flow and commitment lifecycle: `docs/core-flow.md`
 - MVP backlog order (source of truth for priority, not the Jira board order): `docs/mvp-backlog.md`
+- User journeys and key screens: `docs/user-journeys.md`
+- Wireframes (open in a browser): `docs/wireframes/index.html`
 
 ## Current status
 

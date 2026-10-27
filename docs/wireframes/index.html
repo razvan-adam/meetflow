@@ -1,0 +1,839 @@
+<title>MeetFlow Wireframes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a prototype shell (screen tabs on top) around a low-fidelity app frame, with design notes beside it. */
+:root {
+  --paper: #eef0f2;      /* page behind the frames */
+  --frame: #ffffff;      /* the app itself */
+  --ink: #23272d;
+  --muted: #646b75;
+  --line: #c9ced5;
+  --fill: #f3f4f6;       /* grey wire blocks */
+  --wire: #2f5fa7;       /* interactive elements */
+  --wire-soft: #e4ecf8;
+  --note: #fbf3cf;       /* design-note stickies */
+  --note-ink: #5a4a0c;
+  --overdue: #b42318;    /* semantic: overdue */
+  --overdue-soft: #fdecea;
+  --done: #2c7a4b;
+  --font-ui: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #15181c; --frame: #1e2227; --ink: #e6e8eb; --muted: #9aa2ad; --line: #3a4048;
+    --fill: #262b31; --wire: #8fb3ec; --wire-soft: #24324a; --note: #3a3418; --note-ink: #f0e2a6;
+    --overdue: #ff8a80; --overdue-soft: #3d2222; --done: #7fd19f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #15181c; --frame: #1e2227; --ink: #e6e8eb; --muted: #9aa2ad; --line: #3a4048;
+  --fill: #262b31; --wire: #8fb3ec; --wire-soft: #24324a; --note: #3a3418; --note-ink: #f0e2a6;
+  --overdue: #ff8a80; --overdue-soft: #3d2222; --done: #7fd19f; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+h1, h2, h3 { text-wrap: balance; margin: 0; line-height: 1.2; }
+a { color: var(--wire); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--wire); outline-offset: 2px; }
+
+.shell { max-width: 1240px; margin: 0 auto; display: grid; gap: 16px; }
+.shell-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+.shell-head h1 { font-size: 22px; }
+.shell-head p { margin: 0; color: var(--muted); font-size: 14px; }
+.mono { font-family: var(--font-mono); font-size: 12px; letter-spacing: .02em; }
+
+.tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; }
+.tabs a {
+  flex: none; text-decoration: none; color: var(--ink); background: var(--frame); border: 1px solid var(--line);
+  border-radius: 6px; padding: 6px 10px; font-size: 14px; display: flex; gap: 6px; align-items: baseline;
+}
+.tabs a .mono { color: var(--muted); }
+.tabs a[aria-current="page"] { border-color: var(--wire); background: var(--wire-soft); }
+
+.screen { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+@media (max-width: 900px) { .screen { grid-template-columns: minmax(0, 1fr); } }
+
+/* App frame */
+.frame { background: var(--frame); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; min-width: 0; }
+.appbar { display: flex; align-items: center; gap: 16px; padding: 10px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.logo { font-weight: 700; letter-spacing: .01em; }
+.appnav { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; }
+.appnav a { color: var(--muted); text-decoration: none; }
+.appnav a.on { color: var(--ink); font-weight: 700; }
+.avatar { margin-left: auto; width: 30px; height: 30px; border-radius: 50%; background: var(--fill); border: 1px solid var(--line);
+  display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.page { padding: 20px 16px 28px; display: grid; gap: 18px; }
+@media (min-width: 640px) { .page { padding: 24px 28px 32px; } }
+.page-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 16px; }
+.page-head h2 { font-size: 22px; }
+.crumb { color: var(--muted); font-size: 13px; margin-bottom: 4px; }
+.sub { color: var(--muted); font-size: 14px; margin: 4px 0 0; }
+.section-label { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+
+.btn { border: 1px solid var(--line); background: var(--frame); border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 14px; }
+.btn.primary { background: var(--wire); border-color: var(--wire); color: var(--frame); font-weight: 700; }
+.btn.danger { border-color: var(--overdue); color: var(--overdue); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: var(--frame); border-radius: 999px; padding: 3px 10px; font-size: 13px; cursor: pointer; }
+.chip[aria-pressed="true"] { border-color: var(--wire); background: var(--wire-soft); }
+
+.field { display: grid; gap: 4px; font-size: 14px; }
+.field > span { font-weight: 700; font-size: 13px; }
+.input { border: 1px solid var(--line); background: var(--frame); border-radius: 6px; padding: 6px 10px; min-width: 0; width: 100%; }
+textarea.input { min-height: 72px; resize: vertical; }
+.req { color: var(--overdue); }
+
+/* Task rows: the same anatomy everywhere a commitment appears */
+.tasks { display: grid; border: 1px solid var(--line); border-radius: 6px; }
+.task { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; padding: 10px 12px; border-top: 1px solid var(--line); align-items: center; }
+.task:first-child { border-top: 0; }
+.task.is-overdue { background: var(--overdue-soft); box-shadow: inset 3px 0 0 var(--overdue); }
+.task.is-done .t-desc { text-decoration: line-through; color: var(--muted); }
+.t-desc { font-weight: 700; }
+.t-desc a { color: inherit; text-decoration: none; }
+.t-desc a:hover { text-decoration: underline; }
+.t-meta { color: var(--muted); font-size: 13px; display: flex; gap: 4px 12px; flex-wrap: wrap; }
+.t-side { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 560px) { .task { grid-template-columns: minmax(0, 1fr); } .t-side { justify-content: flex-start; } }
+.due { font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.due.overdue { color: var(--overdue); font-weight: 700; }
+.lock { font-family: var(--font-mono); font-size: 11px; color: var(--muted); border: 1px dashed var(--line); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+.tag { font-family: var(--font-mono); font-size: 11px; border-radius: 4px; padding: 1px 6px; background: var(--fill); color: var(--muted); white-space: nowrap; }
+.tag.carry { background: var(--wire-soft); color: var(--wire); }
+.status { border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; background: var(--frame); font-size: 13px; }
+.done-note { font-size: 12px; color: var(--done); }
+
+.summary { display: flex; gap: 8px 24px; flex-wrap: wrap; font-size: 14px; }
+.summary b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.summary .overdue b { color: var(--overdue); }
+
+.card { border: 1px solid var(--line); border-radius: 6px; padding: 14px; display: grid; gap: 12px; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.people { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.person { display: flex; gap: 8px; align-items: center; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font-size: 14px; }
+.person small { color: var(--muted); margin-left: auto; }
+.callout { background: var(--wire-soft); border-radius: 6px; padding: 10px 12px; font-size: 14px; }
+.callout.warn { background: var(--overdue-soft); }
+
+.agenda { display: grid; border: 1px solid var(--line); border-radius: 6px; }
+.agenda-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--line); }
+.agenda-item:first-child { border-top: 0; }
+.handle { color: var(--muted); cursor: grab; font-family: var(--font-mono); }
+.x { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 6px; }
+.add-row { display: flex; gap: 8px; }
+
+/* Live meeting */
+.live { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 18px; align-items: start; }
+@media (max-width: 760px) { .live { grid-template-columns: minmax(0, 1fr); } }
+.outline { display: grid; gap: 2px; font-size: 14px; }
+.outline a { text-decoration: none; color: var(--ink); padding: 6px 8px; border-radius: 6px; display: flex; gap: 8px; }
+.outline a .mono { color: var(--muted); }
+.outline a.cur { background: var(--wire-soft); font-weight: 700; }
+.outline a.skip { color: var(--muted); text-decoration: line-through; }
+.decision { border-left: 3px solid var(--ink); padding: 4px 0 4px 12px; display: grid; gap: 8px; }
+.decision p { margin: 0; font-weight: 700; }
+.new-task { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: end; }
+@media (max-width: 760px) { .new-task { grid-template-columns: minmax(0, 1fr); } }
+.form-error { color: var(--overdue); font-size: 13px; margin: 0; }
+.banner { border-radius: 6px; padding: 12px 14px; display: grid; gap: 10px; background: var(--fill); }
+.banner.closed { background: var(--wire-soft); }
+.banner ul { margin: 0; padding-left: 18px; }
+
+/* Task detail */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; border-left: 1px solid var(--line); background: var(--frame); padding: 6px 12px; cursor: pointer; font-size: 14px; }
+.seg button:first-child { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--wire); color: var(--frame); font-weight: 700; }
+.history { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 14px; }
+.history li { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 10px; }
+.history time { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+.dl { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 12px; font-size: 14px; margin: 0; }
+.dl dt { color: var(--muted); }
+.dl dd { margin: 0; }
+
+/* Minutes */
+.doc { border: 1px solid var(--line); border-radius: 6px; padding: 20px; display: grid; gap: 18px; max-width: 760px; }
+.doc h3 { font-size: 16px; }
+.doc p { margin: 0; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.is-overdue td { background: var(--overdue-soft); }
+.item-block { display: grid; gap: 6px; }
+.item-block .note { color: var(--muted); font-size: 14px; }
+.item-block ul { margin: 0; padding-left: 18px; font-size: 14px; }
+
+/* History */
+.series-group { display: grid; gap: 6px; }
+.meeting-row { display: grid; grid-template-columns: 130px minmax(0, 1fr) auto; gap: 4px 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; align-items: start; text-decoration: none; color: var(--ink); }
+.meeting-row:hover { border-color: var(--wire); }
+@media (max-width: 560px) { .meeting-row { grid-template-columns: minmax(0, 1fr); } }
+.meeting-row .when { font-weight: 700; font-variant-numeric: tabular-nums; }
+.meeting-row .decs { font-size: 13px; color: var(--muted); display: grid; gap: 2px; }
+.meeting-row .count { font-size: 13px; color: var(--muted); white-space: nowrap; }
+mark { background: var(--note); color: var(--note-ink); padding: 0 2px; border-radius: 2px; }
+.empty { color: var(--muted); font-size: 14px; border: 1px dashed var(--line); border-radius: 6px; padding: 14px; }
+
+/* Design notes beside each frame */
+.notes { display: grid; gap: 10px; min-width: 0; }
+.sticky { background: var(--note); color: var(--note-ink); border-radius: 4px; padding: 12px 14px; font-size: 14px; display: grid; gap: 6px; }
+.sticky h3 { font-size: 13px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
+.sticky ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.sticky p { margin: 0; }
+
+@media (prefers-reduced-motion: no-preference) { .btn, .chip, .tabs a { transition: background-color .15s, border-color .15s; } }
+</style>
+
+<div class="shell">
+  <header class="shell-head">
+    <h1>MeetFlow wireframes</h1>
+    <p class="mono">MF-26 · low fidelity · example data: Ops team, today Tue 27 Oct 2026</p>
+  </header>
+
+  <nav class="tabs" aria-label="Screens">
+    <a href="#dashboard"><span class="mono">S2</span>My tasks</a>
+    <a href="#schedule"><span class="mono">S5</span>Schedule meeting</a>
+    <a href="#agenda"><span class="mono">S6</span>Agenda</a>
+    <a href="#live"><span class="mono">S7</span>Live meeting</a>
+    <a href="#task"><span class="mono">S8</span>Task</a>
+    <a href="#minutes"><span class="mono">S9</span>Minutes</a>
+    <a href="#history"><span class="mono">S10</span>History</a>
+  </nav>
+
+  <!-- S2 Pending-tasks dashboard -->
+  <section class="screen" id="v-dashboard" data-view="dashboard">
+    <div class="frame">
+      <div class="appbar">
+        <span class="logo">MeetFlow</span>
+        <nav class="appnav"><a class="on" href="#dashboard">My tasks</a><a href="#agenda">Ops team</a><a href="#history">History</a></nav>
+        <span class="avatar" title="Marta Ruiz">MR</span>
+      </div>
+      <div class="page">
+        <div class="page-head">
+          <div>
+            <h2>My tasks</h2>
+            <p class="sub">Everything you committed to, across your teams.</p>
+          </div>
+          <div class="chips" role="group" aria-label="Filter by team">
+            <button class="chip" aria-pressed="true" data-team="all">All teams</button>
+            <button class="chip" aria-pressed="false" data-team="ops">Ops team</button>
+            <button class="chip" aria-pressed="false" data-team="lead">Leadership</button>
+          </div>
+        </div>
+        <div class="summary">
+          <span><b id="dash-pending">4</b> pending</span>
+          <span class="overdue"><b id="dash-overdue">1</b> overdue</span>
+        </div>
+        <div class="tasks" id="dash-tasks">
+          <div class="task is-overdue" data-team="ops" data-overdue="1">
+            <div>
+              <div class="t-desc"><a href="#task">Renegotiate pallet rates with Translog</a></div>
+              <div class="t-meta"><span>Ops team · Weekly ops sync</span><a href="#minutes">from 12 Oct meeting</a></div>
+            </div>
+            <div class="t-side">
+              <span class="due overdue">Due 23 Oct · 4 days overdue</span>
+              <select class="status" aria-label="Status"><option>Open</option><option selected>In progress</option><option>Done</option></select>
+            </div>
+          </div>
+          <div class="task" data-team="ops">
+            <div>
+              <div class="t-desc"><a href="#task">Confirm holiday cover for the Valencia depot</a></div>
+              <div class="t-meta"><span>Ops team · Weekly ops sync</span><a href="#minutes">from 26 Oct meeting</a></div>
+            </div>
+            <div class="t-side">
+              <span class="due">Due Fri 30 Oct</span>
+              <select class="status" aria-label="Status"><option selected>Open</option><option>In progress</option><option>Done</option></select>
+            </div>
+          </div>
+          <div class="task" data-team="lead">
+            <div>
+              <div class="t-desc"><a href="#task">Send Q4 budget draft to finance</a></div>
+              <div class="t-meta"><span>Leadership · Monthly budget review</span><a href="#minutes">from 5 Oct meeting</a></div>
+            </div>
+            <div class="t-side">
+              <span class="due">Due Fri 6 Nov</span>
+              <select class="status" aria-label="Status"><option selected>Open</option><option>In progress</option><option>Done</option></select>
+            </div>
+          </div>
+          <div class="task" data-team="lead">
+            <div>
+              <div class="t-desc"><a href="#task">Prepare headcount request for peak season</a></div>
+              <div class="t-meta"><span>Leadership · Monthly budget review</span><a href="#minutes">from 5 Oct meeting</a></div>
+            </div>
+            <div class="t-side">
+              <span class="due">Due Fri 20 Nov</span>
+              <select class="status" aria-label="Status"><option>Open</option><option selected>In progress</option><option>Done</option></select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>S2 · Pending-tasks dashboard</h3><p>Journey J5 · MF-21, MF-18</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>Landing page after login.</li>
+        <li>Only my open and in-progress tasks, across all teams, soonest deadline first.</li>
+        <li>Overdue = not done and past the deadline. Highlighted, not a separate status.</li>
+        <li>Status changes inline. A task set to Done leaves the list.</li>
+        <li>Each task links to its meeting's minutes.</li>
+      </ul></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>Is it clear what to do first?</li>
+        <li>Do you need to see tasks you own in other people's series separately?</li>
+      </ul></div>
+    </aside>
+  </section>
+
+  <!-- S5 Schedule a meeting -->
+  <section class="screen" id="v-schedule" data-view="schedule" hidden>
+    <div class="frame">
+      <div class="appbar">
+        <span class="logo">MeetFlow</span>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#agenda">Ops team</a><a href="#history">History</a></nav>
+        <span class="avatar" title="Marta Ruiz">MR</span>
+      </div>
+      <div class="page">
+        <div>
+          <div class="crumb">Ops team › Weekly ops sync</div>
+          <h2>Schedule the next meeting</h2>
+          <p class="sub">You organize this series.</p>
+        </div>
+        <div class="grid-2">
+          <label class="field"><span>Date <span class="req">*</span></span><input class="input" id="sch-date" type="date" value="2026-11-02"></label>
+          <label class="field"><span>Time <span class="req">*</span></span><input class="input" id="sch-time" type="time" value="09:30"></label>
+        </div>
+        <div>
+          <p class="section-label">Participants · team members only</p>
+          <div class="people">
+            <label class="person"><input type="checkbox" id="p-marta" checked disabled> Marta Ruiz <small>organizer</small></label>
+            <label class="person"><input type="checkbox" id="p-jonas" checked> Jonas Berg</label>
+            <label class="person"><input type="checkbox" id="p-ana" checked> Ana Costa</label>
+            <label class="person"><input type="checkbox" id="p-luis" checked> Luis Pérez</label>
+            <label class="person"><input type="checkbox" id="p-priya"> Priya Nair</label>
+            <label class="person"><input type="checkbox" id="p-tom"> Tom Weber</label>
+          </div>
+        </div>
+        <div class="callout">The agenda starts with what is still open from this series: <b>3 open tasks</b> and <b>1 item not covered</b> on 26 Oct.</div>
+        <div><a class="btn primary" href="#agenda" style="text-decoration:none; display:inline-block">Create meeting and open agenda</a></div>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>S5 · Schedule a meeting</h3><p>Journey J3 · MF-13, MF-19</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>Only the series organizer can create meetings.</li>
+        <li>Participants come from the team. Task owners must be participants, so this list matters.</li>
+        <li>Date, time and participants stay editable until the meeting is closed.</li>
+        <li>The callout previews carry-over before the meeting exists.</li>
+      </ul></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>Should "every Monday" be one click, or is scheduling one meeting at a time fine?</li>
+      </ul></div>
+    </aside>
+  </section>
+
+  <!-- S6 Agenda -->
+  <section class="screen" id="v-agenda" data-view="agenda" hidden>
+    <div class="frame">
+      <div class="appbar">
+        <span class="logo">MeetFlow</span>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#agenda">Ops team</a><a href="#history">History</a></nav>
+        <span class="avatar" title="Marta Ruiz">MR</span>
+      </div>
+      <div class="page">
+        <div class="page-head">
+          <div>
+            <div class="crumb">Ops team › Weekly ops sync</div>
+            <h2>Mon 2 Nov 2026, 09:30</h2>
+            <p class="sub">4 participants · Marta Ruiz, Jonas Berg, Ana Costa, Luis Pérez · <a href="#schedule">Edit</a></p>
+          </div>
+          <a class="btn primary" href="#live" style="text-decoration:none">Start meeting</a>
+        </div>
+        <div>
+          <p class="section-label">1 · Open commitments · carried over</p>
+          <div class="tasks">
+            <div class="task is-overdue">
+              <div>
+                <div class="t-desc"><a href="#task">Renegotiate pallet rates with Translog</a></div>
+                <div class="t-meta"><span>Marta Ruiz</span><span>In progress</span></div>
+              </div>
+              <div class="t-side"><span class="due overdue">Due 23 Oct · overdue</span><span class="lock">stays until done</span></div>
+            </div>
+            <div class="task">
+              <div>
+                <div class="t-desc"><a href="#task">Fix scanner sync errors at dock 3</a></div>
+                <div class="t-meta"><span>Jonas Berg</span><span>Open</span></div>
+              </div>
+              <div class="t-side"><span class="due">Due Wed 28 Oct</span><span class="lock">stays until done</span></div>
+            </div>
+            <div class="task">
+              <div>
+                <div class="t-desc"><a href="#task">Confirm holiday cover for the Valencia depot</a></div>
+                <div class="t-meta"><span>Marta Ruiz</span><span>Open</span></div>
+              </div>
+              <div class="t-side"><span class="due">Due Fri 30 Oct</span><span class="lock">stays until done</span></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="section-label">2 · Agenda items</p>
+          <div class="agenda" id="agenda-list">
+            <div class="agenda-item"><span class="handle" aria-hidden="true">⋮⋮</span><span>Returns process backlog <span class="tag carry">not covered on 26 Oct</span></span><button class="x" aria-label="Remove item">×</button></div>
+            <div class="agenda-item"><span class="handle" aria-hidden="true">⋮⋮</span><span>Peak season staffing plan</span><button class="x" aria-label="Remove item">×</button></div>
+            <div class="agenda-item"><span class="handle" aria-hidden="true">⋮⋮</span><span>Customer complaint: late deliveries in Bilbao</span><button class="x" aria-label="Remove item">×</button></div>
+          </div>
+        </div>
+        <form class="add-row" id="agenda-add">
+          <input class="input" id="agenda-new" placeholder="Add an agenda item" aria-label="New agenda item">
+          <button class="btn" type="submit">Add</button>
+        </form>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>S6 · Agenda</h3><p>Journey J3 · MF-14, MF-19</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>Open commitments always come first and have no remove button. They leave only when done.</li>
+        <li>Items not covered last time are tagged and can be removed.</li>
+        <li>Only the organizer sees the drag handles, remove and add. Everyone else sees it read-only.</li>
+      </ul></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>Is it obvious why the tasks can't be removed?</li>
+        <li>Would you prepare this the day before, or in the meeting?</li>
+      </ul></div>
+    </aside>
+  </section>
+
+  <!-- S7 Live meeting -->
+  <section class="screen" id="v-live" data-view="live" hidden>
+    <div class="frame">
+      <div class="appbar">
+        <span class="logo">MeetFlow</span>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a class="on" href="#agenda">Ops team</a><a href="#history">History</a></nav>
+        <span class="avatar" title="Marta Ruiz">MR</span>
+      </div>
+      <div class="page">
+        <div class="page-head">
+          <div>
+            <div class="crumb">Ops team › Weekly ops sync</div>
+            <h2>Mon 2 Nov 2026 · <span id="live-state">in progress</span></h2>
+          </div>
+          <button class="btn danger" id="close-btn" type="button">Close meeting</button>
+        </div>
+
+        <div class="banner" id="close-confirm" hidden>
+          <b>Close this meeting?</b>
+          <ul>
+            <li>Notes, decisions and tasks will be locked. Task status can still be updated.</li>
+            <li>Minutes will be emailed to all 4 participants.</li>
+            <li>Each task owner gets one email with their tasks from this meeting.</li>
+            <li>1 item is marked not covered and will carry over.</li>
+          </ul>
+          <div class="chips"><button class="btn danger" id="close-yes" type="button">Close and send</button><button class="btn" id="close-no" type="button">Keep editing</button></div>
+        </div>
+        <div class="banner closed" id="closed-banner" hidden>
+          <b>Meeting closed at 10:14.</b>
+          <span>Minutes sent to 4 participants. Task emails sent to 3 owners. <a href="#minutes">View minutes</a></span>
+        </div>
+
+        <div class="live">
+          <nav class="outline" aria-label="Agenda">
+            <p class="section-label">Agenda</p>
+            <a href="#live"><span class="mono">✓</span>Open commitments (3)</a>
+            <a href="#live" class="skip"><span class="mono">–</span>Returns process backlog</a>
+            <a href="#live" class="cur"><span class="mono">▸</span>Peak season staffing plan</a>
+            <a href="#live"><span class="mono">○</span>Late deliveries in Bilbao</a>
+          </nav>
+
+          <div style="display:grid; gap:18px; min-width:0">
+            <div class="card">
+              <p class="section-label" style="margin:0">Open commitments · reviewed</p>
+              <div class="tasks">
+                <div class="task is-overdue">
+                  <div><div class="t-desc">Renegotiate pallet rates with Translog</div><div class="t-meta"><span>Marta Ruiz</span><span class="due overdue">Due 23 Oct</span></div></div>
+                  <div class="t-side"><select class="status lockable" aria-label="Status"><option>Open</option><option selected>In progress</option><option>Done</option></select></div>
+                </div>
+                <div class="task is-done">
+                  <div><div class="t-desc">Fix scanner sync errors at dock 3</div><div class="t-meta"><span>Jonas Berg</span><span>Due 28 Oct</span></div></div>
+                  <div class="t-side"><select class="status lockable" aria-label="Status"><option>Open</option><option>In progress</option><option selected>Done</option></select></div>
+                </div>
+                <div class="task">
+                  <div><div class="t-desc">Confirm holiday cover for the Valencia depot</div><div class="t-meta"><span>Marta Ruiz</span><span>Due 30 Oct</span></div></div>
+                  <div class="t-side"><select class="status lockable" aria-label="Status"><option selected>Open</option><option>In progress</option><option>Done</option></select></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="page-head">
+                <h3>Peak season staffing plan</h3>
+                <label class="chips" style="font-size:14px; align-items:center"><input type="checkbox" id="not-covered" class="editable"> Not covered, carry over</label>
+              </div>
+              <label class="field"><span>Notes</span>
+                <textarea class="input editable" id="live-notes">Volume forecast +35% from mid-November. Current team can absorb +15%. Agency quotes received from two providers.</textarea>
+              </label>
+
+              <div class="decision">
+                <p>Hire 6 temporary pickers for 16 Nov – 31 Dec through Temporis.</p>
+                <div class="tasks" id="live-tasks">
+                  <div class="task">
+                    <div><div class="t-desc">Sign the agency contract with Temporis</div><div class="t-meta"><span>Luis Pérez</span><span>Open</span></div></div>
+                    <div class="t-side"><span class="due">Due Fri 6 Nov</span></div>
+                  </div>
+                </div>
+                <form class="new-task" id="task-form" novalidate>
+                  <label class="field"><span>New task <span class="req">*</span></span><input class="input editable" id="nt-desc" placeholder="What needs to be done"></label>
+                  <label class="field"><span>Owner <span class="req">*</span></span>
+                    <select class="input editable" id="nt-owner"><option value="">Participant…</option><option>Marta Ruiz</option><option>Jonas Berg</option><option>Ana Costa</option><option>Luis Pérez</option></select>
+                  </label>
+                  <label class="field"><span>Deadline <span class="req">*</span></span><input class="input editable" id="nt-due" type="date"></label>
+                  <button class="btn editable" type="submit">Add task</button>
+                </form>
+                <p class="form-error" id="nt-error" hidden>Add a description, an owner and a deadline. Every task needs all three.</p>
+              </div>
+
+              <form class="add-row" id="decision-add">
+                <input class="input editable" id="dec-new" placeholder="Record a decision for this item" aria-label="New decision">
+                <button class="btn editable" type="submit">Add decision</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>S7 · Live meeting</h3><p>Journey J4 · MF-15, MF-16, MF-17, MF-18</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>Open commitments are reviewed first. Owner or organizer updates status.</li>
+        <li>Decisions belong to an agenda item. Tasks are created under a decision or item.</li>
+        <li>Description, owner and deadline are all required. Owner list = this meeting's participants.</li>
+        <li>Closing asks for confirmation and says what will happen. After closing everything locks except task status.</li>
+      </ul></div>
+      <div class="sticky"><h3>Try it</h3><p>Submit an empty task to see validation, then press Close meeting.</p></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>Can you keep up with the conversation while typing here?</li>
+        <li>Is one person typing (the organizer) enough?</li>
+      </ul></div>
+    </aside>
+  </section>
+
+  <!-- S8 Task -->
+  <section class="screen" id="v-task" data-view="task" hidden>
+    <div class="frame">
+      <div class="appbar">
+        <span class="logo">MeetFlow</span>
+        <nav class="appnav"><a class="on" href="#dashboard">My tasks</a><a href="#agenda">Ops team</a><a href="#history">History</a></nav>
+        <span class="avatar" title="Marta Ruiz">MR</span>
+      </div>
+      <div class="page">
+        <div>
+          <div class="crumb">Ops team › Weekly ops sync › Task</div>
+          <h2>Renegotiate pallet rates with Translog</h2>
+          <p class="sub"><span class="due overdue">Due 23 Oct · 4 days overdue</span></p>
+        </div>
+        <div class="seg" role="group" aria-label="Status" id="task-seg">
+          <button type="button" aria-pressed="false">Open</button>
+          <button type="button" aria-pressed="true">In progress</button>
+          <button type="button" aria-pressed="false">Done</button>
+        </div>
+        <div class="grid-2">
+          <dl class="dl">
+            <dt>Owner</dt><dd>Marta Ruiz · <a href="#task">Change</a></dd>
+            <dt>Deadline</dt><dd>Fri 23 Oct 2026 · <a href="#task">Change</a></dd>
+            <dt>Created</dt><dd><a href="#minutes">Weekly ops sync, 12 Oct</a></dd>
+            <dt>From decision</dt><dd>Bring pallet costs back under €18 per pallet by Q1.</dd>
+          </dl>
+          <div class="callout">You can change status, owner and deadline because you organize this series. The owner can change status only.</div>
+        </div>
+        <div>
+          <p class="section-label">History</p>
+          <ul class="history">
+            <li><time>26 Oct 09:41</time><span>Marta Ruiz changed status <b>Open → In progress</b> (Weekly ops sync)</span></li>
+            <li><time>19 Oct 09:52</time><span>Marta Ruiz changed deadline <b>16 Oct → 23 Oct</b> (Weekly ops sync)</span></li>
+            <li><time>12 Oct 10:05</time><span>Marta Ruiz created the task. Owner Marta Ruiz, deadline 16 Oct.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>S8 · Task</h3><p>Journeys J4, J5 · MF-18</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>Status: open → in progress → done, and done can be reopened.</li>
+        <li>Owner and deadline: organizer only. A new owner must be a team member.</li>
+        <li>Every change is in the history with who and when.</li>
+        <li>The callout explains why this user can edit, so permissions are not a surprise.</li>
+      </ul></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>Do you want to add a comment when you change status?</li>
+      </ul></div>
+    </aside>
+  </section>
+
+  <!-- S9 Minutes -->
+  <section class="screen" id="v-minutes" data-view="minutes" hidden>
+    <div class="frame">
+      <div class="appbar">
+        <span class="logo">MeetFlow</span>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a href="#agenda">Ops team</a><a class="on" href="#history">History</a></nav>
+        <span class="avatar" title="Marta Ruiz">MR</span>
+      </div>
+      <div class="page">
+        <div class="page-head">
+          <div>
+            <div class="crumb">Ops team › Weekly ops sync › Minutes</div>
+            <h2>Mon 26 Oct 2026</h2>
+            <p class="sub">Closed by Marta Ruiz at 10:12 · emailed to 4 participants · <span class="tag">read-only</span></p>
+          </div>
+        </div>
+        <article class="doc">
+          <div><h3>Participants</h3><p>Marta Ruiz (organizer), Jonas Berg, Ana Costa, Luis Pérez</p></div>
+          <div>
+            <h3>Open commitments</h3>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Task</th><th>Owner</th><th>Deadline</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr class="is-overdue"><td>Renegotiate pallet rates with Translog</td><td>Marta Ruiz</td><td class="num">23 Oct · overdue</td><td>Open → In progress</td></tr>
+                <tr><td>Fix scanner sync errors at dock 3</td><td>Jonas Berg</td><td class="num">28 Oct</td><td>Open</td></tr>
+                <tr><td>Update the carrier contact list</td><td>Ana Costa</td><td class="num">23 Oct</td><td>Done</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+          <div class="item-block">
+            <h3>Holiday cover</h3>
+            <p class="note">Valencia depot has two people off in the week of 21 Dec.</p>
+            <ul><li><b>Decision:</b> Cover Valencia from the Madrid team rather than with agency staff.</li></ul>
+          </div>
+          <div class="item-block">
+            <h3>Returns process backlog</h3>
+            <p class="note">Not covered. Carried over to the next meeting.</p>
+          </div>
+          <div>
+            <h3>New tasks</h3>
+            <div class="table-wrap"><table>
+              <thead><tr><th>Task</th><th>Owner</th><th>Deadline</th></tr></thead>
+              <tbody>
+                <tr><td>Confirm holiday cover for the Valencia depot</td><td>Marta Ruiz</td><td class="num">30 Oct</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+        </article>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>S9 · Minutes</h3><p>Journeys J5, J6 · MF-22</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>Generated when the meeting is closed. Nobody can edit them.</li>
+        <li>Order: participants, open commitments, agenda with notes and decisions, new tasks.</li>
+        <li>Status changes made in the meeting are shown as before → after.</li>
+        <li>The same content is the minutes email (E2).</li>
+      </ul></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>Would you forward this to someone who wasn't there?</li>
+      </ul></div>
+    </aside>
+  </section>
+
+  <!-- S10 History -->
+  <section class="screen" id="v-history" data-view="history" hidden>
+    <div class="frame">
+      <div class="appbar">
+        <span class="logo">MeetFlow</span>
+        <nav class="appnav"><a href="#dashboard">My tasks</a><a href="#agenda">Ops team</a><a class="on" href="#history">History</a></nav>
+        <span class="avatar" title="Marta Ruiz">MR</span>
+      </div>
+      <div class="page">
+        <div class="page-head">
+          <div><div class="crumb">Ops team</div><h2>Meeting history</h2></div>
+        </div>
+        <input class="input" id="hist-q" type="search" placeholder="Search series names and decisions, e.g. pallet" aria-label="Search meeting history">
+        <div id="hist-groups" style="display:grid; gap:18px">
+          <div class="series-group">
+            <p class="section-label">Weekly ops sync</p>
+            <a class="meeting-row" href="#minutes" data-series="Weekly ops sync"><span class="when">Mon 26 Oct</span><span class="decs"><span>Cover Valencia from the Madrid team rather than with agency staff.</span></span><span class="count">1 decision · 1 task</span></a>
+            <a class="meeting-row" href="#minutes" data-series="Weekly ops sync"><span class="when">Mon 19 Oct</span><span class="decs"><span>Move the dock 3 scanners to the new firmware.</span><span>Stop accepting returns without an RMA number.</span></span><span class="count">2 decisions · 2 tasks</span></a>
+            <a class="meeting-row" href="#minutes" data-series="Weekly ops sync"><span class="when">Mon 12 Oct</span><span class="decs"><span>Bring pallet costs back under €18 per pallet by Q1.</span></span><span class="count">1 decision · 1 task</span></a>
+          </div>
+          <div class="series-group">
+            <p class="section-label">Monthly carrier review</p>
+            <a class="meeting-row" href="#minutes" data-series="Monthly carrier review"><span class="when">Thu 1 Oct</span><span class="decs"><span>Drop Rapidex for Bilbao routes after two late months.</span><span>Ask Translog for a pallet volume discount.</span></span><span class="count">2 decisions · 3 tasks</span></a>
+          </div>
+        </div>
+        <p class="empty" id="hist-empty" hidden>No meetings or decisions match. Search covers series names and decision text in your teams.</p>
+      </div>
+    </div>
+    <aside class="notes">
+      <div class="sticky"><h3>S10 · Meeting history</h3><p>Journey J6 · MF-23</p></div>
+      <div class="sticky"><h3>Rules shown</h3><ul>
+        <li>Closed meetings, grouped by series, newest first.</li>
+        <li>Search covers series names and decision text only, within the user's teams.</li>
+        <li>Each row opens the minutes, with tasks at their current status.</li>
+      </ul></div>
+      <div class="sticky"><h3>Try it</h3><p>Search for "pallet" or "Bilbao".</p></div>
+      <div class="sticky"><h3>Ask testers</h3><ul>
+        <li>What would you search for here? Are decisions enough, or do you need notes too?</li>
+      </ul></div>
+    </aside>
+  </section>
+</div>
+
+<script>
+(function () {
+  var views = ['dashboard', 'schedule', 'agenda', 'live', 'task', 'minutes', 'history'];
+
+  function route() {
+    var name = location.hash.replace('#', '');
+    if (views.indexOf(name) === -1) name = 'dashboard';
+    document.querySelectorAll('.screen').forEach(function (s) { s.hidden = s.dataset.view !== name; });
+    document.querySelectorAll('.tabs a').forEach(function (a) {
+      if (a.getAttribute('href') === '#' + name) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+  }
+  window.addEventListener('hashchange', function () { route(); window.scrollTo(0, 0); });
+  route();
+
+  // S2: team filter and inline status changes
+  var dashTeam = 'all';
+  function refreshDashboard() {
+    var pending = 0, overdue = 0;
+    document.querySelectorAll('#dash-tasks .task').forEach(function (row) {
+      var visible = (dashTeam === 'all' || row.dataset.team === dashTeam) && !row.classList.contains('is-done');
+      row.hidden = !visible && !row.dataset.justDone;
+      if (visible) { pending++; if (row.dataset.overdue) overdue++; }
+    });
+    document.getElementById('dash-pending').textContent = pending;
+    document.getElementById('dash-overdue').textContent = overdue;
+  }
+  document.querySelectorAll('[data-team].chip').forEach(function (chip) {
+    chip.addEventListener('click', function () {
+      dashTeam = chip.dataset.team;
+      document.querySelectorAll('[data-team].chip').forEach(function (c) { c.setAttribute('aria-pressed', String(c === chip)); });
+      document.querySelectorAll('#dash-tasks .task').forEach(function (r) { delete r.dataset.justDone; });
+      refreshDashboard();
+    });
+  });
+  document.querySelectorAll('#dash-tasks .status').forEach(function (sel) {
+    sel.addEventListener('change', function () {
+      var row = sel.closest('.task');
+      var note = row.querySelector('.done-note');
+      if (sel.value === 'Done') {
+        row.classList.add('is-done'); row.classList.remove('is-overdue'); row.dataset.justDone = '1';
+        if (!note) { note = document.createElement('span'); note.className = 'done-note'; note.textContent = 'Done. Leaves your list.'; sel.before(note); }
+      } else {
+        row.classList.remove('is-done'); delete row.dataset.justDone;
+        if (row.dataset.overdue) row.classList.add('is-overdue');
+        if (note) note.remove();
+      }
+      refreshDashboard();
+    });
+  });
+
+  // S6: add and remove agenda items
+  var agendaList = document.getElementById('agenda-list');
+  agendaList.addEventListener('click', function (e) {
+    if (e.target.classList.contains('x')) e.target.closest('.agenda-item').remove();
+  });
+  document.getElementById('agenda-add').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = document.getElementById('agenda-new');
+    var text = input.value.trim();
+    if (!text) return;
+    var row = document.createElement('div');
+    row.className = 'agenda-item';
+    row.innerHTML = '<span class="handle" aria-hidden="true">⋮⋮</span><span></span><button class="x" aria-label="Remove item">×</button>';
+    row.children[1].textContent = text;
+    agendaList.appendChild(row);
+    input.value = '';
+  });
+
+  // S7: task validation, decisions and closing
+  var taskForm = document.getElementById('task-form');
+  taskForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var desc = document.getElementById('nt-desc').value.trim();
+    var owner = document.getElementById('nt-owner').value;
+    var due = document.getElementById('nt-due').value;
+    var err = document.getElementById('nt-error');
+    if (!desc || !owner || !due) { err.hidden = false; return; }
+    err.hidden = true;
+    var d = new Date(due + 'T00:00:00');
+    var label = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+    var row = document.createElement('div');
+    row.className = 'task';
+    row.innerHTML = '<div><div class="t-desc"></div><div class="t-meta"><span></span><span>Open</span></div></div><div class="t-side"><span class="due"></span></div>';
+    row.querySelector('.t-desc').textContent = desc;
+    row.querySelector('.t-meta span').textContent = owner;
+    row.querySelector('.due').textContent = 'Due ' + label;
+    document.getElementById('live-tasks').appendChild(row);
+    taskForm.reset();
+  });
+  document.getElementById('decision-add').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = document.getElementById('dec-new');
+    var text = input.value.trim();
+    if (!text) return;
+    var block = document.createElement('div');
+    block.className = 'decision';
+    var p = document.createElement('p'); p.textContent = text;
+    block.appendChild(p);
+    this.before(block);
+    input.value = '';
+  });
+  var confirmBox = document.getElementById('close-confirm');
+  document.getElementById('close-btn').addEventListener('click', function () { confirmBox.hidden = false; });
+  document.getElementById('close-no').addEventListener('click', function () { confirmBox.hidden = true; });
+  document.getElementById('close-yes').addEventListener('click', function () {
+    confirmBox.hidden = true;
+    document.getElementById('closed-banner').hidden = false;
+    document.getElementById('close-btn').disabled = true;
+    document.getElementById('live-state').textContent = 'closed';
+    document.querySelectorAll('#v-live .editable').forEach(function (el) { el.disabled = true; });
+  });
+
+  // S8: status segmented control
+  document.querySelectorAll('#task-seg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('#task-seg button').forEach(function (o) { o.setAttribute('aria-pressed', String(o === b)); });
+    });
+  });
+
+  // S10: search across series names and decision text
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#hist-groups .meeting-row'));
+  rows.forEach(function (r) { r.querySelectorAll('.decs span').forEach(function (s) { s.dataset.text = s.textContent; }); });
+  document.getElementById('hist-q').addEventListener('input', function () {
+    var q = this.value.trim().toLowerCase();
+    var any = false;
+    rows.forEach(function (r) {
+      var seriesHit = r.dataset.series.toLowerCase().indexOf(q) !== -1;
+      var decHit = false;
+      r.querySelectorAll('.decs span').forEach(function (s) {
+        var t = s.dataset.text, i = t.toLowerCase().indexOf(q);
+        if (q && i !== -1) {
+          decHit = true;
+          s.innerHTML = '';
+          s.append(t.slice(0, i));
+          var m = document.createElement('mark'); m.textContent = t.slice(i, i + q.length); s.append(m);
+          s.append(t.slice(i + q.length));
+        } else { s.textContent = t; }
+      });
+      r.hidden = q && !seriesHit && !decHit;
+      if (!r.hidden) any = true;
+    });
+    document.querySelectorAll('#hist-groups .series-group').forEach(function (g) {
+      g.hidden = !Array.prototype.some.call(g.querySelectorAll('.meeting-row'), function (r) { return !r.hidden; });
+    });
+    document.getElementById('hist-empty').hidden = any;
+  });
+})();
+</script>

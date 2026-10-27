@@ -1,6 +1,6 @@
 # MeetFlow – High-Level Project Steps
 
-Ten steps from idea to a launched, sellable product. Steps 1–8 take us to the MVP described in `idea.md`; steps 9–10 cover launch and the features planned for later.
+Ten steps from idea to a launched, sellable product. Steps 1–8 take us to the MVP and steps 9–10 cover launch and the features planned for later.
 
 ## 1. Validate the problem and the market
 Interview 10–15 potential customers (SMBs; operations, logistics and administration departments; consulting firms) to confirm that losing track of meeting commitments is a real, costly problem. Review competitors (note-taking apps, task managers, meeting tools) and write down how MeetFlow's focus on following up on commitments differs.

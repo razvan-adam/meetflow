@@ -4,11 +4,12 @@ Guidance for AI coding agents working on this repository.
 
 ## Project overview
 
-MeetFlow is a web application that helps companies run meetings and, above all, follow through on what is decided in them. Its differentiator is **commitment tracking**: every decision or task agreed in a meeting gets an owner and a deadline, receives reminders, and automatically reappears at the next meeting until it is completed.
+MeetFlow is a web application that helps companies run meetings and, above all, follow through on what is decided in them. Its differentiator is **commitment tracking**: every decision or task agreed in a meeting gets an owner and a deadline, is emailed to its owner after the meeting, and automatically reappears at the next meeting until it is completed.
 
 It is not a note-taking app. When in doubt, favor features and designs that make commitments visible, owned and trackable.
 
 - High-level plan: `docs/roadmap.md`
+- Core meeting flow and commitment lifecycle: `docs/core-flow.md`
 
 ## Current status
 
@@ -17,11 +18,12 @@ The project is in the planning phase. No code, tech stack or tooling has been ch
 ## Domain model (core concepts)
 
 - **User** – a person with an account.
-- **Team** – a group of users who meet regularly.
-- **Meeting** – has participants, a date and an agenda.
+- **Team** – a group of users who meet regularly. Team admins manage membership.
+- **Meeting series** – recurring meetings of a team with the same purpose (e.g. weekly sync); has an organizer. A team can have several.
+- **Meeting** – belongs to a series; has participants, a date and an agenda.
 - **Agenda item** – a topic to discuss; may be carried over from a previous meeting.
 - **Decision / agreement** – something decided in a meeting.
-- **Task (commitment)** – an action with an owner, a deadline and a status (e.g. open, in progress, done). Open tasks carry over to the next meeting.
+- **Task (commitment)** – an action with an owner, a deadline and a status (e.g. open, in progress, done). Open tasks carry over to the next meeting of the same series.
 - **Minutes** – structured summary of a meeting, sent to participants.
 
 ## MVP scope

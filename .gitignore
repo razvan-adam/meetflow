@@ -1,0 +1,60 @@
+# MeetFlow .gitignore
+# The tech stack is not chosen yet (see docs/roadmap.md, step 4).
+# Add language/framework-specific rules below once it is decided.
+
+# --- Secrets and environment config (never commit) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials.json
+
+# --- Local data (meeting content is customer data; GDPR) ---
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.gz
+data/
+backups/
+uploads/
+
+# --- Logs ---
+logs/
+*.log
+
+# --- Tests and coverage ---
+coverage/
+test-results/
+*.lcov
+
+# --- Build output ---
+dist/
+build/
+out/
+
+# --- Temporary files ---
+tmp/
+temp/
+*.tmp
+*.bak
+
+# --- Editors and IDEs ---
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# --- OS files ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- Stack-specific rules (add after step 4) ---

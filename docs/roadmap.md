@@ -8,7 +8,7 @@ Interview 10–15 potential customers (SMBs; operations, logistics and administr
 **Outcome:** validated problem statement, target customer profile, competitor summary.
 
 ## 2. Define the product and the MVP scope
-Turn the idea into concrete user stories and the core flow: before → during → after → next meeting. Fix the MVP scope to the seven features in `idea.md` and explicitly defer AI, Teams integration and advanced analytics.
+Turn the idea into concrete user stories and the core flow: before → during → after → next meeting. Fix the MVP scope to the seven features listed in `AGENTS.md` and explicitly defer AI, Teams integration and advanced analytics.
 
 **Outcome:** prioritized MVP backlog with acceptance criteria.
 

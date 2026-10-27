@@ -6,33 +6,33 @@
 <style>
 /* Layout: a prototype shell (screen tabs on top) around a low-fidelity app frame, with design notes beside it. */
 :root {
-  --paper: #eef0f2;      /* page behind the frames */
+  --paper: #f8fbfa;      /* page behind the frames: near-white with a green bias */
   --frame: #ffffff;      /* the app itself */
-  --ink: #23272d;
-  --muted: #646b75;
-  --line: #c9ced5;
-  --fill: #f3f4f6;       /* grey wire blocks */
-  --wire: #2f5fa7;       /* interactive elements */
-  --wire-soft: #e4ecf8;
-  --note: #fbf3cf;       /* design-note stickies */
-  --note-ink: #5a4a0c;
-  --overdue: #b42318;    /* semantic: overdue */
-  --overdue-soft: #fdecea;
-  --done: #2c7a4b;
+  --ink: #1f2a27;
+  --muted: #6b7773;
+  --line: #e6ecea;
+  --fill: #f5f9f7;       /* wire blocks */
+  --wire: #0f8a72;       /* interactive elements: jade */
+  --wire-soft: #eaf8f3;
+  --note: #f3f0ff;       /* design-note stickies: lilac, apart from the app palette */
+  --note-ink: #4a3a96;
+  --overdue: #e0484d;    /* semantic: overdue */
+  --overdue-soft: #fff4f4;
+  --done: #0f8a72;
   --font-ui: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --paper: #15181c; --frame: #1e2227; --ink: #e6e8eb; --muted: #9aa2ad; --line: #3a4048;
-    --fill: #262b31; --wire: #8fb3ec; --wire-soft: #24324a; --note: #3a3418; --note-ink: #f0e2a6;
-    --overdue: #ff8a80; --overdue-soft: #3d2222; --done: #7fd19f; color-scheme: dark;
+    --paper: #18201e; --frame: #212b28; --ink: #eef4f2; --muted: #a3b1ac; --line: #35433f;
+    --fill: #27322f; --wire: #5fdcbc; --wire-soft: #1d4a40; --note: #2d2849; --note-ink: #d8cfff;
+    --overdue: #ff6b6b; --overdue-soft: #3a1c1e; --done: #4fd1b0; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --paper: #15181c; --frame: #1e2227; --ink: #e6e8eb; --muted: #9aa2ad; --line: #3a4048;
-  --fill: #262b31; --wire: #8fb3ec; --wire-soft: #24324a; --note: #3a3418; --note-ink: #f0e2a6;
-  --overdue: #ff8a80; --overdue-soft: #3d2222; --done: #7fd19f; color-scheme: dark;
+  --paper: #18201e; --frame: #212b28; --ink: #eef4f2; --muted: #a3b1ac; --line: #35433f;
+  --fill: #27322f; --wire: #5fdcbc; --wire-soft: #1d4a40; --note: #2d2849; --note-ink: #d8cfff;
+  --overdue: #ff6b6b; --overdue-soft: #3a1c1e; --done: #4fd1b0; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }

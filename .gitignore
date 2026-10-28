@@ -1,6 +1,4 @@
 # MeetFlow .gitignore
-# The tech stack is not chosen yet (see docs/roadmap.md, step 4).
-# Add language/framework-specific rules below once it is decided.
 
 # --- Secrets and environment config (never commit) ---
 .env
@@ -63,4 +61,12 @@ docs/discovery/
 # --- Personal planning notes ---
 NEXT-STEPS.md
 
-# --- Stack-specific rules (add after step 4) ---
+# --- Backend (Java, Maven) ---
+target/
+.mvn/wrapper/maven-wrapper.jar
+*.iml
+
+# --- Frontend (Node.js, Vite) ---
+node_modules/
+*.tsbuildinfo
+*.local

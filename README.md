@@ -1,6 +1,17 @@
 # meetflow
 Web App that manages meetings, agreements and pending tasks which are discussed on that meeting.
 
+## Getting started
+
+Install JDK 25, Node.js 24 LTS and Docker, then:
+
+```sh
+cd frontend && npm ci && cd ..
+npm run dev
+```
+
+The app opens at http://localhost:5173 and the API health check is at `/api/health`. All commands (test, lint, build) are listed in `AGENTS.md`.
+
 ## Terminology: minutes
 
 **Minutes** are the written record of a meeting: attendees, agenda, decisions, and the tasks agreed with their owners and deadlines. MeetFlow generates them automatically when a meeting is closed and sends them to all participants.

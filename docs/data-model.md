@@ -10,7 +10,7 @@ The data model for the MVP (MF-30). It implements the rules in `docs/core-flow.m
 - **Optimistic locking**: tables edited by several people (`meeting`, `agenda_item`, `task`) have a `version` column, so concurrent edits fail cleanly instead of overwriting each other.
 - **Team scoping**: every table holding team content has a `team_id`, or reaches one through a required parent (see *Team scoping*).
 - **Module ownership**: each table belongs to one module. Foreign keys may cross modules to protect integrity, but code reads and writes another module's tables only through that module's API.
-- **Text limits** (enforced in the API and the database): names 100 characters, titles 200, task descriptions 500, decisions 2,000, notes 10,000.
+- **Text limits** (enforced in the API and the database): names 100 characters, titles 200, task descriptions 500, decisions 2,000, notes 10,000, email addresses 254.
 
 ## Diagram
 
@@ -52,7 +52,7 @@ erDiagram
 | `created_at` | timestamptz | |
 | `deleted_at` | timestamptz | set when the account is deleted (see *GDPR*) |
 
-Sessions are stored in the standard Spring Session JDBC tables (`spring_session`, `spring_session_attributes`). They are not part of this model.
+Sessions are stored in the standard Spring Session JDBC tables (`spring_session`, `spring_session_attributes`). They are not part of this model, except that `principal_name` is widened from 100 to 254 characters so it fits any email address.
 
 ### `teams` module
 
@@ -107,7 +107,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 
 | Column | Type | Notes |
 |---|---|---|
-| `id` | uuid | PK; unique (`id`, `team_id`) |
+| `id` | uuid | PK; unique (`id`, `team_id`) and (`id`, `series_id`) for composite FKs |
 | `team_id` | uuid | |
 | `series_id` | uuid | FK (`series_id`, `team_id`) → `meeting_series` (`id`, `team_id`) |
 | `scheduled_at` | timestamptz | |
@@ -117,6 +117,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 | `version` | bigint | |
 
 - A partial unique index allows **at most one meeting that isn't `CLOSED` per series**. This makes "the previous meeting" well defined for carry-over (see *Carry-over*).
+- `CHECK` constraints keep the timestamps consistent with the status: a `SCHEDULED` meeting has none of them, an `IN_PROGRESS` one has only `started_at`, and a `CLOSED` one has `started_at`, `closed_at` and `closed_by`.
 - Only a `SCHEDULED` meeting can be deleted.
 
 **`meeting_participant`**
@@ -130,24 +131,24 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 
 | Column | Type | Notes |
 |---|---|---|
-| `id` | uuid | PK |
+| `id` | uuid | PK; unique (`id`, `team_id`) and (`id`, `meeting_id`) for composite FKs |
 | `team_id` | uuid | FK (`meeting_id`, `team_id`) → `meeting` |
 | `meeting_id` | uuid | |
 | `position` | int | order on the agenda; unique (`meeting_id`, `position`), deferrable so items can be reordered |
 | `title` | text | not null |
 | `notes` | text | notes taken during the meeting |
 | `status` | text | `PENDING`, `COVERED` or `NOT_COVERED` |
-| `carried_over_from_id` | uuid | FK `agenda_item`, nullable: the uncovered item this one was copied from |
+| `carried_over_from_id` | uuid | nullable: the uncovered item this one was copied from; FK (`carried_over_from_id`, `team_id`) → `agenda_item`, so it is in the same team |
 | `version` | bigint | |
 
 **`decision`**
 
 | Column | Type | Notes |
 |---|---|---|
-| `id` | uuid | PK |
+| `id` | uuid | PK; unique (`id`, `meeting_id`) for composite FKs |
 | `team_id` | uuid | FK (`meeting_id`, `team_id`) → `meeting` |
 | `meeting_id` | uuid | |
-| `agenda_item_id` | uuid | FK `agenda_item`, nullable |
+| `agenda_item_id` | uuid | nullable; FK (`agenda_item_id`, `meeting_id`) → `agenda_item`: an item of the same meeting |
 | `text` | text | not null |
 | `created_by` | uuid | FK `app_user` |
 | `created_at` | timestamptz | |
@@ -159,12 +160,12 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 
 | Column | Type | Notes |
 |---|---|---|
-| `id` | uuid | PK |
-| `team_id` | uuid | FK (`meeting_id`, `team_id`) → `meeting` |
-| `series_id` | uuid | the series the task carries over in; copied from the meeting |
+| `id` | uuid | PK; unique (`id`, `series_id`) for composite FKs |
+| `team_id` | uuid | FK (`series_id`, `team_id`) → `meeting_series` |
+| `series_id` | uuid | the series the task carries over in: always the meeting's series, FK (`meeting_id`, `series_id`) → `meeting` |
 | `meeting_id` | uuid | the meeting where the task was created |
-| `decision_id` | uuid | FK `decision`, nullable |
-| `agenda_item_id` | uuid | FK `agenda_item`, nullable |
+| `decision_id` | uuid | nullable; FK (`decision_id`, `meeting_id`) → `decision`: a decision of the same meeting |
+| `agenda_item_id` | uuid | nullable; FK (`agenda_item_id`, `meeting_id`) → `agenda_item`: an item of the same meeting |
 | `description` | text | not null |
 | `owner_id` | uuid | FK `app_user`, **not null**: exactly one owner, always |
 | `deadline` | date | not null |
@@ -197,8 +198,9 @@ Rows are only inserted, never updated or deleted.
 
 | Column | Type | Notes |
 |---|---|---|
-| `meeting_id` | uuid | PK part, FK `meeting` |
-| `task_id` | uuid | PK part, FK `task` |
+| `meeting_id` | uuid | PK part, FK (`meeting_id`, `series_id`) → `meeting` |
+| `task_id` | uuid | PK part, FK (`task_id`, `series_id`) → `task` |
+| `series_id` | uuid | the series of both the meeting and the task, so a task is only reviewed in its own series |
 | `status_at_close` | text | filled when the meeting closes, for the minutes |
 
 ### `minutes` module
@@ -270,7 +272,7 @@ Every record reaches exactly one team, which the backend checks against the user
 | `email_delivery` | `reference_id` → `invitation` or `meeting` (internal only, never exposed by the API) |
 | `app_user` | not team-scoped. Users see the name and email of people who share a team with them. |
 
-Because `team_id` is a direct column on the main tables, access checks are a plain `WHERE team_id IN (…)`, with no long joins. The composite foreign keys rule out a decision or task pointing to another team's meeting.
+Because `team_id` is a direct column on the main tables, access checks are a plain `WHERE team_id IN (…)`, with no long joins. The composite foreign keys rule out links across teams: a decision or task can't point to another team's meeting, a task's decision and agenda item belong to its own meeting, a task carries over in its meeting's series, a carried-over agenda item comes from the same team, and a task is only reviewed in meetings of its own series.
 
 ## GDPR
 

@@ -15,10 +15,11 @@ It is not a note-taking app. When in doubt, favor features and designs that make
 - Wireframes (open in a browser): `docs/wireframes/index.html`
 - Basic visual style (colors, type, components): `docs/visual-style.md`
 - Architecture and tech stack: `docs/architecture.md`
+- Data model: `docs/data-model.md`
 
 ## Current status
 
-The tech stack is chosen (`docs/architecture.md`); no code exists yet. The data model (MF-30) and project skeleton (MF-31) come next. Update this file when the commands are defined.
+The tech stack (`docs/architecture.md`) and data model (`docs/data-model.md`) are defined; no code exists yet. The project skeleton (MF-31) comes next. Update this file when the commands are defined.
 
 ## Tech stack
 

@@ -1,0 +1,56 @@
+/* Color tokens and typography from docs/visual-style.md. The app follows the system theme. */
+
+:root {
+  --paper: #f8fbfa;
+  --frame: #ffffff;
+  --ink: #1f2a27;
+  --muted: #6b7773;
+  --line: #e6ecea;
+  --fill: #f5f9f7;
+  --wire: #0f8a72;
+  --wire-soft: #eaf8f3;
+  --overdue: #e0484d;
+  --overdue-soft: #fff4f4;
+  --done: #0f8a72;
+
+  --font-sans: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #18201e;
+    --frame: #212b28;
+    --ink: #eef4f2;
+    --muted: #a3b1ac;
+    --line: #35433f;
+    --fill: #27322f;
+    --wire: #5fdcbc;
+    --wire-soft: #1d4a40;
+    --overdue: #ff6b6b;
+    --overdue-soft: #3a1c1e;
+    --done: #5fdcbc;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: var(--wire);
+}

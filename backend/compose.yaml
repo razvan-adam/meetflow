@@ -1,0 +1,12 @@
+# Local development database. Spring Boot starts it on `spring-boot:run` and connects to it
+# automatically (spring-boot-docker-compose). The credentials are for this local container only.
+services:
+  postgres:
+    image: 'postgres:18'
+    environment:
+      - 'POSTGRES_DB=meetflow'
+      - 'POSTGRES_USER=meetflow'
+      - 'POSTGRES_PASSWORD=meetflow-local'
+    ports:
+      # Random host port, reachable from this machine only
+      - '127.0.0.1::5432'

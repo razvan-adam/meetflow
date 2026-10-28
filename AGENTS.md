@@ -19,7 +19,13 @@ It is not a note-taking app. When in doubt, favor features and designs that make
 
 ## Current status
 
-The tech stack (`docs/architecture.md`) and data model (`docs/data-model.md`) are defined; no code exists yet. The project skeleton (MF-31) comes next. Update this file when the commands are defined.
+The project skeleton (MF-31) is in place: a Spring Boot backend with the full schema as Flyway migrations, and a React frontend with a health-check page. No features are built yet. Roadmap step 5 (CI, environments, coding conventions) comes next.
+
+## Repository layout
+
+- `backend/` – Spring Boot app (Maven wrapper). One package per module under `com.meetflow` (`identity`, `teams`, `meetings`, `tasks`, `minutes`, `notifications`); `ModularityTests` enforces their boundaries. Migrations in `src/main/resources/db/migration`, one per module to start with; never edit an applied migration, add a new one.
+- `frontend/` – React app. `src/app` (providers, router), `src/pages` (one component per screen), `src/api` (fetch client and TanStack Query hooks), `src/styles` (visual-style tokens).
+- `scripts/dev.mjs` – starts both apps for local development.
 
 ## Tech stack
 
@@ -62,8 +68,20 @@ Out of scope for the MVP (do not build unless asked): AI summaries from transcri
 - Keep changes small and focused on the task requested; don't add features outside the MVP scope.
 - Treat security as a requirement: authenticate every endpoint, enforce team-level access control (users only see their teams' meetings and tasks), never commit secrets.
 - Meeting content is business data from customers; handle personal data with GDPR in mind.
-- Add or update tests with every behavior change once a test setup exists.
+- Add or update tests with every behavior change.
 
 ## Commands
 
-_To be defined once the tech stack is chosen (install, run, test, lint, build)._
+Prerequisites: JDK 25 (`JAVA_HOME` pointing to it), Node.js 24 LTS or later, and Docker running (local database and backend tests). Maven needs no install; use the wrapper. On Windows, run `mvnw.cmd` (or `.\mvnw` in PowerShell) instead of `./mvnw`.
+
+| Task | Command (run from) |
+|---|---|
+| Install | `npm ci` (`frontend/`); backend dependencies download on the first Maven run |
+| Run locally | `npm run dev` (repo root): backend on :8080, PostgreSQL via Docker Compose, frontend on http://localhost:5173 |
+| Health check | `GET /api/health` |
+| Test backend | `./mvnw test` (`backend/`); uses Testcontainers, so Docker must be running |
+| Test frontend | `npm test` (`frontend/`) |
+| Lint frontend | `npm run lint` (`frontend/`, oxlint); type checking runs in the build. No backend linter yet; conventions are set in roadmap step 5 |
+| Build | `./mvnw package` (`backend/`, runs the tests too) and `npm run build` (`frontend/`, output in `dist/`) |
+
+Configuration: local development needs no settings. Optional overrides go in `backend/.env` (see `backend/.env.example`); never commit it.

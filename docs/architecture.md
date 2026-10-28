@@ -32,6 +32,19 @@ Serving the app and the API from the same domain keeps the session cookie first-
 
 The exact AWS region, infrastructure-as-code tool and CI pipeline are decided in roadmap step 5.
 
+### Tooling chosen with the project skeleton (MF-31)
+
+| Area | Choice | Main reason |
+|---|---|---|
+| Versions | Spring Boot 4.1, Spring Modulith 2.1, PostgreSQL 18, React 19, Vite 8, TypeScript 7 | Latest stable releases when the skeleton was created |
+| Local database | Docker Compose (`backend/compose.yaml`), started by Spring Boot's Docker Compose support | One command runs the whole app; no local PostgreSQL install |
+| Maven repositories | `backend/.mvn/maven.config` turns off the two login-only repositories that Flyway's parent POM declares (`flyway-community-db-support`, `MavenFeed`) | Everything we use is on Maven Central; without it, every build logs HTTP 401 warnings |
+| Modulith events | JDBC event publication registry, table created by Flyway | Flyway owns the whole schema, including library tables |
+| Health check | Spring Boot Actuator, only the `health` endpoint, at `/api/health` | Under `/api/*`, so it goes through the same CloudFront route as the API |
+| Frontend lint | oxlint (Vite template default) | Fast, needs little configuration; ESLint is the fallback if a rule we need is missing |
+| Fonts | Self-hosted with Fontsource | No requests to a third-party font CDN (GDPR) |
+| OpenAPI (springdoc) | Added with the first API endpoints | Nothing to document yet |
+
 ## Backend modules
 
 Each module owns its tables and exposes a small public API to the others.

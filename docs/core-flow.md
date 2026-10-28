@@ -139,3 +139,10 @@ Resolved during roadmap step 2 (MF-2):
 7. **Organizer** – one per series; a team admin can reassign it.
 8. **Removed members** – before a member is removed, a team admin must reassign or delete each of their open tasks and reassign any series they organize.
 9. **Closed meetings** – notes, decisions and tasks are locked once a meeting is closed; task status remains updatable.
+
+Resolved during roadmap step 4 (MF-30, see `docs/data-model.md`):
+
+10. **One open meeting per series** – the next meeting of a series can only be created once the previous one is closed.
+11. **Unmarked agenda items** – items not marked as covered when a meeting closes count as not covered and carry over.
+12. **Deleted tasks** – tasks deleted by an admin are hidden but kept, so their history stays intact.
+13. **Account deletion** – a deleted user is anonymized, not removed from meeting records.

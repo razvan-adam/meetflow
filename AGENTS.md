@@ -14,10 +14,23 @@ It is not a note-taking app. When in doubt, favor features and designs that make
 - User journeys and key screens: `docs/user-journeys.md`
 - Wireframes (open in a browser): `docs/wireframes/index.html`
 - Basic visual style (colors, type, components): `docs/visual-style.md`
+- Architecture and tech stack: `docs/architecture.md`
 
 ## Current status
 
-The project is in the planning phase. No code, tech stack or tooling has been chosen yet. Do not assume a framework, language or database; ask, or check this file and `docs/` for decisions recorded since. Update this file when the stack and commands are decided.
+The tech stack is chosen (`docs/architecture.md`); no code exists yet. The data model (MF-30) and project skeleton (MF-31) come next. Update this file when the commands are defined.
+
+## Tech stack
+
+- **Backend:** Java 25, Spring Boot, Maven. A modular monolith (Spring Modulith) exposing a REST + JSON API.
+- **Frontend:** React + TypeScript, built with Vite.
+- **Database:** PostgreSQL with Spring Data JPA and Flyway migrations.
+- **Auth:** Spring Security, email + password, server-side sessions in a secure cookie.
+- **Email:** Amazon SES.
+- **Hosting:** AWS in an EU region: ECS Fargate, RDS for PostgreSQL, S3 + CloudFront.
+- **Tests:** JUnit 5 and Testcontainers (backend), Vitest and React Testing Library (frontend).
+
+Don't add other frameworks or services without recording the decision in `docs/architecture.md`.
 
 ## Domain model (core concepts)
 

@@ -1,4 +1,4 @@
-# Lint, test and build both apps on every pull request and push to main (MF-33).
+# Lint, format-check, test and build both apps on every pull request and push to main (MF-33, MF-34).
 # Uses the same commands as the table in AGENTS.md.
 name: CI
 
@@ -31,6 +31,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run lint
+      - run: npm run format:check
       - run: npm test
       - run: npm run build
 
@@ -48,5 +49,7 @@ jobs:
           distribution: temurin
           java-version: 25
           cache: maven
-      # Runs the tests (Testcontainers uses the runner's Docker) and packages the app.
+      # Fails fast on unformatted code, before the slower tests (MF-34).
+      - run: ./mvnw --batch-mode --no-transfer-progress spotless:check
+      # Compiles with Error Prone and NullAway, runs the tests (Testcontainers uses the runner's Docker) and packages the app.
       - run: ./mvnw --batch-mode --no-transfer-progress package

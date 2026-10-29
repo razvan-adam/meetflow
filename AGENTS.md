@@ -16,10 +16,11 @@ It is not a note-taking app. When in doubt, favor features and designs that make
 - Basic visual style (colors, type, components): `docs/visual-style.md`
 - Architecture and tech stack: `docs/architecture.md`
 - Data model: `docs/data-model.md`
+- Coding conventions (naming, package structure, API style, tests, commits and branches): `docs/conventions.md`
 
 ## Current status
 
-The project skeleton (MF-31) is in place: a Spring Boot backend with the full schema as Flyway migrations, and a React frontend with a health-check page. No features are built yet. Roadmap step 5 (epic MF-32: CI, coding conventions, baseline security, staging) is in progress; CI runs on GitHub Actions (`.github/workflows/ci.yml`).
+The project skeleton (MF-31) is in place: a Spring Boot backend with the full schema as Flyway migrations, and a React frontend with a health-check page. No features are built yet. Roadmap step 5 (epic MF-32: CI, coding conventions, baseline security, staging) is in progress; CI runs on GitHub Actions (`.github/workflows/ci.yml`), and the coding conventions with their formatters and linters are in place (MF-34).
 
 ## Repository layout
 
@@ -69,6 +70,7 @@ Out of scope for the MVP (do not build unless asked): AI summaries from transcri
 - Treat security as a requirement: authenticate every endpoint, enforce team-level access control (users only see their teams' meetings and tasks), never commit secrets.
 - Meeting content is business data from customers; handle personal data with GDPR in mind.
 - Add or update tests with every behavior change.
+- Follow `docs/conventions.md`. Run the formatters before committing; commit messages start with the Jira key (`MF-34 Add …`) and branch names describe the purpose without it (`feature/team-invitations`).
 
 ## Commands
 
@@ -81,7 +83,10 @@ Prerequisites: JDK 25 (`JAVA_HOME` pointing to it), Node.js 24 LTS or later, and
 | Health check | `GET /api/health` |
 | Test backend | `./mvnw test` (`backend/`); uses Testcontainers, so Docker must be running |
 | Test frontend | `npm test` (`frontend/`) |
-| Lint frontend | `npm run lint` (`frontend/`, oxlint); type checking runs in the build. No backend linter yet; conventions are set in roadmap step 5 |
+| Lint frontend | `npm run lint` (`frontend/`, oxlint); type checking runs in the build |
+| Lint backend | Error Prone and NullAway run on every compile (`./mvnw compile`, `test`, `package`) and fail the build |
+| Format | `./mvnw spotless:apply` (`backend/`) and `npm run format` (`frontend/`, Prettier) |
+| Check formatting | `./mvnw spotless:check` (`backend/`) and `npm run format:check` (`frontend/`); CI runs both |
 | Build | `./mvnw package` (`backend/`, runs the tests too) and `npm run build` (`frontend/`, output in `dist/`) |
 
 Configuration: local development needs no settings. Optional overrides go in `backend/.env` (see `backend/.env.example`); never commit it.

@@ -1,0 +1,6 @@
+# LF line endings everywhere, on every OS, so formatters and Docker images see the same files (MF-34).
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.cmd text eol=crlf
+*.bat text eol=crlf

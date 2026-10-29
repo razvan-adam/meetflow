@@ -8,7 +8,7 @@ Nobody formats by hand or argues about style: the formatters decide, and CI fail
 
 | Area | Tool | Fix locally | Checked in CI |
 |---|---|---|---|
-| Backend formatting (Java, `pom.xml`, config files) | Spotless with Palantir Java Format (4 spaces, 120 columns) | `./mvnw spotless:apply` | `./mvnw spotless:check` |
+| Backend formatting (Java, `pom.xml`, config files) | Spotless with Palantir Java Format for Java (4 spaces, 120 columns) and SortPom for `pom.xml` (2 spaces) | `./mvnw spotless:apply` | `./mvnw spotless:check` |
 | Backend bugs and null-safety | Error Prone and NullAway, inside the Java compiler | Fix the compile error | Every compile |
 | Frontend formatting | Prettier (no semicolons, single quotes, 100 columns) | `npm run format` | `npm run format:check` |
 | Frontend lint | oxlint | Fix the reported rule | `npm run lint` |

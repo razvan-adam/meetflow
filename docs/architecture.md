@@ -50,6 +50,10 @@ The exact AWS region and infrastructure-as-code tool are decided in roadmap step
 | Area | Choice | Main reason |
 |---|---|---|
 | CI | GitHub Actions (`.github/workflows/ci.yml`): frontend lint, tests and build, and backend tests and package, on every pull request and push to `main` | Built into GitHub, where the code lives; the hosted runners include Docker for Testcontainers |
+| Backend formatter | Spotless with Palantir Java Format (`./mvnw spotless:apply`; `spotless:check` in CI) | One plugin formats Java, the POM and config files; 120 columns suits Spring code. Alternatives: Spring Java Format (fixed tab style, Java only), Google Java Format (100 columns wraps Spring code heavily) |
+| Backend linter | Error Prone with NullAway, run inside `javac`; every package `@NullMarked` with JSpecify | Catches real bugs at compile time with few false positives; Spring Framework 7 uses JSpecify, so its APIs are null-checked too. Checkstyle overlaps the formatter; PMD and SpotBugs are noisier. `.mvn/jvm.config` opens the javac internals they need |
+| Frontend formatter | Prettier, version pinned (`npm run format`; `format:check` in CI) | Stable, best editor support; oxfmt is Prettier-compatible and can replace it once it reaches 1.0 |
+| Line endings | LF everywhere via `.gitattributes`, plus `.editorconfig` | Same files on Windows, Linux CI and Docker; formatters don't flag every file on Windows checkouts |
 
 ## Backend modules
 

@@ -30,7 +30,7 @@ Serving the app and the API from the same domain keeps the session cookie first-
 | Secrets | AWS Secrets Manager; `.env` files locally only, never committed | No secrets in the repository or images | SSM Parameter Store |
 | Testing | JUnit 5 and Testcontainers (backend); Vitest and React Testing Library (frontend) | Tests run against a real PostgreSQL | H2 in-memory database (behaves differently) |
 
-The exact AWS region, infrastructure-as-code tool and CI pipeline are decided in roadmap step 5.
+The exact AWS region and infrastructure-as-code tool are decided in roadmap step 5.
 
 ### Tooling chosen with the project skeleton (MF-31)
 
@@ -44,6 +44,12 @@ The exact AWS region, infrastructure-as-code tool and CI pipeline are decided in
 | Frontend lint | oxlint (Vite template default) | Fast, needs little configuration; ESLint is the fallback if a rule we need is missing |
 | Fonts | Self-hosted with Fontsource | No requests to a third-party font CDN (GDPR) |
 | OpenAPI (springdoc) | Added with the first API endpoints | Nothing to document yet |
+
+### Tooling chosen with the development foundations (MF-32)
+
+| Area | Choice | Main reason |
+|---|---|---|
+| CI | GitHub Actions (`.github/workflows/ci.yml`): frontend lint, tests and build, and backend tests and package, on every pull request and push to `main` | Built into GitHub, where the code lives; the hosted runners include Docker for Testcontainers |
 
 ## Backend modules
 

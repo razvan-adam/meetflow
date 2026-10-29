@@ -1,4 +1,4 @@
-# Editor defaults matching the formatters (Spotless + Palantir Java Format, Prettier). See docs/conventions.md.
+# Editor defaults matching the formatters (Spotless + Google Java Format, Prettier). See docs/conventions.md.
 root = true
 
 [*]
@@ -8,9 +8,6 @@ insert_final_newline = true
 trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
-
-[*.{java,sql}]
-indent_size = 4
 
 [*.md]
 # Two trailing spaces are a line break in Markdown.

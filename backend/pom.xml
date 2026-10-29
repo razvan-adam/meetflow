@@ -18,7 +18,8 @@
     <spring-modulith.version>2.1.2</spring-modulith.version>
     <!-- Code checks (MF-34); see docs/conventions.md -->
     <spotless.version>3.10.4</spotless.version>
-    <palantir-java-format.version>2.103.0</palantir-java-format.version>
+    <!-- 1.37.0 fails inside Spotless 3.10.4; raise together with Spotless -->
+    <google-java-format.version>1.36.1</google-java-format.version>
     <error-prone.version>2.51.0</error-prone.version>
     <nullaway.version>0.14.3</nullaway.version>
   </properties>
@@ -189,9 +190,9 @@
         <version>${spotless.version}</version>
         <configuration>
           <java>
-            <palantirJavaFormat>
-              <version>${palantir-java-format.version}</version>
-            </palantirJavaFormat>
+            <googleJavaFormat>
+              <version>${google-java-format.version}</version>
+            </googleJavaFormat>
           </java>
           <pom>
             <sortPom>

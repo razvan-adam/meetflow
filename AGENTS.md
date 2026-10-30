@@ -20,7 +20,7 @@ It is not a note-taking app. When in doubt, favor features and designs that make
 
 ## Current status
 
-The project skeleton (MF-31) is in place: a Spring Boot backend with the full schema as Flyway migrations, and a React frontend with a health-check page. No features are built yet. Roadmap step 5 (epic MF-32: CI, coding conventions, baseline security, staging) is in progress; CI runs on GitHub Actions (`.github/workflows/ci.yml`), and the coding conventions with their formatters and linters are in place (MF-34).
+The project skeleton (MF-31) is in place: a Spring Boot backend with the full schema as Flyway migrations, and a React frontend with a health-check page. No features are built yet. Roadmap step 5 (epic MF-32: CI, coding conventions, baseline security, staging) is in progress; CI runs on GitHub Actions (`.github/workflows/ci.yml`), the coding conventions with their formatters and linters are in place (MF-34), and the skeleton's review follow-ups are fixed (MF-35).
 
 ## Repository layout
 

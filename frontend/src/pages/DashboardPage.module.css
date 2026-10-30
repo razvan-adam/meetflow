@@ -1,0 +1,28 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+@media (min-width: 640px) {
+  .page {
+    padding: 28px;
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+}
+
+.empty {
+  margin: 0;
+  padding: 14px;
+  color: var(--muted);
+  font-size: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+}

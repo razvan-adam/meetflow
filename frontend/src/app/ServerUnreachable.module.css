@@ -1,0 +1,19 @@
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+@media (min-width: 640px) {
+  .page {
+    padding: 28px;
+  }
+}
+
+.message {
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--overdue-soft);
+  border: 1px solid var(--overdue);
+  border-radius: 6px;
+}

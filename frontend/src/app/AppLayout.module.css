@@ -1,0 +1,35 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--frame);
+  border-bottom: 1px solid var(--line);
+}
+
+@media (min-width: 640px) {
+  .bar {
+    padding: 10px 28px;
+  }
+}
+
+.logo {
+  margin-right: auto;
+  font-weight: 700;
+}
+
+.user {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.logOut {
+  padding: 6px 12px;
+  background: none;
+  color: var(--wire);
+  border: 1px solid var(--wire);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}

@@ -19,6 +19,7 @@ function csrfToken(): string | undefined {
     ?.slice('XSRF-TOKEN='.length)
 }
 
+// Resolves to undefined for responses without a body (204 No Content); call those as apiFetch<void>.
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers)
   headers.set('Accept', 'application/json')
@@ -31,5 +32,6 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
   if (!response.ok) {
     throw new ApiError(response.status)
   }
-  return (await response.json()) as T
+  const body = await response.text()
+  return (body ? JSON.parse(body) : undefined) as T
 }

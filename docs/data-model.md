@@ -160,7 +160,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 
 | Column | Type | Notes |
 |---|---|---|
-| `id` | uuid | PK; unique (`id`, `series_id`) for composite FKs |
+| `id` | uuid | PK; unique (`id`, `series_id`) and (`id`, `team_id`) for composite FKs |
 | `team_id` | uuid | FK (`series_id`, `team_id`) → `meeting_series` |
 | `series_id` | uuid | the series the task carries over in: always the meeting's series, FK (`meeting_id`, `series_id`) → `meeting` |
 | `meeting_id` | uuid | the meeting where the task was created |
@@ -184,10 +184,11 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 | Column | Type | Notes |
 |---|---|---|
 | `id` | uuid | PK |
-| `task_id` | uuid | FK `task` |
+| `task_id` | uuid | FK (`task_id`, `team_id`) → `task` |
+| `team_id` | uuid | the task's team, so the meeting can be checked against it |
 | `changed_by` | uuid | FK `app_user` |
 | `changed_at` | timestamptz | |
-| `meeting_id` | uuid | FK `meeting`, nullable: set when the change was made during a meeting |
+| `meeting_id` | uuid | nullable: set when the change was made during a meeting; FK (`meeting_id`, `team_id`) → `meeting`: a meeting of the task's team |
 | `old_status`, `new_status` | text | null when the status didn't change |
 | `old_owner_id`, `new_owner_id` | uuid | null when the owner didn't change |
 | `old_deadline`, `new_deadline` | date | null when the deadline didn't change |
@@ -266,13 +267,12 @@ Every record reaches exactly one team, which the backend checks against the user
 | Table | Team reached through |
 |---|---|
 | `team_membership`, `invitation`, `meeting_series` | `team_id` |
-| `meeting`, `agenda_item`, `decision`, `task`, `minutes` | `team_id`, kept consistent with the parent by composite foreign keys |
+| `meeting`, `agenda_item`, `decision`, `task`, `task_change`, `minutes` | `team_id`, kept consistent with the parent by composite foreign keys |
 | `meeting_participant`, `meeting_task_review` | `meeting_id` → `meeting.team_id` |
-| `task_change` | `task_id` → `task.team_id` |
 | `email_delivery` | `reference_id` → `invitation` or `meeting` (internal only, never exposed by the API) |
 | `app_user` | not team-scoped. Users see the name and email of people who share a team with them. |
 
-Because `team_id` is a direct column on the main tables, access checks are a plain `WHERE team_id IN (…)`, with no long joins. The composite foreign keys rule out links across teams: a decision or task can't point to another team's meeting, a task's decision and agenda item belong to its own meeting, a task carries over in its meeting's series, a carried-over agenda item comes from the same team, and a task is only reviewed in meetings of its own series.
+Because `team_id` is a direct column on the main tables, access checks are a plain `WHERE team_id IN (…)`, with no long joins. The composite foreign keys rule out links across teams: a decision or task can't point to another team's meeting, a task's decision and agenda item belong to its own meeting, a task carries over in its meeting's series, a carried-over agenda item comes from the same team, a task is only reviewed in meetings of its own series, and a task change made during a meeting points to a meeting of the task's team.
 
 ## GDPR
 

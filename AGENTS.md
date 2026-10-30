@@ -20,7 +20,7 @@ It is not a note-taking app. When in doubt, favor features and designs that make
 
 ## Current status
 
-The project skeleton (MF-31) is in place: a Spring Boot backend with the full schema as Flyway migrations, and a React frontend with a health-check page. No features are built yet. Roadmap step 5 (epic MF-32: CI, coding conventions, baseline security, staging) is in progress; CI runs on GitHub Actions (`.github/workflows/ci.yml`), and the coding conventions with their formatters and linters are in place (MF-34).
+The project skeleton (MF-31) is in place: a Spring Boot backend with the full schema as Flyway migrations, and a React frontend with a health-check page. No features are built yet. Roadmap step 5 (epic MF-32: CI, coding conventions, baseline security, staging) is in progress; CI runs on GitHub Actions (`.github/workflows/ci.yml`), the coding conventions with their formatters and linters are in place (MF-34), and the skeleton's review follow-ups are fixed (MF-35).
 
 ## Repository layout
 
@@ -71,6 +71,8 @@ Out of scope for the MVP (do not build unless asked): AI summaries from transcri
 - Meeting content is business data from customers; handle personal data with GDPR in mind.
 - Add or update tests with every behavior change.
 - Follow `docs/conventions.md`. Run the formatters before committing; commit messages start with the Jira key (`MF-34 Add …`) and branch names describe the purpose without it (`feature/team-invitations`).
+- **Before creating a pull request**, show the user what changed (the commits and the main diffs) and explain each change and why it was made. Open the PR only after the user has reviewed it and agreed.
+- **Never change Jira** (no status transitions, edits, comments or new issues). Reading tickets is fine. Instead, tell the user what should change in Jira (e.g. "move MF-35 to Done") and let them do it.
 
 ## Commands
 

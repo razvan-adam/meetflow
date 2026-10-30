@@ -183,6 +183,28 @@
           </annotationProcessorPaths>
         </configuration>
       </plugin>
+      <!-- Mockito is loaded as a Java agent at startup: JDK 21+ warns when it attaches itself at
+           runtime and will block that in a future release. The properties goal sets
+           ${org.mockito:mockito-core:jar} to the jar's path. -Xshare:off turns off class data
+           sharing, which the JVM warns it can't fully use once Mockito extends the boot classpath. -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>properties</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>-javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
+        </configuration>
+      </plugin>
       <!-- ./mvnw spotless:apply formats the code; ./mvnw spotless:check (run in CI) fails on unformatted files. -->
       <plugin>
         <groupId>com.diffplug.spotless</groupId>

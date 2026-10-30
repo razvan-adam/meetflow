@@ -3,11 +3,10 @@ package com.meetflow;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
@@ -18,8 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Rules from docs/data-model.md that the database enforces on its own, checked against the Flyway
  * migrations.
  */
-@Import(TestcontainersConfiguration.class)
-@SpringBootTest
+@IntegrationTest
 @Transactional
 class DatabaseSchemaTests {
 
@@ -142,6 +140,8 @@ class DatabaseSchemaTests {
         meetingId,
         carriedOverTaskId,
         seriesId);
+    insertTaskChange(carriedOverTaskId, teamId, meetingId);
+    insertTaskChange(carriedOverTaskId, teamId, null);
   }
 
   @Test
@@ -248,6 +248,27 @@ class DatabaseSchemaTests {
   }
 
   @Test
+  void taskChangeCannotPointToAnotherTeamsMeeting() {
+    UUID taskId = insertTask(seriesId, insertMeeting("CLOSED"));
+    UUID otherTeamId = insertTeam();
+    UUID otherSeriesId = UUID.randomUUID();
+    insertSeries(otherSeriesId, otherTeamId);
+    UUID otherMeetingId = insertMeeting(otherTeamId, otherSeriesId, "IN_PROGRESS");
+
+    assertThatThrownBy(() -> insertTaskChange(taskId, teamId, otherMeetingId))
+        .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  @Test
+  void taskChangeIsInTheTasksTeam() {
+    UUID taskId = insertTask(seriesId, insertMeeting("CLOSED"));
+    UUID otherTeamId = insertTeam();
+
+    assertThatThrownBy(() -> insertTaskChange(taskId, otherTeamId, null))
+        .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  @Test
   void emailIsAtMost254Characters() {
     String email = "a".repeat(243) + "@example.com";
 
@@ -328,5 +349,15 @@ class DatabaseSchemaTests {
         userId,
         userId);
     return id;
+  }
+
+  private void insertTaskChange(UUID taskId, UUID team, @Nullable UUID meetingId) {
+    jdbc.update(
+        "INSERT INTO task_change (id, task_id, team_id, changed_by, changed_at, meeting_id, new_status) VALUES (?, ?, ?, ?, now(), ?, 'DONE')",
+        UUID.randomUUID(),
+        taskId,
+        team,
+        userId,
+        meetingId);
   }
 }

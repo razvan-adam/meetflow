@@ -11,7 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 
 @IntegrationTest
-class MeetflowApplicationTests {
+class MeetFlowApplicationTests {
 
   @Autowired MockMvcTester mvc;
 

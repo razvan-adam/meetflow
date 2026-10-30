@@ -71,6 +71,8 @@ Out of scope for the MVP (do not build unless asked): AI summaries from transcri
 - Meeting content is business data from customers; handle personal data with GDPR in mind.
 - Add or update tests with every behavior change.
 - Follow `docs/conventions.md`. Run the formatters before committing; commit messages start with the Jira key (`MF-34 Add …`) and branch names describe the purpose without it (`feature/team-invitations`).
+- **Before creating a pull request**, show the user what changed (the commits and the main diffs) and explain each change and why it was made. Open the PR only after the user has reviewed it and agreed.
+- **Never change Jira** (no status transitions, edits, comments or new issues). Reading tickets is fine. Instead, tell the user what should change in Jira (e.g. "move MF-35 to Done") and let them do it.
 
 ## Commands
 

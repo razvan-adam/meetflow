@@ -80,7 +80,7 @@ Names use the domain words from `AGENTS.md` and `docs/core-flow.md` (meeting ser
   - Plain unit tests for logic without Spring.
   - `@WebMvcTest` for controllers: request and response shape, validation, status codes, and access by a non-member of the team.
   - `@ApplicationModuleTest` for a module's logic with its repositories, against PostgreSQL via Testcontainers.
-  - `@SpringBootTest` only for checks that need the whole app. Each different test setup starts another Spring context, which slows the build.
+  - `@IntegrationTest` (in `com.meetflow`) only for checks that need the whole app. It wraps `@SpringBootTest` with MockMvc and the PostgreSQL container, so all such tests share one Spring context; don't use `@SpringBootTest` directly or add per-class configuration (`@MockitoBean`, properties), since each different test setup starts another context and database, which slows the build.
 - Frontend: test files sit next to the code (`HomePage.test.tsx`). Use React Testing Library queries by role or label, as a user would find things, not CSS selectors or test IDs.
 
 ## Commits, branches and pull requests

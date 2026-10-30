@@ -15,17 +15,19 @@ It is not a note-taking app. When in doubt, favor features and designs that make
 - Wireframes (open in a browser): `docs/wireframes/index.html`
 - Basic visual style (colors, type, components): `docs/visual-style.md`
 - Architecture and tech stack: `docs/architecture.md`
+- Staging environment, deploys and rollback: `docs/deployment.md`
 - Data model: `docs/data-model.md`
 - Coding conventions (naming, package structure, API style, tests, commits and branches): `docs/conventions.md`
 
 ## Current status
 
-The project skeleton (MF-31) is in place: a Spring Boot backend with the full schema as Flyway migrations, and a React frontend with a health-check page. No features are built yet. Roadmap step 5 (epic MF-32: CI, coding conventions, baseline security, staging) is in progress; CI runs on GitHub Actions (`.github/workflows/ci.yml`), the coding conventions with their formatters and linters are in place (MF-34), the skeleton's review follow-ups are fixed (MF-35), and baseline security is in place (MF-36: authentication, CSRF, secure session cookie, secret scanning). Only the staging environment (MF-37) remains.
+The project skeleton (MF-31) is in place: a Spring Boot backend with the full schema as Flyway migrations, and a React frontend with a health-check page. No features are built yet. Roadmap step 5 (epic MF-32: CI, coding conventions, baseline security, staging) is in progress; CI runs on GitHub Actions (`.github/workflows/ci.yml`), the coding conventions with their formatters and linters are in place (MF-34), the skeleton's review follow-ups are fixed (MF-35), and baseline security is in place (MF-36: authentication, CSRF, secure session cookie, secret scanning). The staging environment (MF-37) is built but not created: the Terraform code, backend image and deploy workflow exist and are checked in CI, but nothing runs in AWS yet and deploys are off (see "Build now, deploy later" below).
 
 ## Repository layout
 
 - `backend/` – Spring Boot app (Maven wrapper). One package per module under `com.meetflow` (`identity`, `teams`, `meetings`, `tasks`, `minutes`, `notifications`); `ModularityTests` enforces their boundaries. Migrations in `src/main/resources/db/migration`, one per module to start with; never edit an applied migration, add a new one.
 - `frontend/` – React app. `src/app` (providers, router), `src/pages` (one component per screen), `src/api` (fetch client and TanStack Query hooks), `src/styles` (visual-style tokens).
+- `infra/` – Terraform for AWS: `bootstrap` (one-time, account-wide), `modules/environment` (one environment), `staging`. See `docs/deployment.md`.
 - `scripts/dev.mjs` – starts both apps for local development.
 
 ## Tech stack
@@ -35,7 +37,7 @@ The project skeleton (MF-31) is in place: a Spring Boot backend with the full sc
 - **Database:** PostgreSQL with Spring Data JPA and Flyway migrations.
 - **Auth:** Spring Security, email + password, server-side sessions in a secure cookie.
 - **Email:** Amazon SES.
-- **Hosting:** AWS in an EU region: ECS Fargate, RDS for PostgreSQL, S3 + CloudFront.
+- **Hosting:** AWS `eu-west-1` (Ireland): ECS Fargate, RDS for PostgreSQL, S3 + CloudFront, defined with Terraform.
 - **Tests:** JUnit 5 and Testcontainers (backend), Vitest and React Testing Library (frontend).
 
 Don't add other frameworks or services without recording the decision in `docs/architecture.md`.
@@ -73,10 +75,11 @@ Out of scope for the MVP (do not build unless asked): AI summaries from transcri
 - Follow `docs/conventions.md`. Run the formatters before committing; commit messages start with the Jira key (`MF-34 Add …`) and branch names describe the purpose without it (`feature/team-invitations`).
 - **Before creating a pull request**, show the user what changed (the commits and the main diffs) and explain each change and why it was made. Open the PR only after the user has reviewed it and agreed.
 - **Never change Jira** (no status transitions, edits, comments or new issues). Reading tickets is fine. Instead, tell the user what should change in Jira (e.g. "move MF-35 to Done") and let them do it.
+- **Build now, deploy later (no AWS costs yet).** Infrastructure is written and validated but not created. Never run `terraform plan`, `apply` or `import` against AWS, create AWS resources or accounts, configure AWS credentials, or enable deploys (`STAGING_DEPLOY_ENABLED`, GitHub environments) unless the user explicitly asks to create the environment. Infrastructure changes are checked with `terraform fmt` and `terraform validate` only.
 
 ## Commands
 
-Prerequisites: JDK 25 (`JAVA_HOME` pointing to it), Node.js 24 LTS or later, and Docker running (local database and backend tests). Maven needs no install; use the wrapper. On Windows, run `mvnw.cmd` (or `.\mvnw` in PowerShell) instead of `./mvnw`.
+Prerequisites: JDK 25 (`JAVA_HOME` pointing to it), Node.js 24 LTS or later, Docker running (local database and backend tests), and Terraform 1.16 or later for infrastructure changes. Maven needs no install; use the wrapper. On Windows, run `mvnw.cmd` (or `.\mvnw` in PowerShell) instead of `./mvnw`.
 
 | Task | Command (run from) |
 |---|---|
@@ -90,5 +93,7 @@ Prerequisites: JDK 25 (`JAVA_HOME` pointing to it), Node.js 24 LTS or later, and
 | Format | `./mvnw spotless:apply` (`backend/`) and `npm run format` (`frontend/`, Prettier) |
 | Check formatting | `./mvnw spotless:check` (`backend/`) and `npm run format:check` (`frontend/`); CI runs both |
 | Build | `./mvnw package` (`backend/`, runs the tests too) and `npm run build` (`frontend/`, output in `dist/`) |
+| Backend image | `docker build -t meetflow-backend .` (`backend/`, after `./mvnw package`) |
+| Check infrastructure | `terraform -chdir=infra fmt -recursive` (repo root) to format; `terraform init -backend=false` then `terraform validate` in `infra/bootstrap` and `infra/staging` (no AWS access needed); CI runs both |
 
 Configuration: local development needs no settings. Optional overrides go in `backend/.env` (see `backend/.env.example`); never commit it.

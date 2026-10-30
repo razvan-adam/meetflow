@@ -9,4 +9,9 @@ import jakarta.validation.constraints.Size;
 record SignUpRequest(
     @NotBlank @Size(max = 100) String name,
     @NotBlank @Email @Size(max = 254) String email,
-    @NotNull @Size(min = UserService.MIN_PASSWORD_LENGTH) @MaxBytes(72) String password) {}
+    @NotNull
+        @Size(
+            min = UserService.MIN_PASSWORD_LENGTH,
+            message = "must be at least {min} characters long")
+        @MaxBytes(72)
+        String password) {}

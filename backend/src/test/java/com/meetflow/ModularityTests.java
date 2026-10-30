@@ -11,6 +11,6 @@ class ModularityTests {
 
   @Test
   void modulesRespectTheirBoundaries() {
-    ApplicationModules.of(MeetflowApplication.class).verify();
+    ApplicationModules.of(MeetFlowApplication.class).verify();
   }
 }

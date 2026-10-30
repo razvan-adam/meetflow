@@ -70,3 +70,11 @@ target/
 node_modules/
 *.tsbuildinfo
 *.local
+
+# --- Infrastructure (Terraform) ---
+# Provider downloads and state stay local; .terraform.lock.hcl is committed.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log

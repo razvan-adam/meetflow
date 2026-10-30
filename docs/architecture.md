@@ -72,11 +72,13 @@ Closing a meeting publishes an event; `minutes` and `notifications` react to it,
 
 ## Security
 
-- Every API endpoint except sign-up, login and invitation lookup requires an authenticated session.
+- Every API endpoint except the health check (`GET /api/health`), sign-up, login and invitation lookup requires an authenticated session. Unauthenticated requests get 401 and never open a session (the request cache is off), so anonymous traffic adds no rows to the session table.
 - Team-level access control is enforced on the server for every request: users only reach meetings, tasks and minutes of teams they belong to. Each endpoint has tests for access by a non-member.
 - Role rules from `docs/core-flow.md` (admin, organizer, task owner) are checked in the backend, never only hidden in the UI.
 - Passwords are hashed with Spring Security's password encoder (bcrypt by default) and never logged. Login is rate-limited.
-- CSRF protection is enabled for the cookie-based session.
+- The session cookie is Secure, HttpOnly and SameSite=Lax, set in `identity/SecurityConfig` so it is the same in every environment (Spring Boot's `server.servlet.session.cookie.*` properties only apply with the embedded server, not in tests).
+- CSRF protection is enabled for the cookie-based session: every response carries an `XSRF-TOKEN` cookie (readable by JavaScript) and the React app echoes it in the `X-XSRF-TOKEN` header on requests that change data (`frontend/src/api/client.ts`).
+- Secrets for staging and production (database password, SES credentials) live in AWS Secrets Manager and reach the backend as environment variables through the ECS task definition; the repository and the container image contain none. GitHub secret scanning with push protection is enabled on the repository.
 - HTTPS everywhere; the database is not publicly reachable.
 
 ## GDPR

@@ -1,0 +1,3 @@
+# The image needs only the packaged jar; keep .env, sources and build leftovers out of it.
+*
+!target/meetflow-*.jar

@@ -1,0 +1,138 @@
+# Deploys one commit to staging (MF-37): backend image to ECS (Flyway migrates on start-up), then the
+# React app to S3 + CloudFront, then a smoke test. Steps and rollback: docs/deployment.md.
+#
+# Called by CI after every push to main passes, or run by hand with an older commit to roll back.
+# Off until the staging environment exists: set the repository variable STAGING_DEPLOY_ENABLED=true.
+name: Deploy to staging
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit SHA to deploy (e.g. the last good one, to roll back)
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Deploy
+    if: vars.STAGING_DEPLOY_ENABLED == 'true'
+    # ARM runner: the backend runs on Graviton (ARM64) Fargate tasks.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
+    # One deploy at a time; a newer one waits instead of cancelling a half-finished rollout.
+    concurrency:
+      group: deploy-staging
+      cancel-in-progress: false
+    environment:
+      name: staging
+      url: ${{ vars.STAGING_URL }}
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+      TASK_FAMILY: ${{ vars.TASK_FAMILY }}
+      FRONTEND_BUCKET: ${{ vars.FRONTEND_BUCKET }}
+      CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+      STAGING_URL: ${{ vars.STAGING_URL }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - name: Resolve the commit
+        run: echo "IMAGE_TAG=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Image tags are commit SHAs and immutable: a rollback reuses the image that was deployed then.
+      - name: Check for an existing image
+        id: image
+        run: |
+          if aws ecr describe-images --repository-name "$ECR_REPOSITORY" --image-ids imageTag="$IMAGE_TAG" > /dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+          echo "uri=${{ steps.ecr.outputs.registry }}/$ECR_REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - if: steps.image.outputs.exists != 'true'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: maven
+
+      # CI has already tested this commit.
+      - name: Build and push the backend image
+        if: steps.image.outputs.exists != 'true'
+        working-directory: backend
+        run: |
+          ./mvnw --batch-mode --no-transfer-progress package -DskipTests
+          docker build --tag "${{ steps.image.outputs.uri }}" .
+          docker push "${{ steps.image.outputs.uri }}"
+
+      # Copy the latest task definition (Terraform's settings) with the new image.
+      - name: Deploy the backend
+        run: |
+          aws ecs describe-task-definition --task-definition "$TASK_FAMILY" --query taskDefinition \
+            | jq --arg image "${{ steps.image.outputs.uri }}" '
+                .containerDefinitions[0].image = $image
+                | del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities,
+                      .registeredAt, .registeredBy)' \
+            > task-definition.json
+          task_definition=$(aws ecs register-task-definition --cli-input-json file://task-definition.json \
+            --query taskDefinition.taskDefinitionArn --output text)
+          echo "TASK_DEFINITION=$task_definition" >> "$GITHUB_ENV"
+          aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" \
+            --task-definition "$task_definition" > /dev/null
+
+      # The service turns stable after a circuit-breaker rollback too, so check what it is running.
+      - name: Wait for the new tasks
+        run: |
+          aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE"
+          running=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" \
+            --query "services[0].deployments[?status=='PRIMARY'].[taskDefinition,rolloutState]" --output text)
+          echo "Primary deployment: $running"
+          if [ "$running" != "$(printf '%s\t%s' "$TASK_DEFINITION" COMPLETED)" ]; then
+            echo "::error::The new backend did not become healthy; ECS rolled back. Check the logs in CloudWatch."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # Hashed asset files can be cached for good; index.html must always be revalidated.
+      - name: Build and upload the frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          aws s3 sync dist "s3://$FRONTEND_BUCKET" --delete --exclude index.html \
+            --cache-control "public, max-age=31536000, immutable"
+          aws s3 cp dist/index.html "s3://$FRONTEND_BUCKET/index.html" --cache-control "no-cache"
+          aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_DISTRIBUTION_ID" \
+            --paths /index.html > /dev/null
+
+      # Also proves the backend sees HTTPS behind CloudFront: Secure CSRF cookie and HSTS.
+      - name: Smoke test
+        run: |
+          curl --fail --silent --show-error --retry 10 --retry-delay 6 --retry-all-errors \
+            --dump-header headers.txt "$STAGING_URL/api/health" | tee health.json
+          echo
+          grep -q '"status":"UP"' health.json
+          grep -qi '^set-cookie: XSRF-TOKEN=.*; Secure' headers.txt || { echo "::error::XSRF-TOKEN cookie is not Secure"; exit 1; }
+          grep -qi '^strict-transport-security:' headers.txt || { echo "::error::No HSTS header"; exit 1; }
+          curl --fail --silent --show-error "$STAGING_URL/" | grep -q '<div id="root">'

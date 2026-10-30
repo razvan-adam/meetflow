@@ -1,5 +1,6 @@
-# Lint, format-check, test and build both apps on every pull request and push to main (MF-33, MF-34).
-# Uses the same commands as the table in AGENTS.md.
+# Lint, format-check, test and build both apps and validate the infrastructure code on every pull request
+# and push to main (MF-33, MF-34, MF-37); pushes to main then deploy to staging. Uses the same commands as
+# AGENTS.md and docs/deployment.md.
 name: CI
 
 on:
@@ -53,3 +54,33 @@ jobs:
       - run: ./mvnw --batch-mode --no-transfer-progress spotless:check
       # Compiles with Error Prone and NullAway, runs the tests (Testcontainers uses the runner's Docker) and packages the app.
       - run: ./mvnw --batch-mode --no-transfer-progress package
+
+  infrastructure:
+    name: Infrastructure
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.16.6
+      - run: terraform fmt -recursive -check -diff
+      # Checks the code only (no AWS access); plan and apply are run by hand (docs/deployment.md).
+      - run: |
+          for stack in bootstrap staging; do
+            terraform -chdir="$stack" init -backend=false -input=false
+            terraform -chdir="$stack" validate
+          done
+
+  # Off until staging exists (repository variable STAGING_DEPLOY_ENABLED=true, docs/deployment.md).
+  deploy-staging:
+    name: Deploy to staging
+    needs: [frontend, backend, infrastructure]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.STAGING_DEPLOY_ENABLED == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/deploy.yml

@@ -24,14 +24,22 @@ public class TeamAccess {
   }
 
   /**
+   * Checks that the user is a member of the team.
+   *
+   * @throws TeamNotFoundException if not (404, so the team isn't revealed)
+   */
+  public TeamMembership requireMember(UUID userId, UUID teamId) {
+    return membership(userId, teamId).orElseThrow(TeamNotFoundException::new);
+  }
+
+  /**
    * Checks that the user is one of the team's admins.
    *
    * @throws TeamNotFoundException if the user isn't a member (404, so the team isn't revealed)
    * @throws NotTeamAdminException if the user is a member but not an admin
    */
   public void requireAdmin(UUID userId, UUID teamId) {
-    var membership = membership(userId, teamId).orElseThrow(TeamNotFoundException::new);
-    if (membership.getRole() != Role.ADMIN) {
+    if (requireMember(userId, teamId).getRole() != Role.ADMIN) {
       throw new NotTeamAdminException();
     }
   }

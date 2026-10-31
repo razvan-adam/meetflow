@@ -2,9 +2,11 @@ package com.meetflow.teams.service;
 
 import static java.util.Objects.requireNonNull;
 
+import com.meetflow.identity.UserDirectory;
 import com.meetflow.teams.domain.Role;
 import com.meetflow.teams.domain.Team;
 import com.meetflow.teams.domain.TeamMembership;
+import com.meetflow.teams.dto.MemberResponse;
 import com.meetflow.teams.dto.TeamResponse;
 import com.meetflow.teams.exception.TeamNotFoundException;
 import com.meetflow.teams.repository.TeamMembershipRepository;
@@ -24,10 +26,36 @@ public class TeamService {
 
   private final TeamRepository teams;
   private final TeamMembershipRepository memberships;
+  private final TeamAccess access;
+  private final UserDirectory users;
 
-  TeamService(TeamRepository teams, TeamMembershipRepository memberships) {
+  TeamService(
+      TeamRepository teams,
+      TeamMembershipRepository memberships,
+      TeamAccess access,
+      UserDirectory users) {
     this.teams = teams;
     this.memberships = memberships;
+    this.access = access;
+    this.users = users;
+  }
+
+  /** The team's members, sorted by name. Any member can see them. */
+  @Transactional(readOnly = true)
+  public List<MemberResponse> listMembers(UUID userId, UUID teamId) {
+    access.requireMember(userId, teamId);
+    var members = memberships.findByIdTeamId(teamId);
+    var names = users.namesOf(members.stream().map(member -> member.getId().userId()).toList());
+    var byName = Collator.getInstance(Locale.ENGLISH);
+    return members.stream()
+        .map(
+            member ->
+                new MemberResponse(
+                    member.getId().userId(),
+                    names.getOrDefault(member.getId().userId(), ""),
+                    member.getRole()))
+        .sorted(Comparator.comparing(MemberResponse::name, byName))
+        .toList();
   }
 
   /** Creates the team with its creator as the first admin. */

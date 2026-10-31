@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface TeamMembershipRepository extends JpaRepository<TeamMembership, TeamMembership.Id> {
 
   List<TeamMembership> findByIdUserId(UUID userId);
+
+  List<TeamMembership> findByIdTeamId(UUID teamId);
 }

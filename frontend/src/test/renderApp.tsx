@@ -41,6 +41,9 @@ export const loggedOut = () => new Response(null, { status: 401 })
 // The app bar and dashboard load the user’s teams on every logged-in page.
 export const noTeams = () => Response.json([])
 
+// The team page loads the team’s meeting series.
+export const noSeries = () => Response.json([])
+
 export function requestBody(fetchMock: ReturnType<typeof mockApi>, request: string): unknown {
   const call = fetchMock.mock.calls.find(
     ([url, init]) => `${init?.method ?? 'GET'} ${url}` === request,

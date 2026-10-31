@@ -2,9 +2,10 @@ import { useParams } from 'react-router'
 import { ApiError } from '../api/client.ts'
 import { useTeam } from '../api/teams.ts'
 import { TeamInvitations } from './TeamInvitations.tsx'
+import { TeamSeries } from './TeamSeries.tsx'
 import styles from './TeamPage.module.css'
 
-// The team page (S3). Meeting series are added here by MF-12.
+// The team page (S3): its meeting series, and invitations for admins.
 export function TeamPage() {
   const { teamId = '' } = useParams()
   const team = useTeam(teamId)
@@ -30,7 +31,7 @@ export function TeamPage() {
         <h1 className={styles.title}>{team.data.name}</h1>
         <p className={styles.sub}>{isAdmin ? 'You are an admin' : 'You are a member'}</p>
       </div>
-      <p className={styles.empty}>The team’s meeting series will appear here.</p>
+      <TeamSeries teamId={team.data.id} />
       {isAdmin && <TeamInvitations teamId={team.data.id} />}
     </main>
   )

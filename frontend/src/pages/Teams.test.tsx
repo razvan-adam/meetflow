@@ -30,6 +30,7 @@ describe('creating a team', () => {
     const fetchMock = mockApi({
       'GET /api/users/me': loggedIn,
       'GET /api/teams': () => Response.json(teams),
+      [`GET /api/teams/${OPS.id}/invitations`]: () => Response.json([]),
       'POST /api/teams': () => {
         teams = [OPS]
         return Response.json(OPS, { status: 201 })
@@ -71,6 +72,7 @@ describe('switching teams', () => {
       'GET /api/users/me': loggedIn,
       'GET /api/teams': () => Response.json([LEADERSHIP, OPS]),
       [`GET /api/teams/${OPS.id}`]: () => Response.json(OPS),
+      [`GET /api/teams/${OPS.id}/invitations`]: () => Response.json([]),
       [`GET /api/teams/${LEADERSHIP.id}`]: () => Response.json(LEADERSHIP),
     })
     const router = renderApp(`/teams/${OPS.id}`)

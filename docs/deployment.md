@@ -45,7 +45,7 @@ Done once, by someone with administrator access to the AWS account. Needs Terraf
 4. **Create the GitHub environment** `staging` (repository Settings → Environments), and under *Deployment branches* allow `main` only. Add the values from `terraform output github_variables` as environment variables (not secrets; none of them is secret):
    `AWS_ROLE_ARN`, `AWS_REGION`, `ECR_REPOSITORY`, `ECS_CLUSTER`, `ECS_SERVICE`, `TASK_FAMILY`, `FRONTEND_BUCKET`, `CLOUDFRONT_DISTRIBUTION_ID`, `STAGING_URL`.
 5. **Turn deploys on:** add the repository variable `STAGING_DEPLOY_ENABLED` = `true` (Settings → Secrets and variables → Actions → Variables).
-6. **First deploy:** Actions → *Deploy to staging* → *Run workflow*, with the latest commit on `main` (`git rev-parse origin/main`). When it finishes, open `STAGING_URL`: the home page should show the backend as up.
+6. **First deploy:** Actions → *Deploy to staging* → *Run workflow*, with the latest commit on `main` (`git rev-parse origin/main`). When it finishes, open `STAGING_URL`: the login page should load, and signing up should land on the dashboard.
 
 ## Deploying
 

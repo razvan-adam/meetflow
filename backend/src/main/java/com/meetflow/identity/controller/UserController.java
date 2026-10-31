@@ -1,5 +1,10 @@
-package com.meetflow.identity;
+package com.meetflow.identity.controller;
 
+import com.meetflow.identity.CurrentUser;
+import com.meetflow.identity.dto.SignUpRequest;
+import com.meetflow.identity.dto.UserResponse;
+import com.meetflow.identity.service.SessionService;
+import com.meetflow.identity.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;

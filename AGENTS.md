@@ -25,7 +25,7 @@ The project skeleton (MF-31) is in place: a Spring Boot backend with the full sc
 
 ## Repository layout
 
-- `backend/` – Spring Boot app (Maven wrapper). One package per module under `com.meetflow` (`identity`, `teams`, `meetings`, `tasks`, `minutes`, `notifications`); `ModularityTests` enforces their boundaries. Migrations in `src/main/resources/db/migration`, one per module to start with; never edit an applied migration, add a new one.
+- `backend/` – Spring Boot app (Maven wrapper). One package per module under `com.meetflow` (`identity`, `teams`, `meetings`, `tasks`, `minutes`, `notifications`), each split into layer subpackages (`controller`, `service`, `repository`, …; see `docs/conventions.md`); `ModularityTests` enforces their boundaries. Migrations in `src/main/resources/db/migration`, one per module to start with; never edit an applied migration, add a new one.
 - `frontend/` – React app. `src/app` (providers, router), `src/pages` (one component per screen), `src/api` (fetch client and TanStack Query hooks), `src/styles` (visual-style tokens).
 - `infra/` – Terraform for AWS: `bootstrap` (one-time, account-wide), `modules/environment` (one environment), `staging`. See `docs/deployment.md`.
 - `scripts/dev.mjs` – starts both apps for local development.

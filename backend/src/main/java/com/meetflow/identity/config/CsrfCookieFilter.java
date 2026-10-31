@@ -1,4 +1,4 @@
-package com.meetflow.identity;
+package com.meetflow.identity.config;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

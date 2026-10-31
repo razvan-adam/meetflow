@@ -1,4 +1,4 @@
-package com.meetflow.identity;
+package com.meetflow.identity.dto;
 
 import jakarta.validation.Constraint;
 import jakarta.validation.ConstraintValidator;

@@ -1,5 +1,11 @@
-package com.meetflow.identity;
+package com.meetflow.identity.service;
 
+import com.meetflow.identity.CurrentUser;
+import com.meetflow.identity.domain.User;
+import com.meetflow.identity.dto.SignUpRequest;
+import com.meetflow.identity.dto.UserResponse;
+import com.meetflow.identity.exception.EmailAlreadyUsedException;
+import com.meetflow.identity.repository.UserRepository;
 import java.util.Locale;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -10,10 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 /** Sign-up, and looking up accounts for login. */
 @Service
-class UserService implements UserDetailsService {
+public class UserService implements UserDetailsService {
 
   /** Long enough to resist guessing without forcing composition rules (NIST SP 800-63B). */
-  static final int MIN_PASSWORD_LENGTH = 12;
+  public static final int MIN_PASSWORD_LENGTH = 12;
 
   private final UserRepository users;
   private final PasswordEncoder passwordEncoder;
@@ -25,7 +31,7 @@ class UserService implements UserDetailsService {
 
   /** Creates the account and returns it as the user to log in. */
   @Transactional
-  CurrentUser signUp(SignUpRequest request) {
+  public CurrentUser signUp(SignUpRequest request) {
     var email = normalizeEmail(request.email());
     if (users.existsByEmail(email)) {
       throw new EmailAlreadyUsedException();
@@ -42,7 +48,7 @@ class UserService implements UserDetailsService {
 
   /** The name is read from the database: it isn't in the session, which may be older. */
   @Transactional(readOnly = true)
-  UserResponse describe(CurrentUser user) {
+  public UserResponse describe(CurrentUser user) {
     var name = users.findById(user.id()).orElseThrow().getName();
     return new UserResponse(user.id(), name, user.getUsername());
   }

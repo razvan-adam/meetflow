@@ -25,7 +25,7 @@ public final class CurrentUser implements UserDetails, CredentialsContainer {
   private final String email;
   private @Nullable String passwordHash;
 
-  CurrentUser(UUID id, String email, @Nullable String passwordHash) {
+  public CurrentUser(UUID id, String email, @Nullable String passwordHash) {
     this.id = id;
     this.email = email;
     this.passwordHash = passwordHash;

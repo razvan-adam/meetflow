@@ -1,5 +1,6 @@
-package com.meetflow.identity;
+package com.meetflow.identity.config;
 
+import com.meetflow.identity.service.SessionService;
 import jakarta.servlet.DispatcherType;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

@@ -74,7 +74,7 @@ public class MeetingSeriesService {
   }
 
   /** The series, if the user is a member of its team; otherwise 404, as if it didn't exist. */
-  private MeetingSeries findVisible(UUID userId, UUID seriesId) {
+  MeetingSeries findVisible(UUID userId, UUID seriesId) {
     return series
         .findById(seriesId)
         .filter(found -> teamMembers.isMember(userId, found.getTeamId()))

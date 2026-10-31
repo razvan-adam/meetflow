@@ -1,12 +1,13 @@
 package com.meetflow.identity.service;
 
+import static com.meetflow.identity.UserDirectory.normalizeEmail;
+
 import com.meetflow.identity.CurrentUser;
 import com.meetflow.identity.domain.User;
 import com.meetflow.identity.dto.SignUpRequest;
 import com.meetflow.identity.dto.UserResponse;
 import com.meetflow.identity.exception.EmailAlreadyUsedException;
 import com.meetflow.identity.repository.UserRepository;
-import java.util.Locale;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -61,10 +62,5 @@ public class UserService implements UserDetailsService {
         .findByEmail(email)
         .map(user -> new CurrentUser(user.getId(), email, user.getPasswordHash()))
         .orElseThrow(() -> new UsernameNotFoundException("No account with this email"));
-  }
-
-  /** Emails are stored lowercased, so Ana@Example.com and ana@example.com are one account. */
-  private static String normalizeEmail(String email) {
-    return email.strip().toLowerCase(Locale.ROOT);
   }
 }

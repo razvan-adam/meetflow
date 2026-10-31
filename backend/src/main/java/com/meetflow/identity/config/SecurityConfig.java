@@ -22,10 +22,7 @@ import org.springframework.security.web.servlet.util.matcher.PathPatternRequestM
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 
-/**
- * Every endpoint requires an authenticated session, except the ones listed here. Invitation lookup
- * is added to the public list when it is built.
- */
+/** Every endpoint requires an authenticated session, except the ones listed here. */
 @Configuration(proxyBeanMethods = false)
 class SecurityConfig {
 
@@ -42,6 +39,9 @@ class SecurityConfig {
                     .requestMatchers(
                         matcher.matcher(HttpMethod.POST, "/api/users"),
                         matcher.matcher(HttpMethod.POST, "/api/session"))
+                    .permitAll()
+                    // Looking up an invitation link, before signing up or logging in to join.
+                    .requestMatchers(matcher.matcher(HttpMethod.GET, "/api/invitation-links/*"))
                     .permitAll()
                     // Errors are forwarded to /error; checking it again
                     // would turn every error into a 401.

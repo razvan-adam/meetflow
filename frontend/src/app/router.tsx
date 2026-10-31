@@ -3,6 +3,7 @@ import { CreateTeamPage } from '../pages/CreateTeamPage.tsx'
 import { DashboardPage } from '../pages/DashboardPage.tsx'
 import { JoinPage } from '../pages/JoinPage.tsx'
 import { LogInPage } from '../pages/LogInPage.tsx'
+import { SeriesPage } from '../pages/SeriesPage.tsx'
 import { SignUpPage } from '../pages/SignUpPage.tsx'
 import { TeamPage } from '../pages/TeamPage.tsx'
 import { AppLayout } from './AppLayout.tsx'
@@ -28,6 +29,7 @@ export const routes: RouteObject[] = [
           { path: '/', element: <DashboardPage /> },
           { path: '/teams/new', element: <CreateTeamPage /> },
           { path: '/teams/:teamId', element: <TeamPage /> },
+          { path: '/series/:seriesId', element: <SeriesPage /> },
         ],
       },
     ],

@@ -1,4 +1,4 @@
-/* The team page (S3) and its invitation card. */
+/* The team page (S3), with its series and invitation card, and the series page (S4). */
 
 .page {
   display: flex;
@@ -142,4 +142,9 @@
 .meta {
   color: var(--muted);
   font-size: 13px;
+}
+
+/* Space above a form or message that follows a list. */
+.below {
+  margin-top: 10px;
 }

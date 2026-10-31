@@ -22,6 +22,20 @@ export function useTeam(teamId: string) {
   })
 }
 
+export interface Member {
+  id: string
+  name: string
+  role: Team['role']
+}
+
+// The team's members, sorted by name.
+export function useTeamMembers(teamId: string) {
+  return useQuery({
+    queryKey: [...TEAMS, teamId, 'members'],
+    queryFn: () => apiFetch<Member[]>(`/teams/${encodeURIComponent(teamId)}/members`),
+  })
+}
+
 export function useCreateTeam() {
   const queryClient = useQueryClient()
   return useMutation({

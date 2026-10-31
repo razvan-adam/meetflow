@@ -2,7 +2,15 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { Invitation, InvitationLink } from '../api/invitations.ts'
 import type { Team } from '../api/teams.ts'
-import { ANA, loggedOut, mockApi, noTeams, renderApp, requestBody } from '../test/renderApp.tsx'
+import {
+  ANA,
+  loggedOut,
+  mockApi,
+  noSeries,
+  noTeams,
+  renderApp,
+  requestBody,
+} from '../test/renderApp.tsx'
 
 const OPS: Team = { id: '6d0c1a52-3c1e-4f0b-9a57-2d4b8e7f1c10', name: 'Ops team', role: 'ADMIN' }
 const INVITATIONS = `/api/teams/${OPS.id}/invitations`
@@ -33,6 +41,7 @@ describe('inviting colleagues from the team page', () => {
       'GET /api/users/me': () => Response.json(ANA),
       'GET /api/teams': () => Response.json([OPS]),
       [`GET /api/teams/${OPS.id}`]: () => Response.json(OPS),
+      [`GET /api/teams/${OPS.id}/meeting-series`]: noSeries,
       [`GET ${INVITATIONS}`]: () => Response.json(pending),
       [`POST ${INVITATIONS}`]: () => {
         pending = [SOFIA_INVITATION]
@@ -62,6 +71,7 @@ describe('inviting colleagues from the team page', () => {
       'GET /api/users/me': () => Response.json(ANA),
       'GET /api/teams': () => Response.json([OPS]),
       [`GET /api/teams/${OPS.id}`]: () => Response.json(OPS),
+      [`GET /api/teams/${OPS.id}/meeting-series`]: noSeries,
       [`GET ${INVITATIONS}`]: () => Response.json(pending),
       [`DELETE /api/invitations/${SOFIA_INVITATION.id}`]: () => {
         pending = []
@@ -86,6 +96,7 @@ describe('inviting colleagues from the team page', () => {
       'GET /api/users/me': () => Response.json(ANA),
       'GET /api/teams': () => Response.json([OPS]),
       [`GET /api/teams/${OPS.id}`]: () => Response.json(OPS),
+      [`GET /api/teams/${OPS.id}/meeting-series`]: noSeries,
       [`GET ${INVITATIONS}`]: () => Response.json([]),
       [`POST ${INVITATIONS}`]: () => Response.json({ status: 409 }, { status: 409 }),
     })
@@ -105,6 +116,7 @@ describe('inviting colleagues from the team page', () => {
       'GET /api/users/me': () => Response.json(ANA),
       'GET /api/teams': () => Response.json([member]),
       [`GET /api/teams/${OPS.id}`]: () => Response.json(member),
+      [`GET /api/teams/${OPS.id}/meeting-series`]: noSeries,
     })
     renderApp(`/teams/${OPS.id}`)
 
@@ -126,6 +138,7 @@ describe('joining from an invitation link', () => {
       [`POST ${LINK}/accept`]: () => Response.json({ ...OPS, role: 'MEMBER' }),
       'GET /api/teams': () => Response.json([{ ...OPS, role: 'MEMBER' }]),
       [`GET /api/teams/${OPS.id}`]: () => Response.json({ ...OPS, role: 'MEMBER' }),
+      [`GET /api/teams/${OPS.id}/meeting-series`]: noSeries,
     })
     const router = renderApp(`/join/${TOKEN}`)
 
@@ -160,6 +173,7 @@ describe('joining from an invitation link', () => {
       [`POST ${LINK}/accept`]: () => Response.json({ ...OPS, role: 'MEMBER' }),
       'GET /api/teams': () => Response.json([{ ...OPS, role: 'MEMBER' }]),
       [`GET /api/teams/${OPS.id}`]: () => Response.json({ ...OPS, role: 'MEMBER' }),
+      [`GET /api/teams/${OPS.id}/meeting-series`]: noSeries,
     })
     renderApp(`/join/${TOKEN}`)
 
@@ -183,6 +197,7 @@ describe('joining from an invitation link', () => {
       [`POST ${LINK}/accept`]: () => Response.json({ ...OPS, role: 'MEMBER' }),
       'GET /api/teams': () => Response.json([{ ...OPS, role: 'MEMBER' }]),
       [`GET /api/teams/${OPS.id}`]: () => Response.json({ ...OPS, role: 'MEMBER' }),
+      [`GET /api/teams/${OPS.id}/meeting-series`]: noSeries,
     })
     renderApp(`/join/${TOKEN}`)
 

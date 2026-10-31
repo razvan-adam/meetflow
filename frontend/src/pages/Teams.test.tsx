@@ -1,7 +1,7 @@
 import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { Team } from '../api/teams.ts'
-import { ANA, mockApi, noTeams, renderApp, requestBody } from '../test/renderApp.tsx'
+import { ANA, mockApi, noSeries, noTeams, renderApp, requestBody } from '../test/renderApp.tsx'
 
 const OPS: Team = { id: '6d0c1a52-3c1e-4f0b-9a57-2d4b8e7f1c10', name: 'Ops team', role: 'ADMIN' }
 const LEADERSHIP: Team = {
@@ -31,6 +31,7 @@ describe('creating a team', () => {
       'GET /api/users/me': loggedIn,
       'GET /api/teams': () => Response.json(teams),
       [`GET /api/teams/${OPS.id}/invitations`]: () => Response.json([]),
+      [`GET /api/teams/${OPS.id}/meeting-series`]: noSeries,
       'POST /api/teams': () => {
         teams = [OPS]
         return Response.json(OPS, { status: 201 })
@@ -73,7 +74,9 @@ describe('switching teams', () => {
       'GET /api/teams': () => Response.json([LEADERSHIP, OPS]),
       [`GET /api/teams/${OPS.id}`]: () => Response.json(OPS),
       [`GET /api/teams/${OPS.id}/invitations`]: () => Response.json([]),
+      [`GET /api/teams/${OPS.id}/meeting-series`]: noSeries,
       [`GET /api/teams/${LEADERSHIP.id}`]: () => Response.json(LEADERSHIP),
+      [`GET /api/teams/${LEADERSHIP.id}/meeting-series`]: noSeries,
     })
     const router = renderApp(`/teams/${OPS.id}`)
 

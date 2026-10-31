@@ -120,6 +120,7 @@ resource "aws_ecs_task_definition" "backend" {
   cpu                      = var.backend_cpu
   memory                   = var.backend_memory
   execution_role_arn       = aws_iam_role.backend_execution.arn
+  task_role_arn            = aws_iam_role.backend_task.arn
 
   # Graviton: about 20% cheaper than x86; the deploy workflow builds the image on an ARM runner.
   runtime_platform {
@@ -139,6 +140,11 @@ resource "aws_ecs_task_definition" "backend" {
         name  = "SPRING_DATASOURCE_URL"
         value = "jdbc:postgresql://${aws_db_instance.main.endpoint}/${aws_db_instance.main.db_name}?sslmode=require"
       },
+      # Emails (backend/.env.example): sent through SES with the task role, links point to CloudFront.
+      { name = "MEETFLOW_EMAIL_PROVIDER", value = "ses" },
+      { name = "MEETFLOW_EMAIL_FROM", value = var.email_from },
+      { name = "MEETFLOW_EMAIL_REGION", value = local.region },
+      { name = "MEETFLOW_EMAIL_APP_URL", value = "https://${aws_cloudfront_distribution.main.domain_name}" },
     ]
 
     # Injected by ECS at start-up from the secret RDS manages.

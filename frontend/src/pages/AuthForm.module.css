@@ -1,4 +1,4 @@
-/* Shared by the sign-up and login pages (S1) and the create-team form. */
+/* Shared by the sign-up and login pages (S1), the join page and the create-team form. */
 
 .bar {
   padding: 10px 16px;
@@ -20,6 +20,11 @@
   max-width: 380px;
   margin: 0 auto;
   padding: 28px 16px;
+}
+
+.stack {
+  display: grid;
+  gap: 14px;
 }
 
 .title {
@@ -82,4 +87,15 @@
   margin: 0;
   color: var(--muted);
   font-size: 14px;
+}
+
+/* A button that reads as a link, for actions inside a sentence. */
+.link {
+  padding: 0;
+  background: none;
+  color: var(--wire);
+  border: 0;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }

@@ -54,3 +54,8 @@ variable "log_retention_days" {
   type        = number
   default     = 30
 }
+
+variable "email_from" {
+  description = "Sender address of the app's emails (e.g. invitations). SES emails it a verification link when the environment is created; until it is verified, emails fail."
+  type        = string
+}

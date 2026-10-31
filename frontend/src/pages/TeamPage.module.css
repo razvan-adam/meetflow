@@ -1,0 +1,145 @@
+/* The team page (S3) and its invitation card. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+@media (min-width: 640px) {
+  .page {
+    padding: 28px;
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+}
+
+.sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.empty {
+  margin: 0;
+  padding: 14px;
+  color: var(--muted);
+  font-size: 14px;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+}
+
+.card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  background: var(--frame);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 16px;
+}
+
+.addRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.input {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 8px 10px;
+  background: var(--frame);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+}
+
+.input:focus {
+  outline: 2px solid var(--wire);
+  outline-offset: -1px;
+}
+
+.primary,
+.secondary {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.primary {
+  background: var(--wire);
+  color: var(--frame);
+  border: 0;
+  font-weight: 700;
+}
+
+.secondary {
+  background: none;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--overdue-soft);
+  border: 1px solid var(--overdue);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.sectionLabel {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  overflow-wrap: anywhere;
+}
+
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+
+.meta {
+  color: var(--muted);
+  font-size: 13px;
+}

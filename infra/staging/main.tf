@@ -39,6 +39,12 @@ module "environment" {
   name              = "staging"
   vpc_cidr          = "10.20.0.0/16"
   github_repository = "razvan-adam/meetflow"
+  email_from        = var.email_from
+}
+
+variable "email_from" {
+  description = "Sender address of staging's emails. Asked for at plan time; SES sends it a verification link."
+  type        = string
 }
 
 output "url" {

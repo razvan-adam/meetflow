@@ -45,6 +45,7 @@ describe('meeting series on the team page', () => {
       [`GET /api/teams/${OPS.id}`]: () => Response.json(member),
       [`GET /api/teams/${OPS.id}/meeting-series`]: () => Response.json([]),
       [`POST /api/teams/${OPS.id}/meeting-series`]: () => Response.json(WEEKLY, { status: 201 }),
+      [`GET /api/meeting-series/${WEEKLY.id}/meetings`]: () => Response.json([]),
     })
     const router = renderApp(`/teams/${OPS.id}`)
 
@@ -74,6 +75,7 @@ describe('the series page', () => {
       [`GET /api/teams/${OPS.id}`]: () => Response.json(OPS),
       [`GET /api/teams/${OPS.id}/members`]: () => Response.json(MEMBERS),
       [`GET /api/meeting-series/${WEEKLY.id}`]: () => Response.json(WEEKLY),
+      [`GET /api/meeting-series/${WEEKLY.id}/meetings`]: () => Response.json([]),
     })
     renderApp(`/series/${WEEKLY.id}`)
 
@@ -93,6 +95,7 @@ describe('the series page', () => {
       [`GET /api/teams/${OPS.id}/members`]: () => Response.json(MEMBERS),
       [`GET /api/teams/${OPS.id}/meeting-series`]: () => Response.json([series]),
       [`GET /api/meeting-series/${WEEKLY.id}`]: () => Response.json(series),
+      [`GET /api/meeting-series/${WEEKLY.id}/meetings`]: () => Response.json([]),
       [`PUT /api/meeting-series/${WEEKLY.id}/organizer`]: () => {
         series = { ...WEEKLY, organizerId: BO.id, organizerName: BO.name }
         return Response.json(series)

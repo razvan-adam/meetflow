@@ -1,12 +1,16 @@
 import type { FormEvent } from 'react'
 import { Link, useParams } from 'react-router'
 import { ApiError } from '../api/client.ts'
+import { useSeriesMeetings, type Meeting } from '../api/meetings.ts'
 import { useChangeOrganizer, useSeries, type Series } from '../api/series.ts'
 import { useTeam, useTeamMembers } from '../api/teams.ts'
 import { useCurrentUser } from '../api/users.ts'
+import { Breadcrumb } from './Breadcrumb.tsx'
+import { formatMeetingTime } from './meetingTime.ts'
+import meetingStyles from './MeetingPage.module.css'
 import styles from './TeamPage.module.css'
 
-// A meeting series (S4). Its meetings and open tasks are added here by MF-13 and MF-19.
+// A meeting series (S4): its next and past meetings. Its open tasks are added here by MF-19.
 export function SeriesPage() {
   const { seriesId = '' } = useParams()
   const series = useSeries(seriesId)
@@ -26,26 +30,88 @@ export function SeriesPage() {
       </main>
     )
   }
-  const organizer = series.data.organizerId === user?.id ? 'you' : series.data.organizerName
+  const isOrganizer = series.data.organizerId === user?.id
   return (
     <main className={styles.page}>
       <div>
-        <TeamCrumb teamId={series.data.teamId} />
+        <Breadcrumb teamId={series.data.teamId} />
         <h1 className={styles.title}>{series.data.name}</h1>
-        <p className={styles.sub}>Organized by {organizer}</p>
+        <p className={styles.sub}>Organized by {isOrganizer ? 'you' : series.data.organizerName}</p>
       </div>
-      <p className={styles.empty}>The meetings of this series will appear here.</p>
+      <SeriesMeetings seriesId={series.data.id} isOrganizer={isOrganizer} />
       <ChangeOrganizer series={series.data} />
     </main>
   )
 }
 
-function TeamCrumb({ teamId }: { teamId: string }) {
-  const { data: team } = useTeam(teamId)
+// The next meeting, which only the organizer schedules, and the past ones (MF-13).
+function SeriesMeetings({ seriesId, isOrganizer }: { seriesId: string; isOrganizer: boolean }) {
+  const meetings = useSeriesMeetings(seriesId)
+  if (!meetings.data) {
+    return null
+  }
+  // A series has at most one meeting that isn't closed.
+  const next = meetings.data.find((meeting) => meeting.status !== 'CLOSED')
+  const past = meetings.data.filter((meeting) => meeting.status === 'CLOSED')
   return (
-    <div className={styles.meta}>
-      <Link to={`/teams/${teamId}`}>{team?.name ?? 'Team'}</Link>
-    </div>
+    <>
+      <section aria-labelledby="next-title">
+        <div className={meetingStyles.head}>
+          <h2 id="next-title" className={styles.sectionLabel}>
+            Next meeting
+          </h2>
+          {isOrganizer && !next && (
+            <Link
+              className={`${styles.primary} ${meetingStyles.linkButton}`}
+              to={`/series/${seriesId}/schedule`}
+            >
+              Schedule next meeting
+            </Link>
+          )}
+        </div>
+        {next ? (
+          <ul className={styles.list}>
+            <MeetingRow meeting={next} />
+          </ul>
+        ) : (
+          <p className={`${styles.empty} ${styles.below}`}>
+            {isOrganizer
+              ? 'No meeting scheduled. Schedule the next one when you know the date.'
+              : 'No meeting scheduled yet. The organizer schedules the meetings.'}
+          </p>
+        )}
+      </section>
+      {past.length > 0 && (
+        <section aria-labelledby="past-title">
+          <h2 id="past-title" className={styles.sectionLabel}>
+            Past meetings
+          </h2>
+          <ul className={styles.list}>
+            {past.map((meeting) => (
+              <MeetingRow key={meeting.id} meeting={meeting} />
+            ))}
+          </ul>
+        </section>
+      )}
+    </>
+  )
+}
+
+function MeetingRow({ meeting }: { meeting: Meeting }) {
+  return (
+    <li className={styles.row}>
+      <div>
+        <Link className={meetingStyles.time} to={`/meetings/${meeting.id}`}>
+          {formatMeetingTime(meeting.scheduledAt)}
+        </Link>
+        <div className={styles.meta}>
+          {meeting.participants.length === 1
+            ? '1 participant'
+            : `${meeting.participants.length} participants`}
+        </div>
+      </div>
+      {meeting.status === 'IN_PROGRESS' && <span className={meetingStyles.tag}>in progress</span>}
+    </li>
   )
 }
 

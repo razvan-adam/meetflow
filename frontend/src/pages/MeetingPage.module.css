@@ -1,0 +1,66 @@
+/* The meeting pages: schedule and edit form (S5) and the meeting itself. Shared layout comes from
+   TeamPage.module.css. */
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* A link that looks like the primary button. */
+.linkButton {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 220px));
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.people {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.person {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.person small {
+  color: var(--muted);
+}
+
+.time {
+  font-variant-numeric: tabular-nums;
+}
+
+.tag {
+  padding: 2px 8px;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}

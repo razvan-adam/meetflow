@@ -1,7 +1,9 @@
 import { createBrowserRouter, type RouteObject } from 'react-router'
+import { CreateTeamPage } from '../pages/CreateTeamPage.tsx'
 import { DashboardPage } from '../pages/DashboardPage.tsx'
 import { LogInPage } from '../pages/LogInPage.tsx'
 import { SignUpPage } from '../pages/SignUpPage.tsx'
+import { TeamPage } from '../pages/TeamPage.tsx'
 import { AppLayout } from './AppLayout.tsx'
 import { RequireGuest } from './RequireGuest.tsx'
 import { RequireUser } from './RequireUser.tsx'
@@ -16,7 +18,16 @@ export const routes: RouteObject[] = [
   },
   {
     element: <RequireUser />,
-    children: [{ element: <AppLayout />, children: [{ path: '/', element: <DashboardPage /> }] }],
+    children: [
+      {
+        element: <AppLayout />,
+        children: [
+          { path: '/', element: <DashboardPage /> },
+          { path: '/teams/new', element: <CreateTeamPage /> },
+          { path: '/teams/:teamId', element: <TeamPage /> },
+        ],
+      },
+    ],
   },
 ]
 

@@ -1,6 +1,7 @@
 .bar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 10px 16px;
   background: var(--frame);
@@ -14,8 +15,35 @@
 }
 
 .logo {
-  margin-right: auto;
   font-weight: 700;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: auto;
+  font-size: 14px;
+}
+
+.navLink {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.navLink:global(.active) {
+  color: var(--wire);
+  font-weight: 700;
+}
+
+.teamSelect {
+  max-width: 180px;
+  padding: 4px 8px;
+  background: var(--frame);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
 }
 
 .user {

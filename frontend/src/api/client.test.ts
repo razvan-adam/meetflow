@@ -1,5 +1,18 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ApiError, apiFetch } from './client.ts'
+import { ApiError, apiFetch, shouldRetry } from './client.ts'
+
+describe('shouldRetry', () => {
+  it('does not retry client errors such as 404', () => {
+    expect(shouldRetry(0, new ApiError(404))).toBe(false)
+    expect(shouldRetry(0, new ApiError(401))).toBe(false)
+  })
+
+  it('retries server and network errors up to 3 times', () => {
+    expect(shouldRetry(0, new ApiError(502))).toBe(true)
+    expect(shouldRetry(2, new TypeError('Failed to fetch'))).toBe(true)
+    expect(shouldRetry(3, new ApiError(502))).toBe(false)
+  })
+})
 
 describe('apiFetch', () => {
   it('returns the parsed JSON body', async () => {

@@ -1,6 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { ANA, loggedOut, mockApi, renderApp, requestBody } from '../test/renderApp.tsx'
+import { ANA, loggedOut, mockApi, noTeams, renderApp, requestBody } from '../test/renderApp.tsx'
 
 function fillInAndSubmit(password: string) {
   fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'ana@example.com' } })
@@ -13,6 +13,7 @@ describe('LogInPage', () => {
     const fetchMock = mockApi({
       'GET /api/users/me': loggedOut,
       'POST /api/session': () => Response.json(ANA),
+      'GET /api/teams': noTeams,
     })
     renderApp('/log-in')
     await screen.findByRole('heading', { name: 'Log in' })

@@ -50,13 +50,13 @@ class SecurityTests {
     assertThat(mvc.post().uri("/api/teams").with(user("member"))).hasStatus(HttpStatus.FORBIDDEN);
   }
 
-  // Passes security and reaches the app, which has no such endpoint yet.
+  // Passes security and reaches the app, which has no such endpoint.
   @Test
   void acceptsChangesWithCsrfToken() {
     var token = csrfCookie();
     assertThat(
             mvc.post()
-                .uri("/api/teams")
+                .uri("/api/no-such-endpoint")
                 .with(user("member"))
                 .cookie(token)
                 .header("X-XSRF-TOKEN", token.getValue()))

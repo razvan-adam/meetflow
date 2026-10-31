@@ -21,10 +21,12 @@ export function useTeamSeries(teamId: string) {
   })
 }
 
-export function useSeries(seriesId: string) {
+// Doesn't fetch without a series ID.
+export function useSeries(seriesId: string | undefined) {
   return useQuery({
-    queryKey: seriesKey(seriesId),
-    queryFn: () => apiFetch<Series>(`/meeting-series/${encodeURIComponent(seriesId)}`),
+    queryKey: seriesKey(seriesId ?? ''),
+    queryFn: () => apiFetch<Series>(`/meeting-series/${encodeURIComponent(seriesId ?? '')}`),
+    enabled: seriesId !== undefined,
   })
 }
 

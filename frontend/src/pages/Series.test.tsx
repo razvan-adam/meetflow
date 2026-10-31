@@ -66,10 +66,11 @@ describe('meeting series on the team page', () => {
 })
 
 describe('the series page', () => {
-  it('links back to the team', async () => {
+  it('links back to the team and selects it in the team switcher', async () => {
+    const SALES: Team = { id: '1f2e3d4c-5b6a-4789-8a9b-0c1d2e3f4a5b', name: 'Sales', role: 'ADMIN' }
     mockApi({
       'GET /api/users/me': loggedIn,
-      'GET /api/teams': () => Response.json([OPS]),
+      'GET /api/teams': () => Response.json([OPS, SALES]),
       [`GET /api/teams/${OPS.id}`]: () => Response.json(OPS),
       [`GET /api/teams/${OPS.id}/members`]: () => Response.json(MEMBERS),
       [`GET /api/meeting-series/${WEEKLY.id}`]: () => Response.json(WEEKLY),
@@ -80,6 +81,7 @@ describe('the series page', () => {
       'href',
       `/teams/${OPS.id}`,
     )
+    expect(screen.getByRole('combobox', { name: 'Team' })).toHaveValue(OPS.id)
   })
 
   it('lets a team admin hand the organizer role to another member', async () => {

@@ -9,7 +9,7 @@ Stories and their acceptance criteria live in Jira (project MF). The flow they i
 | Rank | Key | Story | Epic | Status |
 |---|---|---|---|---|
 | 1 | MF-8 | Sign up, log in and log out | MF-5 Core | Done |
-| 2 | MF-9 | Create a team | MF-5 Core | To Do |
+| 2 | MF-9 | Create a team | MF-5 Core | Done |
 | 3 | MF-10 | Invite colleagues to a team | MF-5 Core | To Do |
 | 4 | MF-12 | Create a meeting series | MF-5 Core | To Do |
 | 5 | MF-13 | Schedule a meeting with participants | MF-5 Core | To Do |

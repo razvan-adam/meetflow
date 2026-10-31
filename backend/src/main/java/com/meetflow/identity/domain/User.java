@@ -1,4 +1,4 @@
-package com.meetflow.identity;
+package com.meetflow.identity.domain;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -14,7 +14,7 @@ import org.springframework.data.domain.Persistable;
 /** A person with an account. A deleted account keeps its row but loses its email and password. */
 @Entity
 @Table(name = "app_user")
-class User implements Persistable<UUID> {
+public class User implements Persistable<UUID> {
 
   @Id private UUID id;
 
@@ -31,7 +31,7 @@ class User implements Persistable<UUID> {
   // The ID is assigned here, so Spring Data can't tell a new user from a stored one by its ID.
   @Transient private boolean isNew = true;
 
-  User(String email, String name, String passwordHash) {
+  public User(String email, String name, String passwordHash) {
     this.id = UUID.randomUUID();
     this.email = email;
     this.name = name;
@@ -47,15 +47,15 @@ class User implements Persistable<UUID> {
     return id;
   }
 
-  @Nullable String getEmail() {
+  public @Nullable String getEmail() {
     return email;
   }
 
-  String getName() {
+  public String getName() {
     return name;
   }
 
-  @Nullable String getPasswordHash() {
+  public @Nullable String getPasswordHash() {
     return passwordHash;
   }
 

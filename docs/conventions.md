@@ -23,7 +23,8 @@ Nobody formats by hand or argues about style: the formatters decide, and CI fail
 ### Package structure
 
 - One package per Spring Modulith module under `com.meetflow` (`identity`, `teams`, `meetings`, `tasks`, `minutes`, `notifications`); see `docs/architecture.md`.
-- A module starts as one flat package. Classes are **package-private by default**; only the module's API for other modules is `public`. Add subpackages only when a module grows, remembering that Modulith treats subpackages as internal.
+- Inside a module, classes are grouped by layer in subpackages: `controller`, `service`, `repository`, `domain` (entities), `dto` (request and response bodies and their validation), `exception`, `config`. Add a subpackage only when the module has a class for it. The module's API for other modules (e.g. `identity.CurrentUser`) stays in the module's root package.
+- Modulith treats subpackages as internal, so other modules can't use them even when their classes are `public`. Within the module, make a class `public` only when another subpackage uses it; the rest stay package-private (e.g. controllers).
 - Modules talk through another module's public API or through application events. Use events for side effects that the publisher shouldn't depend on (e.g. a closed meeting triggers minutes and emails). `ModularityTests` fails on boundary violations.
 
 ### Naming

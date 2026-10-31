@@ -1,7 +1,8 @@
-package com.meetflow.identity;
+package com.meetflow.identity.service;
 
 import static java.util.Objects.requireNonNull;
 
+import com.meetflow.identity.CurrentUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,10 +16,10 @@ import org.springframework.stereotype.Service;
 
 /**
  * Logs a user in by storing them in the session, which Spring Session keeps in PostgreSQL. Logout
- * is handled by Spring Security (see {@link SecurityConfig}).
+ * is handled by Spring Security (see {@code SecurityConfig}).
  */
 @Service
-class SessionService {
+public class SessionService {
 
   private final AuthenticationManager authenticationManager;
   private final CsrfTokenRepository csrfTokens;
@@ -35,7 +36,7 @@ class SessionService {
    *
    * @throws org.springframework.security.core.AuthenticationException if they don't match
    */
-  CurrentUser logIn(
+  public CurrentUser logIn(
       String email, String password, HttpServletRequest request, HttpServletResponse response) {
     var authentication =
         authenticationManager.authenticate(
@@ -45,7 +46,7 @@ class SessionService {
   }
 
   /** Logs in a user who has just signed up, without checking the password again. */
-  void logIn(CurrentUser user, HttpServletRequest request, HttpServletResponse response) {
+  public void logIn(CurrentUser user, HttpServletRequest request, HttpServletResponse response) {
     start(
         UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities()),
         request,

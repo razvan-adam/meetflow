@@ -2,6 +2,7 @@ package com.meetflow.teams.controller;
 
 import com.meetflow.identity.CurrentUser;
 import com.meetflow.teams.dto.CreateTeamRequest;
+import com.meetflow.teams.dto.MemberResponse;
 import com.meetflow.teams.dto.TeamResponse;
 import com.meetflow.teams.service.TeamService;
 import jakarta.validation.Valid;
@@ -37,6 +38,12 @@ class TeamController {
   @GetMapping
   List<TeamResponse> list(@AuthenticationPrincipal CurrentUser user) {
     return teamService.listFor(user.id());
+  }
+
+  @GetMapping("/{teamId}/members")
+  List<MemberResponse> listMembers(
+      @AuthenticationPrincipal CurrentUser user, @PathVariable UUID teamId) {
+    return teamService.listMembers(user.id(), teamId);
   }
 
   @GetMapping("/{teamId}")

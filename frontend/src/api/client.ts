@@ -10,6 +10,15 @@ export class ApiError extends Error {
   }
 }
 
+// Query retry rule: a 4xx (not found, no access, logged out) won't change by asking again, so it is
+// shown at once; server and network errors are retried up to 3 times.
+export function shouldRetry(failureCount: number, error: Error): boolean {
+  if (error instanceof ApiError && error.status < 500) {
+    return false
+  }
+  return failureCount < 3
+}
+
 const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
 
 function csrfToken(): string | undefined {

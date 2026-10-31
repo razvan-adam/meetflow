@@ -1,5 +1,6 @@
 package com.meetflow.identity.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PostLoad;
@@ -24,9 +25,11 @@ public class User implements Persistable<UUID> {
 
   private @Nullable String passwordHash;
 
-  private Instant createdAt;
+  // Only written to the database, never read in Java; @Column keeps Error Prone from flagging these
+  // as unused.
+  @Column private Instant createdAt;
 
-  private @Nullable Instant deletedAt;
+  @Column private @Nullable Instant deletedAt;
 
   // The ID is assigned here, so Spring Data can't tell a new user from a stored one by its ID.
   @Transient private boolean isNew = true;

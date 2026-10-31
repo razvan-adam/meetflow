@@ -1,6 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { ANA, loggedOut, mockApi, renderApp, requestBody } from '../test/renderApp.tsx'
+import { ANA, loggedOut, mockApi, noTeams, renderApp, requestBody } from '../test/renderApp.tsx'
 
 async function fillInAndSubmit() {
   await screen.findByRole('heading', { name: 'Create your account' })
@@ -17,6 +17,7 @@ describe('SignUpPage', () => {
     const fetchMock = mockApi({
       'GET /api/users/me': loggedOut,
       'POST /api/users': () => Response.json(ANA, { status: 201 }),
+      'GET /api/teams': noTeams,
     })
     renderApp('/sign-up')
 

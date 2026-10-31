@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.meetflow.IntegrationTest;
 import jakarta.servlet.http.Cookie;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -65,7 +66,7 @@ class AccountTests {
 
   @Test
   void storesTheEmailLowercased() {
-    signUp("Ana Costa", email.toUpperCase(), PASSWORD);
+    signUp("Ana Costa", email.toUpperCase(Locale.ROOT), PASSWORD);
 
     assertThat(
             jdbc.queryForObject(
@@ -77,7 +78,7 @@ class AccountTests {
   void rejectsASecondAccountWithTheSameEmail() {
     signUp("Ana Costa", email, PASSWORD);
 
-    var response = signUp("Another Ana", email.toUpperCase(), PASSWORD);
+    var response = signUp("Another Ana", email.toUpperCase(Locale.ROOT), PASSWORD);
 
     assertThat(response.getStatus()).isEqualTo(409);
     assertThat(response.getContentType()).isEqualTo(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
@@ -105,7 +106,7 @@ class AccountTests {
   void logsInWithEmailAndPassword() {
     signUp("Ana Costa", email, PASSWORD);
 
-    var response = logIn(email.toUpperCase(), PASSWORD);
+    var response = logIn(email.toUpperCase(Locale.ROOT), PASSWORD);
 
     assertThat(response.getStatus()).isEqualTo(200);
     var session = requireNonNull(response.getCookie("SESSION"));

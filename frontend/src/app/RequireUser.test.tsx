@@ -1,6 +1,6 @@
 import { fireEvent, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { ANA, loggedOut, mockApi, renderApp } from '../test/renderApp.tsx'
+import { ANA, loggedOut, mockApi, noTeams, renderApp } from '../test/renderApp.tsx'
 
 describe('pages that need a logged-in user', () => {
   it('send a logged-out user to the login page', async () => {
@@ -13,7 +13,7 @@ describe('pages that need a logged-in user', () => {
   })
 
   it('show the logged-in user and a way to log out', async () => {
-    mockApi({ 'GET /api/users/me': () => Response.json(ANA) })
+    mockApi({ 'GET /api/users/me': () => Response.json(ANA), 'GET /api/teams': noTeams })
 
     renderApp('/')
 
@@ -24,6 +24,7 @@ describe('pages that need a logged-in user', () => {
   it('log out and return to the login page', async () => {
     const fetchMock = mockApi({
       'GET /api/users/me': () => Response.json(ANA),
+      'GET /api/teams': noTeams,
       'DELETE /api/session': () => new Response(null, { status: 204 }),
     })
     renderApp('/')
@@ -49,7 +50,7 @@ describe('pages that need a logged-in user', () => {
 
 describe('sign-up and login pages', () => {
   it('send a logged-in user to the dashboard', async () => {
-    mockApi({ 'GET /api/users/me': () => Response.json(ANA) })
+    mockApi({ 'GET /api/users/me': () => Response.json(ANA), 'GET /api/teams': noTeams })
 
     const router = renderApp('/log-in')
 

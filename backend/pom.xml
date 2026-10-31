@@ -22,6 +22,7 @@
     <google-java-format.version>1.36.1</google-java-format.version>
     <error-prone.version>2.51.0</error-prone.version>
     <nullaway.version>0.14.3</nullaway.version>
+    <aws-sdk.version>2.57.8</aws-sdk.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -29,6 +30,13 @@
         <groupId>org.springframework.modulith</groupId>
         <artifactId>spring-modulith-bom</artifactId>
         <version>${spring-modulith.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>software.amazon.awssdk</groupId>
+        <artifactId>bom</artifactId>
+        <version>${aws-sdk.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -78,6 +86,17 @@
     <dependency>
       <groupId>org.springframework.modulith</groupId>
       <artifactId>spring-modulith-starter-jdbc</artifactId>
+    </dependency>
+    <!-- Amazon SES for email (docs/architecture.md); the blocking client only, so no Netty. -->
+    <dependency>
+      <groupId>software.amazon.awssdk</groupId>
+      <artifactId>sesv2</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>software.amazon.awssdk</groupId>
+          <artifactId>netty-nio-client</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>

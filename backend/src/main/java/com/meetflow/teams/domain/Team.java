@@ -1,5 +1,6 @@
 package com.meetflow.teams.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.PostLoad;
@@ -17,9 +18,11 @@ public class Team implements Persistable<UUID> {
 
   private String name;
 
-  private UUID createdBy;
+  // Only written to the database, never read in Java; @Column keeps Error Prone from flagging these
+  // as unused.
+  @Column private UUID createdBy;
 
-  private Instant createdAt;
+  @Column private Instant createdAt;
 
   // The ID is assigned here, so Spring Data can't tell a new team from a stored one by its ID.
   @Transient private boolean isNew = true;

@@ -1,5 +1,6 @@
 package com.meetflow.teams.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -25,7 +26,9 @@ public class TeamMembership implements Persistable<TeamMembership.Id> {
   @Enumerated(EnumType.STRING)
   private Role role;
 
-  private Instant joinedAt;
+  // Only written to the database, never read in Java; @Column keeps Error Prone from flagging it
+  // unused.
+  @Column private Instant joinedAt;
 
   // The ID is known up front, so Spring Data can't tell a new membership from a stored one by it.
   @Transient private boolean isNew = true;

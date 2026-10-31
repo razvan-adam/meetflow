@@ -74,6 +74,11 @@ Out of scope for the MVP (do not build unless asked): AI summaries from transcri
 - Add or update tests with every behavior change.
 - Follow `docs/conventions.md`. Run the formatters before committing; commit messages start with the Jira key (`MF-34 Add …`) and branch names describe the purpose without it (`feature/team-invitations`).
 - **Before creating a pull request**, show the user what changed (the commits and the main diffs) and explain each change and why it was made. Open the PR only after the user has reviewed it and agreed.
+- **After opening a pull request**, make sure it is ready to merge before handing it over. `main` requires branches to be up to date and the `Frontend` and `Backend` checks to pass, so:
+  1. If the branch is behind `main` (`git rev-list --count HEAD..origin/main` is not 0), merge `origin/main` into it and push.
+  2. Wait for CI (`gh pr checks <number> --watch`) and read the check annotations; fix real warnings (not GitHub's own notices).
+  3. Confirm `gh pr view <number> --json mergeStateStatus` is `CLEAN`, and tell the user, e.g. "Ready to merge: GitHub shows it as CLEAN, and the branch is up to date with `main`, so you won't need *Update branch*."
+- **Never merge a pull request** or push to `main`; the user reviews and merges.
 - **Never change Jira** (no status transitions, edits, comments or new issues). Reading tickets is fine. Instead, tell the user what should change in Jira (e.g. "move MF-35 to Done") and let them do it.
 - **Build now, deploy later (no AWS costs yet).** Infrastructure is written and validated but not created. Never run `terraform plan`, `apply` or `import` against AWS, create AWS resources or accounts, configure AWS credentials, or enable deploys (`STAGING_DEPLOY_ENABLED`, GitHub environments) unless the user explicitly asks to create the environment. Infrastructure changes are checked with `terraform fmt` and `terraform validate` only.
 

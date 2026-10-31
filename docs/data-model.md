@@ -220,7 +220,9 @@ History search uses `decision.search_vector` and a matching generated `tsvector`
 
 ### `notifications` module
 
-Emails are triggered by events (invitation created, meeting closed). Spring Modulith's event publication table makes them reliable: an event is retried until its listener succeeds.
+Minutes and task emails are triggered by events (meeting closed). Spring Modulith's event publication table makes them reliable: an event is retried until its listener succeeds.
+
+Invitation emails are the exception: they are sent directly, inside the transaction that creates the invitation, because the event table would store the link's token, which must never be stored. If the email can't be sent, the invitation isn't saved and the admin is asked to try again (503).
 
 **`email_delivery`** – a record of the emails sent, so none is sent twice.
 

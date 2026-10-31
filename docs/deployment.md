@@ -12,7 +12,8 @@ Browser ── HTTPS ──► CloudFront (*.cloudfront.net)
                       └── /api/*  ► VPC origin ► internal ALB (private subnets)
                                                    └── ECS Fargate task, ARM64 (public subnet, inbound from the ALB only)
                                                          ├── RDS PostgreSQL 18 (private subnet)
-                                                         └── Secrets Manager (database credentials, managed by RDS)
+                                                         ├── Secrets Manager (database credentials, managed by RDS)
+                                                         └── Amazon SES (invitation emails, sent with the task role)
 ```
 
 - **Region:** `eu-west-1` (Ireland). All data, backups and logs stay there.
@@ -41,6 +42,7 @@ Done once, by someone with administrator access to the AWS account. Needs Terraf
    terraform plan -out staging.tfplan
    terraform apply staging.tfplan
    ```
+   `plan` asks for `email_from`, the sender address of staging's emails (e.g. a shared team mailbox). SES then emails that address a verification link: open it, or every email fails. A new SES account is in the *sandbox*: it only delivers to verified addresses (at most 200 emails a day), so also verify the testers' addresses in the SES console, or request production access when staging is shared more widely.
    Creating RDS and CloudFront takes 10–20 minutes. Until the first deploy, the ECS service shows a failed deployment: its first task definition points to an image tag (`initial`) that doesn't exist yet. That's expected.
 4. **Create the GitHub environment** `staging` (repository Settings → Environments), and under *Deployment branches* allow `main` only. Add the values from `terraform output github_variables` as environment variables (not secrets; none of them is secret):
    `AWS_ROLE_ARN`, `AWS_REGION`, `ECR_REPOSITORY`, `ECS_CLUSTER`, `ECS_SERVICE`, `TASK_FAMILY`, `FRONTEND_BUCKET`, `CLOUDFRONT_DISTRIBUTION_ID`, `STAGING_URL`.

@@ -26,9 +26,19 @@ export function EditMeetingPage() {
   return <EditMeeting meeting={meeting.data} series={series.data} />
 }
 
+function failureMessage(failure: Error): string {
+  if (failure instanceof ApiError && failure.status === 403) {
+    return 'You’re no longer the organizer of this series, so you can’t change this meeting.'
+  }
+  if (failure instanceof ApiError && failure.status === 409) {
+    return 'This meeting was closed meanwhile, so it can’t be changed any more.'
+  }
+  return 'The changes couldn’t be saved. Try again in a few minutes.'
+}
+
 function EditMeeting({ meeting, series }: { meeting: Meeting; series: Series }) {
   const { data: user } = useCurrentUser()
-  const update = useUpdateMeeting(meeting.id)
+  const update = useUpdateMeeting(meeting.id, meeting.seriesId)
   const navigate = useNavigate()
   const canEdit = series.organizerId === user?.id && meeting.status !== 'CLOSED'
 
@@ -61,9 +71,7 @@ function EditMeeting({ meeting, series }: { meeting: Meeting; series: Series }) 
       )}
       {update.isError && (
         <p role="alert" className={styles.error}>
-          {update.error instanceof ApiError && update.error.status === 409
-            ? 'This meeting was closed meanwhile, so it can’t be changed any more.'
-            : 'The changes couldn’t be saved. Try again in a few minutes.'}
+          {failureMessage(update.error)}
         </p>
       )}
     </main>

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { apiFetch } from './client.ts'
+import { ApiError, apiFetch } from './client.ts'
+import { seriesKey } from './series.ts'
 
 export interface Participant {
   id: string
@@ -60,8 +61,9 @@ export function useScheduleMeeting(seriesId: string) {
   })
 }
 
-// The series organizer only, until the meeting is closed. The latest edit wins.
-export function useUpdateMeeting(meetingId: string) {
+// The series organizer only, until the meeting is closed. The latest edit wins. A 403 means the
+// user is no longer the organizer, so the series reloads and the page stops offering the form.
+export function useUpdateMeeting(meetingId: string, seriesId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (changes: MeetingChanges) =>
@@ -73,6 +75,11 @@ export function useUpdateMeeting(meetingId: string) {
     onSuccess: (updated) => {
       queryClient.setQueryData(meetingKey(updated.id), updated)
       return queryClient.invalidateQueries({ queryKey: seriesMeetingsKey(updated.seriesId) })
+    },
+    onError: (error) => {
+      if (error instanceof ApiError && error.status === 403) {
+        return queryClient.invalidateQueries({ queryKey: seriesKey(seriesId), exact: true })
+      }
     },
   })
 }

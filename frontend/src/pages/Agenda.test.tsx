@@ -116,9 +116,45 @@ describe('the agenda', () => {
 
     expect(await screen.findByText('not covered last time')).toBeVisible()
     fireEvent.click(await screen.findByRole('button', { name: 'Remove Returns backlog' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove item' }))
 
-    await waitFor(() => expect(screen.queryByText('Returns backlog')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByText(/Returns backlog/)).not.toBeInTheDocument())
     expect(screen.getByText('Budget')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Remove item' })).not.toBeInTheDocument()
+  })
+
+  it('asks before removing an item and keeps it if the organizer changes their mind', async () => {
+    const fetchMock = api({ [`GET ${AGENDA}`]: () => Response.json([BUDGET]) })
+    renderApp(`/meetings/${MONDAY.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove Budget' }))
+
+    expect(screen.getByText(/Remove “Budget” from the agenda\?/)).toBeVisible()
+    const keep = screen.getByRole('button', { name: 'Keep item' })
+    expect(keep).toHaveFocus()
+    fireEvent.click(keep)
+
+    expect(await screen.findByRole('button', { name: 'Remove Budget' })).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Remove item' })).not.toBeInTheDocument()
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
+  })
+
+  it('closes the confirmation and says so when removing fails', async () => {
+    let agenda = [BUDGET, RETURNS]
+    api({
+      [`GET ${AGENDA}`]: () => Response.json(agenda),
+      [`DELETE /api/agenda-items/${RETURNS.id}`]: () => {
+        agenda = [BUDGET]
+        return Response.json({ status: 404 }, { status: 404 })
+      },
+    })
+    renderApp(`/meetings/${MONDAY.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove Returns backlog' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove item' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('changed meanwhile')
+    expect(screen.queryByRole('button', { name: 'Remove item' })).not.toBeInTheDocument()
   })
 
   it('moves an item with the buttons, which work without a mouse', async () => {

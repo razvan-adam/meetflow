@@ -72,7 +72,8 @@
 }
 
 .primary,
-.secondary {
+.secondary,
+.danger {
   padding: 8px 14px;
   border-radius: 6px;
   font: inherit;
@@ -93,8 +94,15 @@
   border: 1px solid var(--line);
 }
 
+.danger {
+  background: none;
+  color: var(--overdue);
+  border: 1px solid var(--overdue);
+}
+
 .primary:disabled,
-.secondary:disabled {
+.secondary:disabled,
+.danger:disabled {
   opacity: 0.6;
   cursor: default;
 }

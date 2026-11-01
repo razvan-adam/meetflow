@@ -26,6 +26,7 @@ export function Agenda({ meetingId, canEdit }: Props) {
   const remove = useRemoveAgendaItem(meetingId)
   const reorder = useReorderAgenda(meetingId)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [removingId, setRemovingId] = useState<string | null>(null)
   const [draggedId, setDraggedId] = useState<string | null>(null)
 
   if (!items.data) {
@@ -70,6 +71,11 @@ export function Agenda({ meetingId, canEdit }: Props) {
     rename.mutate({ itemId, title }, { onSuccess: () => setEditingId(null) })
   }
 
+  function handleRemove(itemId: string) {
+    resetErrors()
+    remove.mutate(itemId, { onSettled: () => setRemovingId(null) })
+  }
+
   function handleDrop(event: DragEvent, index: number) {
     event.preventDefault()
     if (draggedId) {
@@ -103,6 +109,13 @@ export function Agenda({ meetingId, canEdit }: Props) {
                   pending={rename.isPending}
                   onSave={(title) => handleRename(item.id, title)}
                   onCancel={() => setEditingId(null)}
+                />
+              ) : removingId === item.id ? (
+                <RemoveConfirmation
+                  item={item}
+                  pending={remove.isPending}
+                  onConfirm={() => handleRemove(item.id)}
+                  onCancel={() => setRemovingId(null)}
                 />
               ) : (
                 <>
@@ -154,6 +167,7 @@ export function Agenda({ meetingId, canEdit }: Props) {
                         aria-label={`Edit ${item.title}`}
                         onClick={() => {
                           resetErrors()
+                          setRemovingId(null)
                           setEditingId(item.id)
                         }}
                       >
@@ -166,7 +180,8 @@ export function Agenda({ meetingId, canEdit }: Props) {
                         disabled={remove.isPending}
                         onClick={() => {
                           resetErrors()
-                          remove.mutate(item.id)
+                          setEditingId(null)
+                          setRemovingId(item.id)
                         }}
                       >
                         ×
@@ -202,6 +217,30 @@ export function Agenda({ meetingId, canEdit }: Props) {
         </p>
       )}
     </section>
+  )
+}
+
+interface RemoveConfirmationProps {
+  item: AgendaItem
+  pending: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+// Focus starts on the safe choice, so pressing Enter by accident doesn't remove the item.
+function RemoveConfirmation({ item, pending, onConfirm, onCancel }: RemoveConfirmationProps) {
+  return (
+    <div className={styles.confirmation} role="group" aria-label={`Confirm removing ${item.title}`}>
+      <p className={styles.confirmationText}>
+        Remove “{item.title}” from the agenda? This can’t be undone.
+      </p>
+      <button className={pageStyles.danger} type="button" disabled={pending} onClick={onConfirm}>
+        Remove item
+      </button>
+      <button className={pageStyles.secondary} type="button" onClick={onCancel} autoFocus>
+        Keep item
+      </button>
+    </div>
   )
 }
 

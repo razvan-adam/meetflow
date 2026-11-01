@@ -3,6 +3,7 @@ import { ApiError } from '../api/client.ts'
 import { useMeeting, type Meeting } from '../api/meetings.ts'
 import { useSeries } from '../api/series.ts'
 import { useCurrentUser } from '../api/users.ts'
+import { Agenda } from './Agenda.tsx'
 import { Breadcrumb } from './Breadcrumb.tsx'
 import { formatMeetingTime } from './meetingTime.ts'
 import pageStyles from './TeamPage.module.css'
@@ -14,8 +15,8 @@ const STATUS_LABELS: Record<Meeting['status'], string> = {
   CLOSED: 'Closed',
 }
 
-// A meeting: when, who attends and, from MF-14, its agenda. Every member of the team can open it;
-// the series organizer can change it until it is closed (MF-13).
+// A meeting: when, who attends and its agenda. Every member of the team can open it; the series
+// organizer can change it until it is closed (MF-13, MF-14).
 export function MeetingPage() {
   const { meetingId = '' } = useParams()
   const meeting = useMeeting(meetingId)
@@ -65,7 +66,7 @@ export function MeetingPage() {
           ))}
         </ul>
       </section>
-      <p className={pageStyles.empty}>The agenda of this meeting will appear here.</p>
+      <Agenda meetingId={meeting.data.id} canEdit={canEdit} />
     </main>
   )
 }

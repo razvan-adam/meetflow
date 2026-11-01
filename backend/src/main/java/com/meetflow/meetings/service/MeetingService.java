@@ -6,7 +6,6 @@ import com.meetflow.meetings.domain.MeetingSeries;
 import com.meetflow.meetings.domain.MeetingStatus;
 import com.meetflow.meetings.dto.MeetingResponse;
 import com.meetflow.meetings.dto.ParticipantResponse;
-import com.meetflow.meetings.exception.MeetingChangedException;
 import com.meetflow.meetings.exception.MeetingClosedException;
 import com.meetflow.meetings.exception.MeetingNotFoundException;
 import com.meetflow.meetings.exception.NotOrganizerException;
@@ -88,28 +87,19 @@ public class MeetingService {
   }
 
   /**
-   * Changes the date and time and the participants. Organizer only, until the meeting is closed,
-   * and only on the latest version of the meeting.
+   * Changes the date and time and the participants. Organizer only, until the meeting is closed.
+   * The latest edit wins, even if it was made on a page opened before an earlier edit.
    */
   @Transactional
   public MeetingResponse update(
-      UUID userId,
-      UUID meetingId,
-      Instant scheduledAt,
-      Collection<UUID> participantIds,
-      long version) {
+      UUID userId, UUID meetingId, Instant scheduledAt, Collection<UUID> participantIds) {
     var meeting = findVisible(userId, meetingId);
     var found = series.findVisible(userId, meeting.getSeriesId());
     requireOrganizer(userId, found);
     if (meeting.getStatus() == MeetingStatus.CLOSED) {
       throw new MeetingClosedException();
     }
-    if (meeting.getVersion() != version) {
-      throw new MeetingChangedException();
-    }
     meeting.reschedule(scheduledAt, participants(found, participantIds));
-    // Flushed now so the response carries the new version.
-    meetings.flush();
     return toResponse(meeting, names(List.of(meeting)));
   }
 
@@ -155,7 +145,6 @@ public class MeetingService {
         meeting.getSeriesId(),
         meeting.getScheduledAt(),
         meeting.getStatus(),
-        participants,
-        meeting.getVersion());
+        participants);
   }
 }

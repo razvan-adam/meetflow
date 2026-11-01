@@ -15,8 +15,6 @@ export interface Meeting {
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'CLOSED'
   // Sorted by name; the series organizer is always one of them.
   participants: Participant[]
-  // Sent back with an edit, so an edit of an outdated copy is rejected (409).
-  version: number
 }
 
 export interface MeetingChanges {
@@ -62,15 +60,15 @@ export function useScheduleMeeting(seriesId: string) {
   })
 }
 
-// The series organizer only, until the meeting is closed.
-export function useUpdateMeeting(meeting: Meeting) {
+// The series organizer only, until the meeting is closed. The latest edit wins.
+export function useUpdateMeeting(meetingId: string) {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (changes: MeetingChanges) =>
-      apiFetch<Meeting>(`/meetings/${encodeURIComponent(meeting.id)}`, {
+      apiFetch<Meeting>(`/meetings/${encodeURIComponent(meetingId)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...changes, version: meeting.version }),
+        body: JSON.stringify(changes),
       }),
     onSuccess: (updated) => {
       queryClient.setQueryData(meetingKey(updated.id), updated)

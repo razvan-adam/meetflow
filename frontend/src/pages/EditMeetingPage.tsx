@@ -28,7 +28,7 @@ export function EditMeetingPage() {
 
 function EditMeeting({ meeting, series }: { meeting: Meeting; series: Series }) {
   const { data: user } = useCurrentUser()
-  const update = useUpdateMeeting(meeting)
+  const update = useUpdateMeeting(meeting.id)
   const navigate = useNavigate()
   const canEdit = series.organizerId === user?.id && meeting.status !== 'CLOSED'
 
@@ -45,8 +45,6 @@ function EditMeeting({ meeting, series }: { meeting: Meeting; series: Series }) 
       </div>
       {canEdit && (
         <MeetingForm
-          // Starts over from the saved meeting after each save.
-          key={meeting.version}
           series={series}
           initial={{
             ...toDateAndTime(meeting.scheduledAt),
@@ -64,7 +62,7 @@ function EditMeeting({ meeting, series }: { meeting: Meeting; series: Series }) 
       {update.isError && (
         <p role="alert" className={styles.error}>
           {update.error instanceof ApiError && update.error.status === 409
-            ? 'Someone else changed or closed this meeting meanwhile. Reload the page and try again.'
+            ? 'This meeting was closed meanwhile, so it can’t be changed any more.'
             : 'The changes couldn’t be saved. Try again in a few minutes.'}
         </p>
       )}

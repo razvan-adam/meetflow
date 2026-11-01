@@ -43,7 +43,8 @@ public class Meeting implements Persistable<UUID> {
   @Column(name = "user_id")
   private Set<UUID> participantIds = new HashSet<>();
 
-  // Several people may edit a meeting; a stale edit fails instead of overwriting.
+  // Edits made from an outdated page simply replace earlier ones (user decision, MF-13). This only
+  // stops two saves that run at the very same moment from mixing their participant lists.
   @Version private long version;
 
   // The ID is assigned here, so Spring Data can't tell a new meeting from a stored one by its ID.
@@ -84,10 +85,6 @@ public class Meeting implements Persistable<UUID> {
 
   public Set<UUID> getParticipantIds() {
     return Set.copyOf(participantIds);
-  }
-
-  public long getVersion() {
-    return version;
   }
 
   /** The participants must already be checked to be members of the team. */

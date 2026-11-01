@@ -93,8 +93,7 @@ class MeetingTests {
         .isLenientlyEqualTo(
             """
             {"teamId": "%s", "seriesId": "%s", "scheduledAt": "%s", "status": "SCHEDULED",
-             "participants": [{"id": "%s", "name": "Ana Costa"}, {"id": "%s", "name": "Bo Lind"}],
-             "version": 0}"""
+             "participants": [{"id": "%s", "name": "Ana Costa"}, {"id": "%s", "name": "Bo Lind"}]}"""
                 .formatted(teamId, seriesId, MONDAY, anaId, boId));
     String meetingId = JsonPath.read(body(response), "$.id");
     assertThat(mvc.get().uri("/api/meetings/{id}", meetingId).cookie(bo))
@@ -148,12 +147,12 @@ class MeetingTests {
   void theOrganizerChangesTheDateAndParticipants() {
     String meetingId = JsonPath.read(body(schedule(ana, MONDAY, boId)), "$.id");
 
-    assertThat(update(ana, meetingId, TUESDAY, 0, deeId))
+    assertThat(update(ana, meetingId, TUESDAY, deeId))
         .hasStatusOk()
         .bodyJson()
         .isLenientlyEqualTo(
             """
-            {"scheduledAt": "%s", "version": 1,
+            {"scheduledAt": "%s",
              "participants": [{"id": "%s", "name": "Ana Costa"}, {"id": "%s", "name": "Dee Moss"}]}"""
                 .formatted(TUESDAY, anaId, deeId));
     assertThat(mvc.get().uri("/api/meetings/{id}", meetingId).cookie(bo))
@@ -166,8 +165,8 @@ class MeetingTests {
   void onlyTheOrganizerChangesAMeetingAndOnlyToTeamMembers() {
     String meetingId = JsonPath.read(body(schedule(ana, MONDAY, boId)), "$.id");
 
-    assertThat(update(bo, meetingId, TUESDAY, 0, boId)).hasStatus(HttpStatus.FORBIDDEN);
-    assertThat(update(ana, meetingId, TUESDAY, 0, cyId)).hasStatus(HttpStatus.BAD_REQUEST);
+    assertThat(update(bo, meetingId, TUESDAY, boId)).hasStatus(HttpStatus.FORBIDDEN);
+    assertThat(update(ana, meetingId, TUESDAY, cyId)).hasStatus(HttpStatus.BAD_REQUEST);
     assertThat(mvc.get().uri("/api/meetings/{id}", meetingId).cookie(ana))
         .bodyJson()
         .extractingPath("$.scheduledAt")
@@ -175,15 +174,19 @@ class MeetingTests {
   }
 
   @Test
-  void rejectsAnEditOfAnOutdatedCopy() {
+  void theLatestEditWinsEvenFromAnOutdatedPage() {
     String meetingId = JsonPath.read(body(schedule(ana, MONDAY, boId)), "$.id");
-    update(ana, meetingId, TUESDAY, 0, boId);
+    update(ana, meetingId, TUESDAY, boId);
 
-    assertThat(update(ana, meetingId, MONDAY, 0, deeId)).hasStatus(HttpStatus.CONFLICT);
+    // Made on a page that still showed Monday with Bo.
+    assertThat(update(ana, meetingId, MONDAY, deeId)).hasStatusOk();
     assertThat(mvc.get().uri("/api/meetings/{id}", meetingId).cookie(ana))
         .bodyJson()
-        .extractingPath("$.scheduledAt")
-        .isEqualTo(TUESDAY);
+        .isLenientlyEqualTo(
+            """
+            {"scheduledAt": "%s",
+             "participants": [{"id": "%s", "name": "Ana Costa"}, {"id": "%s", "name": "Dee Moss"}]}"""
+                .formatted(MONDAY, anaId, deeId));
   }
 
   @Test
@@ -191,7 +194,7 @@ class MeetingTests {
     String meetingId = JsonPath.read(body(schedule(ana, MONDAY, boId)), "$.id");
     close(meetingId);
 
-    assertThat(update(ana, meetingId, TUESDAY, 0, boId)).hasStatus(HttpStatus.CONFLICT);
+    assertThat(update(ana, meetingId, TUESDAY, boId)).hasStatus(HttpStatus.CONFLICT);
   }
 
   @Test
@@ -201,7 +204,7 @@ class MeetingTests {
     assertThat(mvc.get().uri("/api/meetings/{id}", meetingId).cookie(cy))
         .hasStatus(HttpStatus.NOT_FOUND);
     assertThat(meetingsOfSeries(cy)).hasStatus(HttpStatus.NOT_FOUND);
-    assertThat(update(cy, meetingId, TUESDAY, 0, cyId)).hasStatus(HttpStatus.NOT_FOUND);
+    assertThat(update(cy, meetingId, TUESDAY, cyId)).hasStatus(HttpStatus.NOT_FOUND);
     assertThat(mvc.get().uri("/api/meetings/{id}", UUID.randomUUID()).cookie(ana))
         .hasStatus(HttpStatus.NOT_FOUND);
   }
@@ -215,15 +218,11 @@ class MeetingTests {
   }
 
   private MvcTestResult update(
-      Cookie session,
-      String meetingId,
-      String scheduledAt,
-      long version,
-      String... participantIds) {
+      Cookie session, String meetingId, String scheduledAt, String... participantIds) {
     return send(
         mvc.put().uri("/api/meetings/{id}", meetingId).cookie(session),
-        "{\"scheduledAt\": \"%s\", \"participantIds\": %s, \"version\": %d}"
-            .formatted(scheduledAt, jsonIds(participantIds), version));
+        "{\"scheduledAt\": \"%s\", \"participantIds\": %s}"
+            .formatted(scheduledAt, jsonIds(participantIds)));
   }
 
   private MvcTestResult meetingsOfSeries(Cookie session) {

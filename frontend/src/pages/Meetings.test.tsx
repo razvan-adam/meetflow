@@ -32,7 +32,6 @@ const MONDAY: Meeting = {
     { id: ANA.id, name: ANA.name },
     { id: BO.id, name: BO.name },
   ],
-  version: 0,
 }
 
 const loggedIn = () => Response.json(ANA)
@@ -127,7 +126,6 @@ describe('the meeting page', () => {
           ...MONDAY,
           scheduledAt: '2026-11-03T15:00:00.000Z',
           participants: [...MONDAY.participants, DEE],
-          version: 1,
         }
         return Response.json(meeting)
       },
@@ -152,11 +150,10 @@ describe('the meeting page', () => {
     expect(requestBody(fetchMock, `PUT /api/meetings/${MONDAY.id}`)).toEqual({
       scheduledAt: '2026-11-03T15:00:00.000Z',
       participantIds: [ANA.id, BO.id, DEE.id],
-      version: 0,
     })
   })
 
-  it('says so when someone else changed the meeting meanwhile', async () => {
+  it('says so when the meeting was closed meanwhile', async () => {
     mockApi({
       ...teamApi,
       [`GET /api/meeting-series/${WEEKLY.id}`]: () => Response.json(WEEKLY),
@@ -167,7 +164,7 @@ describe('the meeting page', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Save changes' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Someone else changed or closed')
+    expect(await screen.findByRole('alert')).toHaveTextContent('was closed meanwhile')
   })
 
   it('shows the meeting read-only to members who don’t organize it', async () => {

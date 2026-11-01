@@ -6,6 +6,9 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-/** The participants are team members; the organizer always attends, listed or not. */
-public record ScheduleMeetingRequest(
+/**
+ * The date and time and participants of a meeting, to schedule it or to change it. The participants
+ * are team members; the organizer always attends, listed or not.
+ */
+public record MeetingRequest(
     @NotNull Instant scheduledAt, @NotNull @Size(max = 500) List<@NotNull UUID> participantIds) {}

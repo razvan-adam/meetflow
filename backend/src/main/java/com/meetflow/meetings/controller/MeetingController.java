@@ -1,9 +1,8 @@
 package com.meetflow.meetings.controller;
 
 import com.meetflow.identity.CurrentUser;
+import com.meetflow.meetings.dto.MeetingRequest;
 import com.meetflow.meetings.dto.MeetingResponse;
-import com.meetflow.meetings.dto.ScheduleMeetingRequest;
-import com.meetflow.meetings.dto.UpdateMeetingRequest;
 import com.meetflow.meetings.service.MeetingService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -32,7 +31,7 @@ class MeetingController {
   MeetingResponse schedule(
       @AuthenticationPrincipal CurrentUser user,
       @PathVariable UUID seriesId,
-      @Valid @RequestBody ScheduleMeetingRequest body) {
+      @Valid @RequestBody MeetingRequest body) {
     return meetingService.schedule(user.id(), seriesId, body.scheduledAt(), body.participantIds());
   }
 
@@ -51,8 +50,7 @@ class MeetingController {
   MeetingResponse update(
       @AuthenticationPrincipal CurrentUser user,
       @PathVariable UUID meetingId,
-      @Valid @RequestBody UpdateMeetingRequest body) {
-    return meetingService.update(
-        user.id(), meetingId, body.scheduledAt(), body.participantIds(), body.version());
+      @Valid @RequestBody MeetingRequest body) {
+    return meetingService.update(user.id(), meetingId, body.scheduledAt(), body.participantIds());
   }
 }

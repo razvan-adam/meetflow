@@ -12,5 +12,4 @@ public record MeetingResponse(
     UUID seriesId,
     Instant scheduledAt,
     MeetingStatus status,
-    List<ParticipantResponse> participants,
-    long version) {}
+    List<ParticipantResponse> participants) {}

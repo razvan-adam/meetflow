@@ -61,6 +61,9 @@ docs/discovery/
 # --- Personal planning notes ---
 NEXT-STEPS.md
 
+# --- Playwright MCP output (screenshots, page snapshots, console logs from local browser checks) ---
+.playwright-mcp/
+
 # --- Backend (Java, Maven) ---
 target/
 .mvn/wrapper/maven-wrapper.jar

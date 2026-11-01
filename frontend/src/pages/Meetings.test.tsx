@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { Meeting } from '../api/meetings.ts'
 import type { Series } from '../api/series.ts'
@@ -167,6 +167,28 @@ describe('the meeting page', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Save changes' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('was closed meanwhile')
+  })
+
+  it('removes the form and says why when the organizer role moved to someone else', async () => {
+    let series = WEEKLY
+    mockApi({
+      ...teamApi,
+      [`GET /api/meeting-series/${WEEKLY.id}`]: () => Response.json(series),
+      [`GET /api/meetings/${MONDAY.id}`]: () => Response.json(MONDAY),
+      [`PUT /api/meetings/${MONDAY.id}`]: () => {
+        series = { ...WEEKLY, organizerId: BO.id, organizerName: BO.name }
+        return Response.json({ status: 403 }, { status: 403 })
+      },
+    })
+    renderApp(`/meetings/${MONDAY.id}/edit`)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Save changes' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('no longer the organizer')
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument(),
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent('no longer the organizer')
   })
 
   it('shows the meeting read-only to members who don’t organize it', async () => {

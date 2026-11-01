@@ -6,7 +6,9 @@ import com.meetflow.teams.exception.NotTeamAdminException;
 import com.meetflow.teams.exception.TeamNotFoundException;
 import com.meetflow.teams.repository.TeamMembershipRepository;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 /** Team-level access control: who is a member of a team, and who is one of its admins. */
@@ -21,6 +23,13 @@ public class TeamAccess {
 
   public Optional<TeamMembership> membership(UUID userId, UUID teamId) {
     return memberships.findById(new TeamMembership.Id(teamId, userId));
+  }
+
+  /** The IDs of the team's members. */
+  public Set<UUID> memberIds(UUID teamId) {
+    return memberships.findByIdTeamId(teamId).stream()
+        .map(membership -> membership.getId().userId())
+        .collect(Collectors.toSet());
   }
 
   /**

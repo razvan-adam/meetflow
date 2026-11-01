@@ -14,5 +14,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Meeting times are entered and shown in local time; fixing it keeps the tests repeatable.
+    env: { TZ: 'UTC' },
   },
 })

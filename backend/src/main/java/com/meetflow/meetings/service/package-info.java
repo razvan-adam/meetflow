@@ -1,4 +1,4 @@
-/** Creating meeting series and changing their organizer. */
+/** Meeting series and their organizer, and scheduling meetings. */
 @NullMarked
 package com.meetflow.meetings.service;
 

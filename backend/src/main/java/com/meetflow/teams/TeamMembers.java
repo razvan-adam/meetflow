@@ -1,6 +1,7 @@
 package com.meetflow.teams;
 
 import com.meetflow.teams.service.TeamAccess;
+import java.util.Collection;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,12 @@ public class TeamMembers {
   @Transactional(readOnly = true)
   public boolean isMember(UUID userId, UUID teamId) {
     return access.membership(userId, teamId).isPresent();
+  }
+
+  /** Whether all these users are members of the team. */
+  @Transactional(readOnly = true)
+  public boolean areMembers(Collection<UUID> userIds, UUID teamId) {
+    return access.memberIds(teamId).containsAll(userIds);
   }
 
   /** Throws a 404 error response if the user isn't a member of the team. */

@@ -29,6 +29,7 @@ public class AgendaItem implements Persistable<UUID> {
 
   private String title;
 
+  @SuppressWarnings("UnusedVariable") // The table requires it; running a meeting reads it (MF-15).
   @Enumerated(EnumType.STRING)
   private AgendaItemStatus status;
 

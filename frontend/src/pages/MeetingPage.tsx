@@ -66,7 +66,7 @@ export function MeetingPage() {
           ))}
         </ul>
       </section>
-      <Agenda meetingId={meeting.data.id} canEdit={canEdit} />
+      <Agenda meetingId={meeting.data.id} seriesId={meeting.data.seriesId} canEdit={canEdit} />
     </main>
   )
 }

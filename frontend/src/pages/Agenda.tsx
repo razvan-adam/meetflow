@@ -13,18 +13,29 @@ import styles from './Agenda.module.css'
 
 interface Props {
   meetingId: string
+  seriesId: string
   // The series organizer, until the meeting is closed.
   canEdit: boolean
 }
 
+function failureMessage(failure: Error): string {
+  if (failure instanceof ApiError && failure.status === 403) {
+    return 'You’re no longer the organizer of this series, so the agenda is now read-only.'
+  }
+  if (failure instanceof ApiError && (failure.status === 409 || failure.status === 404)) {
+    return 'The agenda or the meeting changed meanwhile. Check the agenda and try again.'
+  }
+  return 'The agenda couldn’t be saved. Try again in a few minutes.'
+}
+
 // The agenda of a meeting (S6): read-only for everyone but the organizer. MF-19 adds the open
 // commitments above the items; they can't be removed.
-export function Agenda({ meetingId, canEdit }: Props) {
+export function Agenda({ meetingId, seriesId, canEdit }: Props) {
   const items = useAgendaItems(meetingId)
-  const add = useAddAgendaItem(meetingId)
-  const rename = useRenameAgendaItem(meetingId)
-  const remove = useRemoveAgendaItem(meetingId)
-  const reorder = useReorderAgenda(meetingId)
+  const add = useAddAgendaItem({ meetingId, seriesId })
+  const rename = useRenameAgendaItem({ meetingId, seriesId })
+  const remove = useRemoveAgendaItem({ meetingId, seriesId })
+  const reorder = useReorderAgenda({ meetingId, seriesId })
   const [editingId, setEditingId] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [draggedId, setDraggedId] = useState<string | null>(null)
@@ -103,14 +114,14 @@ export function Agenda({ meetingId, canEdit }: Props) {
               onDragOver={canEdit ? (event) => event.preventDefault() : undefined}
               onDrop={canEdit ? (event) => handleDrop(event, index) : undefined}
             >
-              {editingId === item.id ? (
+              {canEdit && editingId === item.id ? (
                 <RenameForm
                   item={item}
                   pending={rename.isPending}
                   onSave={(title) => handleRename(item.id, title)}
                   onCancel={() => setEditingId(null)}
                 />
-              ) : removingId === item.id ? (
+              ) : canEdit && removingId === item.id ? (
                 <RemoveConfirmation
                   item={item}
                   pending={remove.isPending}
@@ -211,9 +222,7 @@ export function Agenda({ meetingId, canEdit }: Props) {
       )}
       {failure && (
         <p role="alert" className={`${pageStyles.error} ${pageStyles.below}`}>
-          {failure instanceof ApiError && (failure.status === 409 || failure.status === 404)
-            ? 'The agenda or the meeting changed meanwhile. Check the agenda and try again.'
-            : 'The agenda couldn’t be saved. Try again in a few minutes.'}
+          {failureMessage(failure)}
         </p>
       )}
     </section>

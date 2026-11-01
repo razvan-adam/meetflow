@@ -217,6 +217,31 @@ describe('the agenda', () => {
     await waitFor(() => expect(screen.queryByText('Returns backlog')).not.toBeInTheDocument())
   })
 
+  it('turns read-only and says why when the organizer role moved to someone else', async () => {
+    let series = WEEKLY
+    api({
+      [`GET /api/meeting-series/${WEEKLY.id}`]: () => Response.json(series),
+      [`GET ${AGENDA}`]: () => Response.json([BUDGET, RETURNS]),
+      [`PUT /api/agenda-items/${BUDGET.id}`]: () => {
+        series = { ...WEEKLY, organizerId: BO.id, organizerName: BO.name }
+        return Response.json({ status: 403 }, { status: 403 })
+      },
+    })
+    renderApp(`/meetings/${MONDAY.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Budget' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('no longer the organizer')
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument(),
+    )
+    expect(screen.getByText('Budget')).toBeVisible()
+    expect(screen.queryByRole('textbox', { name: 'New agenda item' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Remove|Move|Edit/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('read-only')
+  })
+
   it('shows the agenda read-only to members who don’t organize the series', async () => {
     api({
       [`GET /api/meeting-series/${WEEKLY.id}`]: () =>

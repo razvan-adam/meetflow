@@ -1,11 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { apiFetch } from './client.ts'
+import { ApiError, apiFetch } from './client.ts'
+import { seriesKey } from './series.ts'
 
 export interface AgendaItem {
   id: string
   title: string
   // Not covered at the previous meeting of the series.
   carriedOver: boolean
+}
+
+// The meeting whose agenda changes, and its series, which says who may change it.
+export interface AgendaContext {
+  meetingId: string
+  seriesId: string
 }
 
 const agendaKey = (meetingId: string) => ['meetings', meetingId, 'agenda-items']
@@ -22,23 +29,33 @@ export function useAgendaItems(meetingId: string) {
 }
 
 // The changes below are for the series organizer only, until the meeting is closed. They reload
-// the agenda even when they fail, since a failure usually means the page was out of date.
-
-export function useAddAgendaItem(meetingId: string) {
+// the agenda even when they fail, since a failure usually means the page was out of date. A 403
+// means the user is no longer the organizer, so the series reloads too and the page turns read-only.
+function useReloadAfterChange({ meetingId, seriesId }: AgendaContext) {
   const queryClient = useQueryClient()
+  return async (error: Error | null) => {
+    if (error instanceof ApiError && error.status === 403) {
+      await queryClient.invalidateQueries({ queryKey: seriesKey(seriesId), exact: true })
+    }
+    await queryClient.invalidateQueries({ queryKey: agendaKey(meetingId) })
+  }
+}
+
+export function useAddAgendaItem(context: AgendaContext) {
+  const reload = useReloadAfterChange(context)
   return useMutation({
     mutationFn: (title: string) =>
-      apiFetch<AgendaItem>(agendaPath(meetingId), {
+      apiFetch<AgendaItem>(agendaPath(context.meetingId), {
         method: 'POST',
         headers: JSON_HEADERS,
         body: JSON.stringify({ title }),
       }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: agendaKey(meetingId) }),
+    onSettled: (_data, error) => reload(error),
   })
 }
 
-export function useRenameAgendaItem(meetingId: string) {
-  const queryClient = useQueryClient()
+export function useRenameAgendaItem(context: AgendaContext) {
+  const reload = useReloadAfterChange(context)
   return useMutation({
     mutationFn: ({ itemId, title }: { itemId: string; title: string }) =>
       apiFetch<AgendaItem>(itemPath(itemId), {
@@ -46,25 +63,26 @@ export function useRenameAgendaItem(meetingId: string) {
         headers: JSON_HEADERS,
         body: JSON.stringify({ title }),
       }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: agendaKey(meetingId) }),
+    onSettled: (_data, error) => reload(error),
   })
 }
 
-export function useRemoveAgendaItem(meetingId: string) {
-  const queryClient = useQueryClient()
+export function useRemoveAgendaItem(context: AgendaContext) {
+  const reload = useReloadAfterChange(context)
   return useMutation({
     mutationFn: (itemId: string) => apiFetch<void>(itemPath(itemId), { method: 'DELETE' }),
-    onSettled: () => queryClient.invalidateQueries({ queryKey: agendaKey(meetingId) }),
+    onSettled: (_data, error) => reload(error),
   })
 }
 
 // Takes every item in the new order, and shows that order right away so a drag doesn't jump back.
-export function useReorderAgenda(meetingId: string) {
+export function useReorderAgenda(context: AgendaContext) {
   const queryClient = useQueryClient()
-  const key = agendaKey(meetingId)
+  const reload = useReloadAfterChange(context)
+  const key = agendaKey(context.meetingId)
   return useMutation({
     mutationFn: (items: AgendaItem[]) =>
-      apiFetch<AgendaItem[]>(`${agendaPath(meetingId)}/order`, {
+      apiFetch<AgendaItem[]>(`${agendaPath(context.meetingId)}/order`, {
         method: 'PUT',
         headers: JSON_HEADERS,
         body: JSON.stringify({ itemIds: items.map((item) => item.id) }),
@@ -73,6 +91,6 @@ export function useReorderAgenda(meetingId: string) {
       await queryClient.cancelQueries({ queryKey: key })
       queryClient.setQueryData(key, items)
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
+    onSettled: (_data, error) => reload(error),
   })
 }

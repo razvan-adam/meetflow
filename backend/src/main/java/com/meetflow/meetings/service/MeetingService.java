@@ -104,11 +104,29 @@ public class MeetingService {
   }
 
   /** The meeting, if the user is a member of its team; otherwise 404, as if it didn't exist. */
-  private Meeting findVisible(UUID userId, UUID meetingId) {
+  Meeting findVisible(UUID userId, UUID meetingId) {
     return meetings
         .findById(meetingId)
         .filter(found -> teamMembers.isMember(userId, found.getTeamId()))
         .orElseThrow(MeetingNotFoundException::new);
+  }
+
+  /**
+   * The meeting, locked until the transaction ends, for a change by its organizer. The lock keeps
+   * agenda positions consistent, and the status read here is current because it comes with the
+   * lock, so a closed meeting answers 409.
+   */
+  Meeting lockForOrganizerEdit(UUID userId, UUID meetingId) {
+    var meeting =
+        meetings
+            .findForUpdateById(meetingId)
+            .filter(found -> teamMembers.isMember(userId, found.getTeamId()))
+            .orElseThrow(MeetingNotFoundException::new);
+    requireOrganizer(userId, series.findVisible(userId, meeting.getSeriesId()));
+    if (meeting.getStatus() == MeetingStatus.CLOSED) {
+      throw new MeetingClosedException();
+    }
+    return meeting;
   }
 
   private static void requireOrganizer(UUID userId, MeetingSeries found) {

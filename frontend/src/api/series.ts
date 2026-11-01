@@ -11,7 +11,7 @@ export interface Series {
 
 const SERIES = ['series']
 const teamSeriesKey = (teamId: string) => [...SERIES, 'team', teamId]
-const seriesKey = (seriesId: string) => [...SERIES, seriesId]
+export const seriesKey = (seriesId: string) => [...SERIES, seriesId]
 
 // The team's meeting series, sorted by name.
 export function useTeamSeries(teamId: string) {

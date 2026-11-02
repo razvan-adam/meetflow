@@ -1,6 +1,7 @@
 import { NavLink, useMatch, useNavigate } from 'react-router'
 import { useMeeting } from '../api/meetings.ts'
 import { useSeries } from '../api/series.ts'
+import { useTask } from '../api/tasks.ts'
 import { useTeams } from '../api/teams.ts'
 import styles from './AppLayout.module.css'
 
@@ -10,11 +11,12 @@ const NEW_TEAM = 'new'
 export function TeamSwitcher() {
   const { data: teams } = useTeams()
   const navigate = useNavigate()
-  // On series and meeting pages, their team is the current one.
+  // On series, meeting and task pages, their team is the current one.
   const teamId = useMatch('/teams/:teamId')?.params.teamId
   const { data: series } = useSeries(useMatch('/series/:seriesId/*')?.params.seriesId)
   const { data: meeting } = useMeeting(useMatch('/meetings/:meetingId/*')?.params.meetingId)
-  const current = teamId ?? series?.teamId ?? meeting?.teamId
+  const { data: task } = useTask(useMatch('/tasks/:taskId')?.params.taskId)
+  const current = teamId ?? series?.teamId ?? meeting?.teamId ?? task?.teamId
 
   if (!teams) {
     return null

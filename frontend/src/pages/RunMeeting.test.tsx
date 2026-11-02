@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { AgendaItem } from '../api/agenda.ts'
 import type { Decision } from '../api/decisions.ts'
@@ -7,7 +7,7 @@ import type { Series } from '../api/series.ts'
 import type { Task } from '../api/tasks.ts'
 import type { Team } from '../api/teams.ts'
 import { ANA, mockApi, renderApp, requestBody } from '../test/renderApp.tsx'
-import { formatDeadline } from './taskDeadline.ts'
+import { formatDeadline } from './taskDisplay.ts'
 
 const OPS: Team = { id: '6d0c1a52-3c1e-4f0b-9a57-2d4b8e7f1c10', name: 'Ops team', role: 'MEMBER' }
 const BO = { id: '9c8b7a6d-5e4f-4321-8765-0fedcba98765', name: 'Bo Lind' }
@@ -465,6 +465,9 @@ describe('creating tasks', () => {
   const PICKERS: Decision = { id: 'pickers', agendaItemId: BUDGET.id, text: 'Hire 6 pickers' }
   const CONTRACT: Task = {
     id: 'contract',
+    teamId: OPS.id,
+    seriesId: WEEKLY.id,
+    meetingId: SCHEDULED.id,
     agendaItemId: BUDGET.id,
     decisionId: PICKERS.id,
     description: 'Sign the contract',
@@ -510,7 +513,10 @@ describe('creating tasks', () => {
 
     const list = await screen.findByRole('list', { name: 'Tasks from: Hire 6 pickers' })
     expect(within(list).getByText('Sign the contract')).toBeVisible()
-    expect(within(list).getByText('Bo Lind · Open')).toBeVisible()
+    expect(within(list).getByText('Bo Lind')).toBeVisible()
+    expect(within(list).getByRole('combobox', { name: 'Status of Sign the contract' })).toHaveValue(
+      'OPEN',
+    )
     expect(within(list).getByText(`Due ${formatDeadline('2026-11-20')}`)).toBeVisible()
     expect(requestBody(fetchMock, `POST /api/decisions/${PICKERS.id}/tasks`)).toEqual({
       description: 'Sign the contract',
@@ -661,6 +667,122 @@ describe('creating tasks', () => {
     renderApp(`/meetings/${SCHEDULED.id}`)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('tasks couldn’t be loaded')
+  })
+
+  describe('keeping them up to date', () => {
+    const STATUS = 'Status of Send the draft'
+    const AS_MEMBER = {
+      [`GET /api/meeting-series/${WEEKLY.id}`]: () =>
+        Response.json({ ...WEEKLY, organizerId: BO.id, organizerName: BO.name }),
+    }
+
+    it('lets the organizer change a status from the agenda', async () => {
+      let task = DRAFT
+      const fetchMock = api({
+        [`GET ${TASKS}`]: () => Response.json([task]),
+        [`PUT /api/tasks/${DRAFT.id}/status`]: () => {
+          task = { ...DRAFT, status: 'IN_PROGRESS' }
+          return Response.json(task)
+        },
+      })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      fireEvent.change(await screen.findByRole('combobox', { name: STATUS }), {
+        target: { value: 'IN_PROGRESS' },
+      })
+
+      await waitFor(() =>
+        expect(screen.getByRole('combobox', { name: STATUS })).toHaveValue('IN_PROGRESS'),
+      )
+      expect(requestBody(fetchMock, `PUT /api/tasks/${DRAFT.id}/status`)).toEqual({
+        status: 'IN_PROGRESS',
+      })
+    })
+
+    it('lets the owner change only their own tasks’ status, during and after the meeting', async () => {
+      const mine = { ...DRAFT, ownerId: ANA.id, ownerName: ANA.name }
+      for (const meeting of [RUNNING, CLOSED]) {
+        api({
+          ...AS_MEMBER,
+          [`GET ${MEETING}`]: () => Response.json(meeting),
+          [`GET ${TASKS}`]: () => Response.json([mine, { ...CONTRACT, decisionId: null }]),
+        })
+        renderApp(`/meetings/${SCHEDULED.id}`)
+
+        expect(await screen.findByRole('combobox', { name: STATUS })).toBeVisible()
+        expect(
+          screen.queryByRole('combobox', { name: 'Status of Sign the contract' }),
+        ).not.toBeInTheDocument()
+        expect(screen.getByText('Bo Lind · Open')).toBeVisible()
+        cleanup()
+      }
+    })
+
+    it('lets the organizer change a status after the meeting closes', async () => {
+      api({
+        [`GET ${MEETING}`]: () => Response.json(CLOSED),
+        [`GET ${TASKS}`]: () => Response.json([DRAFT]),
+      })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      expect(await screen.findByRole('combobox', { name: STATUS })).toBeEnabled()
+    })
+
+    it('links each task to its own screen', async () => {
+      api({ [`GET ${TASKS}`]: () => Response.json([DRAFT]) })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      expect(await screen.findByRole('link', { name: 'Send the draft' })).toHaveAttribute(
+        'href',
+        `/tasks/${DRAFT.id}`,
+      )
+    })
+
+    it('shows tasks overdue as of the meeting’s date, unless they’re done', async () => {
+      api({
+        [`GET ${TASKS}`]: () =>
+          Response.json([
+            { ...DRAFT, id: 'late', description: 'Late', deadline: '2026-10-30' },
+            {
+              ...DRAFT,
+              id: 'finished',
+              description: 'Finished',
+              deadline: '2026-10-30',
+              status: 'DONE',
+            },
+          ]),
+      })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      // Every item shows until the page knows the user organizes the series, so wait for that.
+      await notesBox()
+      expect(await screen.findByText(`Due ${formatDeadline('2026-10-30')} · overdue`)).toBeVisible()
+      expect(screen.getByText(`Due ${formatDeadline('2026-10-30')}`)).toBeVisible()
+    })
+
+    it('offers removing a decision again once its tasks are gone', async () => {
+      api({ [`GET ${DECISIONS}`]: () => Response.json([PICKERS]) })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      expect(
+        await screen.findByRole('button', { name: 'Remove decision: Hire 6 pickers' }),
+      ).toBeVisible()
+    })
+
+    it('says so when a status change can’t be saved', async () => {
+      api({
+        [`GET ${TASKS}`]: () => Response.json([DRAFT]),
+        [`PUT /api/tasks/${DRAFT.id}/status`]: () =>
+          Response.json({ status: 500 }, { status: 500 }),
+      })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      fireEvent.change(await screen.findByRole('combobox', { name: STATUS }), {
+        target: { value: 'DONE' },
+      })
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('couldn’t be saved')
+    })
   })
 })
 

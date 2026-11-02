@@ -85,8 +85,10 @@ export function MeetingPage() {
         <LiveAgenda
           meetingId={meeting.data.id}
           seriesId={meeting.data.seriesId}
+          scheduledAt={meeting.data.scheduledAt}
           participants={meeting.data.participants}
           canEdit={canEdit}
+          organizes={Boolean(user && series.data?.organizerId === user.id)}
           closed={meeting.data.status === 'CLOSED'}
         />
       )}

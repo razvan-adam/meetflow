@@ -234,6 +234,26 @@
   white-space: nowrap;
 }
 
+.task[data-overdue] {
+  background: var(--overdue-soft);
+  box-shadow: inset 3px 0 0 var(--overdue);
+}
+
+.task[data-overdue] .taskDue {
+  color: var(--overdue);
+  font-weight: 600;
+}
+
+.taskStatus {
+  padding: 4px 6px;
+  background: var(--frame);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+
 .addTask {
   justify-self: start;
   margin-top: 8px;

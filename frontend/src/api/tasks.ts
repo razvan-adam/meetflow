@@ -20,6 +20,15 @@ export interface Task {
   // A calendar date: YYYY-MM-DD.
   deadline: string
   status: TaskStatus
+  // Null unless deleted. A task deleted after its meeting closed stays on that meeting's record.
+  deletion: TaskDeletion | null
+}
+
+export interface TaskDeletion {
+  byName: string
+  at: string
+  // The meeting it was deleted in; null if deleted outside a meeting.
+  meetingScheduledAt: string | null
 }
 
 export interface NewTask {
@@ -45,6 +54,7 @@ export interface TaskHistoryEntry {
   newDeadline: string | null
   oldDescription: string | null
   newDescription: string | null
+  deleted: boolean
 }
 
 // One thing to change on a task; the field's name is also the end of its URL's path.
@@ -120,18 +130,20 @@ export function useChangeTask(context: AgendaContext) {
   })
 }
 
-// For the organizer, while a meeting of the task's series runs. The task itself reloads only after
-// a failure: once deleted it answers 404, which the page leaving it shouldn't flash first. A 409
-// may mean the running meeting closed, so the series' meetings reload too.
+// For the organizer, while a meeting of the task's series runs. The task itself reloads now only
+// after a failure: deleted during its own meeting it answers 404, which the page leaving it
+// shouldn't flash first. A 409 may mean the running meeting closed, so the series' meetings reload
+// too.
 export function useDeleteTask(context: AgendaContext) {
   const queryClient = useQueryClient()
   const reload = useReloadAfterChange(context, tasksKey(context.meetingId))
   return useMutation({
     mutationFn: (taskId: string) => apiFetch<void>(taskPath(taskId), { method: 'DELETE' }),
     onSettled: async (_data, error, taskId) => {
-      if (error) {
-        await queryClient.invalidateQueries({ queryKey: taskKey(taskId) })
-      }
+      await queryClient.invalidateQueries({
+        queryKey: taskKey(taskId),
+        refetchType: error ? 'active' : 'none',
+      })
       if (error instanceof ApiError && error.status === 409) {
         await queryClient.invalidateQueries({ queryKey: seriesMeetingsKey(context.seriesId) })
       }

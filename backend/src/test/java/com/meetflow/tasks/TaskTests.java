@@ -163,13 +163,15 @@ class TaskTests {
   }
 
   @Test
-  void listsTasksInTheOrderTheyWereCreatedWithoutTheDeletedOnes() {
+  void listsTasksInTheOrderTheyWereCreatedWithoutThoseDeletedDuringTheMeeting() {
     start();
     fromItem(ana, budget, json("First", boId, DEADLINE));
     String second = idOf(fromItem(ana, budget, json("Second", boId, DEADLINE)));
     fromItem(ana, budget, json("Third", boId, DEADLINE));
     jdbc.update(
-        "UPDATE task SET deleted_at = now(), deleted_by = owner_id WHERE id = ?::uuid", second);
+        "UPDATE task SET deleted_at = now(), deleted_by = owner_id,"
+            + " deleted_in_meeting_id = meeting_id WHERE id = ?::uuid",
+        second);
 
     assertThat(descriptions(ana)).isEqualTo(List.of("First", "Third"));
   }

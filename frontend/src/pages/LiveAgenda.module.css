@@ -244,6 +244,14 @@
   font-weight: 600;
 }
 
+.task[data-deleted] {
+  background: var(--fill);
+}
+
+.task[data-deleted] .taskDescription {
+  color: var(--muted);
+}
+
 /* A line of its own, so every row's controls sit in the same place. */
 .taskControls {
   display: flex;

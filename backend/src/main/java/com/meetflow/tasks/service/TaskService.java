@@ -15,6 +15,7 @@ import com.meetflow.tasks.exception.TaskNotFoundException;
 import com.meetflow.tasks.repository.TaskChangeRepository;
 import com.meetflow.tasks.repository.TaskRepository;
 import com.meetflow.teams.TeamMembers;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
  * Tasks: creating them during a meeting (MF-17) and keeping them up to date (MF-18). Every member
  * of the team can read a task. Its owner and the series organizer change its status, and the
  * organizer its owner and deadline, during a meeting or between meetings. The organizer can also
- * reword and delete it while any meeting of its series runs, and create it while its own runs.
+ * reword and delete it while any meeting of its series runs, and create it while its own runs. A
+ * task deleted after its own meeting can still be read, as part of that meeting's record.
  */
 @Service
 public class TaskService {
@@ -57,20 +59,18 @@ public class TaskService {
   @Transactional(readOnly = true)
   public List<TaskResponse> listForMeeting(UUID userId, UUID meetingId) {
     meetings.requireVisibleMeeting(userId, meetingId);
-    var found = tasks.findByMeetingIdAndDeletedAtIsNullOrderByCreatedAt(meetingId);
-    var names = users.namesOf(found.stream().map(Task::getOwnerId).toList());
-    return found.stream().map(task -> toResponse(task, names)).toList();
+    return toResponses(tasks.findRecordedInMeeting(meetingId));
   }
 
   @Transactional(readOnly = true)
   public TaskResponse get(UUID userId, UUID taskId) {
-    return toResponse(findVisible(userId, taskId));
+    return toResponse(findRecorded(userId, taskId));
   }
 
   /** The task's history, latest first. */
   @Transactional(readOnly = true)
   public List<TaskChangeResponse> history(UUID userId, UUID taskId) {
-    findVisible(userId, taskId);
+    findRecorded(userId, taskId);
     var found = changes.findByTaskIdOrderByChangedAtDesc(taskId);
     var names =
         users.namesOf(
@@ -170,10 +170,9 @@ public class TaskService {
   public void delete(UUID userId, UUID taskId) {
     var runningMeetingId =
         meetings.lockRunningMeetingOf(userId, findPlace(userId, taskId).seriesId());
-    tasks
-        .findByIdAndDeletedAtIsNull(taskId)
-        .orElseThrow(TaskNotFoundException::new)
-        .delete(userId, runningMeetingId);
+    var task = tasks.findByIdAndDeletedAtIsNull(taskId).orElseThrow(TaskNotFoundException::new);
+    task.delete(userId, runningMeetingId);
+    changes.save(TaskChange.ofDeletion(task, userId, runningMeetingId));
   }
 
   private TaskResponse create(
@@ -186,7 +185,18 @@ public class TaskService {
     return toResponse(task);
   }
 
-  /** The task, if the user is a member of its team; otherwise 404, as if it didn't exist. */
+  /**
+   * For reading: the task, even if deleted after its own meeting, if the user is a member of its
+   * team; otherwise 404, as if it didn't exist.
+   */
+  private Task findRecorded(UUID userId, UUID taskId) {
+    return tasks
+        .findRecordedById(taskId)
+        .filter(found -> teamMembers.isMember(userId, found.getTeamId()))
+        .orElseThrow(TaskNotFoundException::new);
+  }
+
+  /** For changing: the task, if not deleted and the user is a member of its team; otherwise 404. */
   private Task findVisible(UUID userId, UUID taskId) {
     return tasks
         .findByIdAndDeletedAtIsNull(taskId)
@@ -218,10 +228,29 @@ public class TaskService {
   }
 
   private TaskResponse toResponse(Task task) {
-    return toResponse(task, users.namesOf(List.of(task.getOwnerId())));
+    return toResponses(List.of(task)).getFirst();
   }
 
-  private static TaskResponse toResponse(Task task, Map<UUID, String> names) {
+  private List<TaskResponse> toResponses(List<Task> found) {
+    var names =
+        users.namesOf(
+            found.stream()
+                .flatMap(task -> Stream.of(task.getOwnerId(), task.getDeletedBy()))
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList());
+    var meetingTimes =
+        meetings.scheduledTimesOf(
+            found.stream()
+                .map(Task::getDeletedInMeetingId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList());
+    return found.stream().map(task -> toResponse(task, names, meetingTimes)).toList();
+  }
+
+  private static TaskResponse toResponse(
+      Task task, Map<UUID, String> names, Map<UUID, Instant> meetingTimes) {
     return new TaskResponse(
         task.getId(),
         task.getTeamId(),
@@ -233,7 +262,21 @@ public class TaskService {
         task.getOwnerId(),
         names.getOrDefault(task.getOwnerId(), ""),
         task.getDeadline(),
-        task.getStatus());
+        task.getStatus(),
+        deletionOf(task, names, meetingTimes));
+  }
+
+  private static TaskResponse.@Nullable Deletion deletionOf(
+      Task task, Map<UUID, String> names, Map<UUID, Instant> meetingTimes) {
+    var at = task.getDeletedAt();
+    if (at == null) {
+      return null;
+    }
+    var meetingId = task.getDeletedInMeetingId();
+    return new TaskResponse.Deletion(
+        Objects.requireNonNullElse(nameOf(task.getDeletedBy(), names), ""),
+        at,
+        meetingId == null ? null : meetingTimes.get(meetingId));
   }
 
   private static TaskChangeResponse toResponse(TaskChange change, Map<UUID, String> names) {
@@ -248,7 +291,8 @@ public class TaskService {
         change.getOldDeadline(),
         change.getNewDeadline(),
         change.getOldDescription(),
-        change.getNewDescription());
+        change.getNewDescription(),
+        change.isDeleted());
   }
 
   private static @Nullable String nameOf(@Nullable UUID userId, Map<UUID, String> names) {

@@ -52,13 +52,10 @@ public class Task implements Persistable<UUID> {
   @SuppressWarnings("UnusedVariable") // The table requires it.
   private Instant updatedAt;
 
-  @SuppressWarnings("UnusedVariable") // Deleted tasks are filtered out by this column.
   private @Nullable Instant deletedAt;
 
-  @SuppressWarnings("UnusedVariable") // The table requires it once a task is deleted.
   private @Nullable UUID deletedBy;
 
-  @SuppressWarnings("UnusedVariable") // Records where a task was deleted; nothing reads it yet.
   private @Nullable UUID deletedInMeetingId;
 
   // Stops two changes to a task made at the very same moment from overwriting each other.
@@ -130,6 +127,18 @@ public class Task implements Persistable<UUID> {
     return status;
   }
 
+  public @Nullable Instant getDeletedAt() {
+    return deletedAt;
+  }
+
+  public @Nullable UUID getDeletedBy() {
+    return deletedBy;
+  }
+
+  public @Nullable UUID getDeletedInMeetingId() {
+    return deletedInMeetingId;
+  }
+
   public void changeStatus(TaskStatus status) {
     this.status = status;
     this.updatedAt = Instant.now();
@@ -151,14 +160,18 @@ public class Task implements Persistable<UUID> {
   }
 
   /**
-   * Hides the task but keeps it, with its history. It lets go of its decision, so a decision whose
-   * tasks were all deleted can be removed again.
+   * Stops the task from being worked on but keeps it, with its history. During its own meeting it
+   * lets go of its decision, so a decision whose tasks were all deleted can be removed again. After
+   * that the decision can't be removed anyway, and the closed meeting still shows the task under
+   * it.
    */
-  public void delete(UUID deletedBy, UUID meetingId) {
+  public void delete(UUID deletedBy, UUID duringMeetingId) {
     this.deletedAt = Instant.now();
     this.deletedBy = deletedBy;
-    this.deletedInMeetingId = meetingId;
-    this.decisionId = null;
+    this.deletedInMeetingId = duringMeetingId;
+    if (duringMeetingId.equals(meetingId)) {
+      this.decisionId = null;
+    }
     this.updatedAt = this.deletedAt;
   }
 

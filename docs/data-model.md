@@ -177,7 +177,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 | `version` | bigint | |
 
 - When a task is created, its owner must be a participant of `meeting_id` (service check).
-- A task created from a decision stores both `decision_id` and the decision's `agenda_item_id`; one created from an agenda item leaves `decision_id` null. A decision with tasks can't be removed; deleting a task clears its `decision_id`, so a decision whose tasks were all deleted can be.
+- A task created from a decision stores both `decision_id` and the decision's `agenda_item_id`; one created from an agenda item leaves `decision_id` null. A decision with tasks can't be removed; deleting a task during its own meeting clears its `decision_id`, so a decision whose tasks were all deleted can be. Deleting it during a later meeting keeps the link, so the closed meeting still shows it under its decision.
 - **Overdue** is not stored. A task is overdue when it isn't `DONE` and `deadline` is before the current date: today for the viewer on every screen, which also says how many days overdue it is, and the meeting date in the minutes, which are a record of that meeting.
 - Index on (`owner_id`, `status`, `deadline`) for the pending-tasks dashboard, and on (`series_id`, `status`) for carry-over.
 
@@ -195,6 +195,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 | `old_owner_id`, `new_owner_id` | uuid | null when the owner didn't change |
 | `old_deadline`, `new_deadline` | date | null when the deadline didn't change |
 | `old_description`, `new_description` | text | null unless the task was reworded during a later meeting; 500 characters at most |
+| `deleted` | boolean | true on the row that records the task being deleted |
 
 Rows are only inserted, never updated or deleted.
 
@@ -263,7 +264,7 @@ Once `meeting.status` is `CLOSED`, the `meetings` and `tasks` services reject an
 
 ### Status history
 
-Every change to a task's status, owner, deadline or description inserts a `task_change` row, in the same transaction as the change. The minutes and the meeting history read it to show how a commitment evolved. Rewording a task during its own meeting inserts no row: it is a correction made before anyone is sent the task.
+Every change to a task's status, owner, deadline or description inserts a `task_change` row, in the same transaction as the change. The minutes and the meeting history read it to show how a commitment evolved. Deleting a task inserts a row too, with `deleted` set. Rewording a task during its own meeting inserts no row: it is a correction made before anyone is sent the task.
 
 ## Team scoping
 
@@ -308,5 +309,5 @@ Product rules settled while modeling (MF-30):
 
 1. **One open meeting per series.** The next meeting can only be created once the previous one is closed. Without this rule, carry-over from a meeting that is still running would be ambiguous.
 2. **Pending agenda items become "not covered" on closing**, so nothing is lost if the organizer forgets to mark them.
-3. **Deleted tasks are soft-deleted** (`deleted_at`), so their history and the meetings that reviewed them stay intact.
+3. **Deleted tasks are soft-deleted** (`deleted_at`), so their history and the meetings that reviewed them stay intact. One deleted during a later meeting stays visible on its closed meeting.
 4. **Account deletion anonymizes the user** instead of deleting the row, so meeting records keep their integrity.

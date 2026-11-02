@@ -14,9 +14,9 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Persistable;
 
 /**
- * One line of a task's history: who changed its status, owner, deadline or description, and when.
- * Rows are only inserted, never updated. Correcting a description during the task's own meeting
- * isn't recorded: nobody has been sent the task yet.
+ * One line of a task's history: who changed its status, owner, deadline or description, or deleted
+ * it, and when. Rows are only inserted, never updated. Correcting a description during the task's
+ * own meeting isn't recorded: nobody has been sent the task yet.
  */
 @Entity
 public class TaskChange implements Persistable<UUID> {
@@ -52,6 +52,8 @@ public class TaskChange implements Persistable<UUID> {
   private @Nullable String oldDescription;
 
   private @Nullable String newDescription;
+
+  private boolean deleted;
 
   // The ID is assigned here, so Spring Data can't tell a new row from a stored one by its ID.
   @Transient private boolean isNew = true;
@@ -94,6 +96,12 @@ public class TaskChange implements Persistable<UUID> {
     var change = new TaskChange(task, changedBy, meetingId);
     change.oldDescription = from;
     change.newDescription = to;
+    return change;
+  }
+
+  public static TaskChange ofDeletion(Task task, UUID changedBy, UUID meetingId) {
+    var change = new TaskChange(task, changedBy, meetingId);
+    change.deleted = true;
     return change;
   }
 
@@ -156,6 +164,10 @@ public class TaskChange implements Persistable<UUID> {
 
   public @Nullable String getNewDescription() {
     return newDescription;
+  }
+
+  public boolean isDeleted() {
+    return deleted;
   }
 
   @Override

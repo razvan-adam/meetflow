@@ -475,6 +475,7 @@ describe('creating tasks', () => {
     ownerName: BO.name,
     deadline: '2999-11-20',
     status: 'OPEN',
+    deletion: null,
   }
   const DRAFT: Task = { ...CONTRACT, id: 'draft', decisionId: null, description: 'Send the draft' }
   const FROM_DECISION = 'Add task from decision: Hire 6 pickers'
@@ -850,7 +851,16 @@ describe('creating tasks', () => {
         [`GET /api/meeting-series/${WEEKLY.id}/meetings`]: () =>
           Response.json([{ ...RUNNING, id: 'later' }, CLOSED]),
         [`DELETE /api/tasks/${DRAFT.id}`]: () => {
-          tasks = []
+          tasks = [
+            {
+              ...DRAFT,
+              deletion: {
+                byName: ANA.name,
+                at: '2026-11-09T09:00:00.000Z',
+                meetingScheduledAt: '2026-11-09T08:30:00.000Z',
+              },
+            },
+          ]
           return new Response(null, { status: 204 })
         },
       })
@@ -860,7 +870,13 @@ describe('creating tasks', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Delete task: Send the draft' }))
       fireEvent.click(screen.getByRole('button', { name: 'Delete task' }))
 
-      await waitFor(() => expect(screen.queryByText('Send the draft')).not.toBeInTheDocument())
+      // It stays on the closed meeting's record, marked, with no way left to change it.
+      expect(await screen.findByText(/Deleted by Ana Costa during the meeting of/)).toBeVisible()
+      expect(screen.getByRole('link', { name: 'Send the draft' }).closest('s')).not.toBeNull()
+      expect(screen.queryByRole('combobox', { name: STATUS })).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: /Edit task|Delete task/ }),
+      ).not.toBeInTheDocument()
     })
 
     it('offers neither on a closed meeting when no meeting of the series runs', async () => {

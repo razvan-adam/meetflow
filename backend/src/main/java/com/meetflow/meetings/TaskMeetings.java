@@ -4,6 +4,9 @@ import com.meetflow.meetings.service.AgendaService;
 import com.meetflow.meetings.service.DecisionService;
 import com.meetflow.meetings.service.MeetingSeriesService;
 import com.meetflow.meetings.service.MeetingService;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
@@ -73,6 +76,12 @@ public class TaskMeetings {
   @Transactional(readOnly = true)
   public Optional<UUID> runningMeetingOf(UUID seriesId) {
     return meetings.runningMeetingOf(seriesId);
+  }
+
+  /** When the meetings are scheduled, by ID. */
+  @Transactional(readOnly = true)
+  public Map<UUID, Instant> scheduledTimesOf(Collection<UUID> meetingIds) {
+    return meetings.scheduledTimesOf(meetingIds);
   }
 
   private TaskOrigin origin(

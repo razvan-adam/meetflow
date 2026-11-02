@@ -349,8 +349,6 @@ class TaskUpdateTests {
     assertThat(delete(bo)).hasStatus(HttpStatus.FORBIDDEN);
     assertThat(delete(ana)).hasStatus(HttpStatus.NO_CONTENT);
 
-    assertThat(get(ana, "/api/tasks/" + task)).hasStatus(HttpStatus.NOT_FOUND);
-    assertThat(body(get(ana, "/api/meetings/" + meetingId + "/tasks"))).isEqualTo("[]");
     var row =
         jdbc.queryForMap(
             "SELECT deleted_by::text AS by, deleted_in_meeting_id::text AS meeting"
@@ -358,6 +356,33 @@ class TaskUpdateTests {
             task);
     assertThat(row.get("by")).isEqualTo(userId(ana));
     assertThat(row.get("meeting")).isEqualTo(next);
+  }
+
+  @Test
+  void aTaskDeletedDuringALaterMeetingStaysOnItsClosedMeetingUnderItsDecision() {
+    close();
+    scheduleAndStart();
+    delete(ana);
+
+    String list = body(get(ana, "/api/meetings/" + meetingId + "/tasks"));
+    assertThat(JsonPath.<String>read(list, "$[0].id")).isEqualTo(task);
+    assertThat(JsonPath.<String>read(list, "$[0].decisionId")).isEqualTo(decision);
+    assertThat(JsonPath.<String>read(list, "$[0].deletion.byName")).isEqualTo("Ana Costa");
+    assertThat(JsonPath.<String>read(list, "$[0].deletion.meetingScheduledAt"))
+        .isEqualTo("2026-11-02T08:30:00Z");
+
+    // It can be read by the team, but no longer changed.
+    String read = body(get(bo, "/api/tasks/" + task));
+    assertThat(JsonPath.<String>read(read, "$.deletion.byName")).isEqualTo("Ana Costa");
+    assertThat(status(ana, "DONE")).hasStatus(HttpStatus.NOT_FOUND);
+    assertThat(reword(ana, "Back")).hasStatus(HttpStatus.NOT_FOUND);
+    assertThat(delete(ana)).hasStatus(HttpStatus.NOT_FOUND);
+
+    assertThat(get(cy, "/api/tasks/" + task)).hasStatus(HttpStatus.NOT_FOUND);
+
+    String history = body(get(ana, "/api/tasks/" + task + "/changes"));
+    assertThat(JsonPath.<Boolean>read(history, "$[0].deleted")).isTrue();
+    assertThat(JsonPath.<Boolean>read(history, "$[0].duringMeeting")).isTrue();
   }
 
   @Test
@@ -387,7 +412,8 @@ class TaskUpdateTests {
             "SELECT deleted_at, deleted_by::text AS by FROM task WHERE id = ?::uuid", task);
     assertThat(row.get("deleted_at")).isNotNull();
     assertThat(row.get("by")).isEqualTo(userId(ana));
-    assertThat(historySize()).isEqualTo(1);
+    // The creation and the deletion.
+    assertThat(historySize()).isEqualTo(2);
   }
 
   @Test

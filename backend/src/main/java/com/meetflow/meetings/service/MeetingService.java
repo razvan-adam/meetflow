@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -150,6 +151,12 @@ public class MeetingService {
         .findById(meetingId)
         .filter(found -> teamMembers.isMember(userId, found.getTeamId()))
         .orElseThrow(MeetingNotFoundException::new);
+  }
+
+  /** When the meetings are scheduled, by ID. */
+  public Map<UUID, Instant> scheduledTimesOf(Collection<UUID> meetingIds) {
+    return meetings.findAllById(meetingIds).stream()
+        .collect(Collectors.toMap(Meeting::getId, Meeting::getScheduledAt));
   }
 
   /** The series' meeting that is running right now, if any. */

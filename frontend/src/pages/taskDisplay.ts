@@ -1,6 +1,6 @@
 import { ApiError } from '../api/client.ts'
-import type { Task, TaskStatus } from '../api/tasks.ts'
-import { toDateAndTime } from './meetingTime.ts'
+import type { Task, TaskDeletion, TaskStatus } from '../api/tasks.ts'
+import { formatMeetingTime, toDateAndTime } from './meetingTime.ts'
 
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   OPEN: 'Open',
@@ -45,6 +45,13 @@ export function dueText(task: Task, today: string): string {
   }
   const days = daysBetween(task.deadline, today)
   return `${due} · ${days} ${days === 1 ? 'day' : 'days'} overdue`
+}
+
+export function deletionText(deletion: TaskDeletion): string {
+  const when = deletion.meetingScheduledAt
+    ? `during the meeting of ${formatMeetingTime(deletion.meetingScheduledAt)}`
+    : `on ${formatMeetingTime(deletion.at)}`
+  return `Deleted by ${deletion.byName} ${when}`
 }
 
 // For rewording and deleting, which need a meeting running: a 409 means it closed.

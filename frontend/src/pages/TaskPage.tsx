@@ -9,6 +9,7 @@ import {
   useDeleteTask,
   useTask,
   type Task,
+  type TaskDeletion,
   type TaskFieldChange,
   type TaskStatus,
 } from '../api/tasks.ts'
@@ -16,8 +17,10 @@ import { useTeamMembers } from '../api/teams.ts'
 import { useCurrentUser } from '../api/users.ts'
 import { Breadcrumb } from './Breadcrumb.tsx'
 import liveStyles from './LiveAgenda.module.css'
+import meetingStyles from './MeetingPage.module.css'
 import { formatMeetingTime } from './meetingTime.ts'
 import {
+  deletionText,
   dueText,
   formatDeadline,
   isOverdue,
@@ -53,7 +56,68 @@ export function TaskPage() {
       </main>
     )
   }
-  return <TaskDetails task={task.data} />
+  return task.data.deletion ? (
+    <DeletedTask task={task.data} deletion={task.data.deletion} />
+  ) : (
+    <TaskDetails task={task.data} />
+  )
+}
+
+// Where the task came from.
+function TaskPlace({ task }: { task: Task }) {
+  const series = useSeries(task.seriesId)
+  const meeting = useMeeting(task.meetingId)
+  const decisions = useDecisions(task.meetingId)
+  const decision = decisions.data?.find((found) => found.id === task.decisionId)
+
+  return (
+    <>
+      <dt>Created in</dt>
+      <dd>
+        <Link to={`/meetings/${task.meetingId}`}>
+          {series.data?.name ?? 'Meeting'}
+          {meeting.data && `, ${formatMeetingTime(meeting.data.scheduledAt)}`}
+        </Link>
+      </dd>
+      {decision && (
+        <>
+          <dt>From decision</dt>
+          <dd className={styles.decision}>{decision.text}</dd>
+        </>
+      )}
+    </>
+  )
+}
+
+// Read-only: what the task was, who deleted it and its history.
+function DeletedTask({ task, deletion }: { task: Task; deletion: TaskDeletion }) {
+  const series = useSeries(task.seriesId)
+
+  return (
+    <main className={pageStyles.page}>
+      <div>
+        <Breadcrumb teamId={task.teamId} series={series.data} />
+        <h1 className={`${pageStyles.title} ${styles.title}`}>
+          <s>{task.description}</s>
+        </h1>
+      </div>
+      <p className={`${meetingStyles.banner} ${meetingStyles.bannerClosed}`}>
+        <span>
+          <strong>This task was deleted.</strong> {deletionText(deletion)}.
+        </span>
+      </p>
+      <dl className={styles.details}>
+        <dt>Status</dt>
+        <dd>{TASK_STATUS_LABELS[task.status]}</dd>
+        <dt>Owner</dt>
+        <dd>{task.ownerName}</dd>
+        <dt>Deadline</dt>
+        <dd>{formatDeadline(task.deadline)}</dd>
+        <TaskPlace task={task} />
+      </dl>
+      <TaskHistory taskId={task.id} />
+    </main>
+  )
 }
 
 function permissionsText(organizes: boolean, owns: boolean): string {
@@ -70,9 +134,7 @@ function TaskDetails({ task }: { task: Task }) {
   const context = { meetingId: task.meetingId, seriesId: task.seriesId }
   const { data: user } = useCurrentUser()
   const series = useSeries(task.seriesId)
-  const meeting = useMeeting(task.meetingId)
   const seriesMeetings = useSeriesMeetings(task.seriesId)
-  const decisions = useDecisions(task.meetingId)
   const members = useTeamMembers(task.teamId)
   const change = useChangeTask(context)
   // Apart from the rest because a 409 here means a meeting closed, not a change at the same time.
@@ -87,7 +149,6 @@ function TaskDetails({ task }: { task: Task }) {
   // Rewording and deleting: during any meeting of the series, including one after the task's own.
   const canCorrect =
     organizes && Boolean(seriesMeetings.data?.some((found) => found.status === 'IN_PROGRESS'))
-  const decision = decisions.data?.find((found) => found.id === task.decisionId)
 
   function save(fields: TaskFieldChange, onSuccess?: () => void) {
     correct.reset()
@@ -198,19 +259,7 @@ function TaskDetails({ task }: { task: Task }) {
           }
           onSave={(deadline, onSuccess) => save({ deadline }, onSuccess)}
         />
-        <dt>Created in</dt>
-        <dd>
-          <Link to={`/meetings/${task.meetingId}`}>
-            {series.data?.name ?? 'Meeting'}
-            {meeting.data && `, ${formatMeetingTime(meeting.data.scheduledAt)}`}
-          </Link>
-        </dd>
-        {decision && (
-          <>
-            <dt>From decision</dt>
-            <dd className={styles.decision}>{decision.text}</dd>
-          </>
-        )}
+        <TaskPlace task={task} />
       </dl>
       <p className={styles.callout}>{permissionsText(organizes, owns)}</p>
       {(change.error || correctionFailure) && (
@@ -228,7 +277,7 @@ function TaskDetails({ task }: { task: Task }) {
             aria-label={`Confirm deleting task: ${task.description}`}
           >
             <p className={styles.confirmationText}>
-              Delete this task? It disappears from the meeting and its owner’s list.
+              Delete this task? It comes off its owner’s list and can’t be restored.
             </p>
             <button
               className={pageStyles.danger}

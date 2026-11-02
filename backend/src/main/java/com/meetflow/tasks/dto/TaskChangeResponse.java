@@ -21,4 +21,5 @@ public record TaskChangeResponse(
     @Nullable LocalDate oldDeadline,
     @Nullable LocalDate newDeadline,
     @Nullable String oldDescription,
-    @Nullable String newDescription) {}
+    @Nullable String newDescription,
+    boolean deleted) {}

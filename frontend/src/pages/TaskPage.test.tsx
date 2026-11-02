@@ -47,6 +47,7 @@ const CONTRACT: Task = {
   // Far enough ahead that the tests don't depend on today's date.
   deadline: '2999-11-20',
   status: 'OPEN',
+  deletion: null,
 }
 const CREATED: TaskHistoryEntry = {
   changedAt: '2026-11-02T09:40:00.000Z',
@@ -60,6 +61,7 @@ const CREATED: TaskHistoryEntry = {
   newDeadline: '2999-11-20',
   oldDescription: null,
   newDescription: null,
+  deleted: false,
 }
 
 const TASK = `/api/tasks/${CONTRACT.id}`
@@ -378,6 +380,29 @@ describe('correcting a task while its meeting runs', () => {
 
     expect(await screen.findByRole('button', { name: 'Change description' })).toBeVisible()
     expect(screen.getByRole('button', { name: 'Delete this task' })).toBeVisible()
+  })
+
+  it('shows a task deleted during a later meeting read-only, with its history', async () => {
+    api({
+      [`GET ${TASK}`]: () =>
+        Response.json({
+          ...CONTRACT,
+          deletion: {
+            byName: ANA.name,
+            at: '2026-11-09T09:00:00.000Z',
+            meetingScheduledAt: '2026-11-09T08:30:00.000Z',
+          },
+        }),
+      [`GET ${TASK}/changes`]: () =>
+        Response.json([{ ...CREATED, newStatus: null, deleted: true }, CREATED]),
+    })
+    renderApp(`/tasks/${CONTRACT.id}`)
+
+    expect(await screen.findByText('This task was deleted.')).toBeVisible()
+    expect(screen.getByText(/Deleted by Ana Costa during the meeting of/)).toBeVisible()
+    expect(await screen.findByText(/Ana Costa deleted the task/)).toBeVisible()
+    expect(await screen.findByRole('link', { name: /Weekly ops sync,/ })).toBeVisible()
+    expect(screen.queryByRole('button', { name: /Change|Delete|Done/ })).not.toBeInTheDocument()
   })
 
   it('isn’t offered between meetings, though the status still is', async () => {

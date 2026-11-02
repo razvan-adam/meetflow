@@ -3,7 +3,14 @@ import { Link } from 'react-router'
 import type { Task, TaskStatus } from '../api/tasks.ts'
 import agendaStyles from './Agenda.module.css'
 import styles from './LiveAgenda.module.css'
-import { dueText, isOverdue, TASK_STATUS_LABELS, todayDate } from './taskDisplay.ts'
+import {
+  deletionText,
+  dueText,
+  formatDeadline,
+  isOverdue,
+  TASK_STATUS_LABELS,
+  todayDate,
+} from './taskDisplay.ts'
 import pageStyles from './TeamPage.module.css'
 
 interface Props {
@@ -51,6 +58,25 @@ function TaskRow({
   const [mode, setMode] = useState<'view' | 'edit' | 'delete'>('view')
   const showView = () => setMode('view')
 
+  // Deleted after this meeting closed: still part of its record, but no longer open to changes.
+  if (task.deletion) {
+    return (
+      <li className={styles.task} data-deleted>
+        <div className={styles.taskMain}>
+          <p className={styles.taskDescription}>
+            <s>
+              <Link to={`/tasks/${task.id}`}>{task.description}</Link>
+            </s>
+          </p>
+          <p className={styles.taskMeta}>
+            {task.ownerName} · {deletionText(task.deletion)}
+          </p>
+        </div>
+        <span className={styles.taskDue}>Due {formatDeadline(task.deadline)}</span>
+      </li>
+    )
+  }
+
   function handleReword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const description = String(new FormData(event.currentTarget).get('description')).trim()
@@ -91,7 +117,7 @@ function TaskRow({
           aria-label={`Confirm deleting task: ${task.description}`}
         >
           <p className={agendaStyles.confirmationText}>
-            Delete this task? It disappears from the meeting and its owner’s list.
+            Delete this task? It comes off its owner’s list and can’t be restored.
           </p>
           <button
             className={pageStyles.danger}

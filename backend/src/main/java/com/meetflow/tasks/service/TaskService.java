@@ -29,7 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Tasks: creating them during a meeting (MF-17) and keeping them up to date (MF-18). Every member
  * of the team can read a task. Its owner and the series organizer change its status, and the
  * organizer its owner and deadline, during a meeting or between meetings. The organizer can also
- * reword it while any meeting of its series runs, and create and delete it while its own runs.
+ * reword and delete it while any meeting of its series runs, and create it while its own runs.
  */
 @Service
 public class TaskService {
@@ -165,10 +165,11 @@ public class TaskService {
     return toResponse(task);
   }
 
-  /** Takes back a task created by mistake, while its own meeting runs. */
+  /** The organizer only, while any meeting of the task's series runs. */
   @Transactional
   public void delete(UUID userId, UUID taskId) {
-    findInRunningMeeting(userId, taskId).delete(userId);
+    meetings.lockRunningMeetingOf(userId, findPlace(userId, taskId).seriesId());
+    tasks.findByIdAndDeletedAtIsNull(taskId).orElseThrow(TaskNotFoundException::new).delete(userId);
   }
 
   private TaskResponse create(
@@ -190,15 +191,10 @@ public class TaskService {
   }
 
   /**
-   * The task, loaded only once its meeting is locked, so one deleted meanwhile answers 404.
-   * Outsiders get the same 404 as for an unknown task.
+   * Where the task belongs, read before taking a lock, without loading the task itself: it is
+   * loaded once the meeting is locked, so one deleted meanwhile answers 404. Outsiders get the same
+   * 404 as for an unknown task.
    */
-  private Task findInRunningMeeting(UUID userId, UUID taskId) {
-    meetings.lockRunningMeeting(userId, findPlace(userId, taskId).meetingId());
-    return tasks.findByIdAndDeletedAtIsNull(taskId).orElseThrow(TaskNotFoundException::new);
-  }
-
-  /** Where the task belongs, read before taking a lock, without loading the task itself. */
   private TaskRepository.TaskPlace findPlace(UUID userId, UUID taskId) {
     return tasks
         .findPlaceByIdAndDeletedAtIsNull(taskId)

@@ -84,11 +84,9 @@ function TaskDetails({ task }: { task: Task }) {
 
   const organizes = Boolean(user && series.data?.organizerId === user.id)
   const owns = task.ownerId === user?.id
-  // During any meeting of the series, including one after the task's own.
-  const canReword =
+  // Rewording and deleting: during any meeting of the series, including one after the task's own.
+  const canCorrect =
     organizes && Boolean(seriesMeetings.data?.some((found) => found.status === 'IN_PROGRESS'))
-  // Only during the task's own meeting.
-  const canDelete = organizes && meeting.data?.status === 'IN_PROGRESS'
   const decision = decisions.data?.find((found) => found.id === task.decisionId)
 
   function save(fields: TaskFieldChange, onSuccess?: () => void) {
@@ -142,7 +140,7 @@ function TaskDetails({ task }: { task: Task }) {
         <p className={styles.status}>Status: {TASK_STATUS_LABELS[task.status]}</p>
       )}
       <dl className={styles.details}>
-        {canReword && (
+        {canCorrect && (
           <TaskField
             label="Description"
             value={task.description}
@@ -222,7 +220,7 @@ function TaskDetails({ task }: { task: Task }) {
             : correctionFailure && taskCorrectionFailure(correctionFailure)}
         </p>
       )}
-      {canDelete &&
+      {canCorrect &&
         (confirming ? (
           <div
             className={styles.confirmation}
@@ -260,7 +258,7 @@ function TaskDetails({ task }: { task: Task }) {
               Delete this task
             </button>
             <p className={`${pageStyles.meta} ${styles.hint}`}>
-              A task can be deleted until its meeting closes.
+              A task can be deleted while a meeting of its series is running.
             </p>
           </div>
         ))}

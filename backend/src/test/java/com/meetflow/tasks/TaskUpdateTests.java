@@ -326,15 +326,35 @@ class TaskUpdateTests {
   }
 
   @Test
-  void aTaskCantBeDeletedOnceItsMeetingClosedEvenDuringALaterOne() {
+  void aTaskCantBeDeletedBetweenMeetings() {
     close();
 
     assertThat(delete(ana)).hasStatus(HttpStatus.CONFLICT);
 
+    // A scheduled meeting that hasn't started doesn't count.
+    post(
+        ana,
+        "/api/meeting-series/" + seriesId + "/meetings",
+        "{\"scheduledAt\": \"2026-11-09T08:30:00Z\", \"participantIds\": []}");
+    assertThat(delete(ana)).hasStatus(HttpStatus.CONFLICT);
+
+    assertThat(body(get(ana, "/api/tasks/" + task))).contains("Sign the contract");
+  }
+
+  @Test
+  void theOrganizerDeletesATaskDuringALaterMeeting() {
+    close();
     scheduleAndStart();
 
-    assertThat(delete(ana)).hasStatus(HttpStatus.CONFLICT);
-    assertThat(body(get(ana, "/api/tasks/" + task))).contains("Sign the contract");
+    assertThat(delete(bo)).hasStatus(HttpStatus.FORBIDDEN);
+    assertThat(delete(ana)).hasStatus(HttpStatus.NO_CONTENT);
+
+    assertThat(get(ana, "/api/tasks/" + task)).hasStatus(HttpStatus.NOT_FOUND);
+    assertThat(body(get(ana, "/api/meetings/" + meetingId + "/tasks"))).isEqualTo("[]");
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT deleted_by::text FROM task WHERE id = ?::uuid", String.class, task))
+        .isEqualTo(userId(ana));
   }
 
   @Test

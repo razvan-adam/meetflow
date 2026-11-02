@@ -12,8 +12,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * What the tasks module asks about meetings. Tasks are created and deleted by the series organizer
- * while the task's meeting runs, and reworded while any meeting of its series runs, so the same
+ * What the tasks module asks about meetings. Tasks are created by the series organizer while the
+ * task's meeting runs, and reworded and deleted while any meeting of its series runs, so the same
  * rules as for decisions apply: 404 for outsiders, 403 for other members and 409 when no such
  * meeting is running.
  *
@@ -49,11 +49,6 @@ public class TaskMeetings {
   public TaskOrigin ofDecision(UUID userId, UUID decisionId) {
     var decision = decisions.findInRunningMeeting(userId, decisionId);
     return origin(userId, decision.getMeetingId(), decision.getAgendaItemId(), decision.getId());
-  }
-
-  @Transactional(propagation = Propagation.MANDATORY)
-  public void lockRunningMeeting(UUID userId, UUID meetingId) {
-    meetings.lockRunningMeeting(userId, meetingId);
   }
 
   /** Locks the series' running meeting, whichever it is, and returns its ID. */

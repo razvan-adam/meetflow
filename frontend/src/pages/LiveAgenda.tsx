@@ -100,7 +100,7 @@ export function LiveAgenda({
   // Apart from the status, because a 409 here means a meeting closed.
   const rewordTask = useChangeTask({ meetingId, seriesId })
   const deleteTask = useDeleteTask({ meetingId, seriesId })
-  // On a closed meeting's page, its tasks can still be reworded while a later meeting runs.
+  // On a closed meeting's page, its tasks can still be reworded and deleted while a later one runs.
   const seriesMeetings = useSeriesMeetings(seriesId, closed && organizes)
   const { data: user } = useCurrentUser()
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -129,7 +129,7 @@ export function LiveAgenda({
   // The tasks that came straight from the item, not from one of its decisions.
   const tasksOfItem = (item: AgendaItem) =>
     (tasks.data ?? []).filter((task) => task.agendaItemId === item.id && !task.decisionId)
-  const canReword =
+  const canCorrect =
     canEdit ||
     (closed &&
       organizes &&
@@ -147,8 +147,7 @@ export function LiveAgenda({
       tasks={list}
       label={label}
       canChangeStatus={(task) => organizes || task.ownerId === user?.id}
-      canReword={canReword}
-      canDelete={canEdit}
+      canCorrect={canCorrect}
       pending={changeTask.isPending || rewordTask.isPending || deleteTask.isPending}
       onChangeStatus={(task, status) => {
         resetTaskErrors()

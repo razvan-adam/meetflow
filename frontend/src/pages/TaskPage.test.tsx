@@ -369,7 +369,7 @@ describe('correcting a task while its meeting runs', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe(`/meetings/${RUNNING.id}`))
   })
 
-  it('offers rewording but not deleting while a later meeting runs', async () => {
+  it('offers rewording and deleting while a later meeting runs', async () => {
     api({
       [`GET /api/meetings/${RUNNING.id}`]: () => Response.json(CLOSED),
       [SERIES_MEETINGS]: () => Response.json([{ ...RUNNING, id: 'later' }, CLOSED]),
@@ -377,8 +377,7 @@ describe('correcting a task while its meeting runs', () => {
     renderApp(`/tasks/${CONTRACT.id}`)
 
     expect(await screen.findByRole('button', { name: 'Change description' })).toBeVisible()
-    await screen.findByRole('link', { name: /Weekly ops sync,/ })
-    expect(screen.queryByRole('button', { name: 'Delete this task' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Delete this task' })).toBeVisible()
   })
 
   it('isn’t offered between meetings, though the status still is', async () => {
@@ -396,11 +395,11 @@ describe('correcting a task while its meeting runs', () => {
   })
 
   it('says why when deleting is rejected because the meeting closed', async () => {
-    let meeting = RUNNING
+    let meetings = [RUNNING]
     api({
-      [`GET /api/meetings/${RUNNING.id}`]: () => Response.json(meeting),
+      [SERIES_MEETINGS]: () => Response.json(meetings),
       [`DELETE ${TASK}`]: () => {
-        meeting = CLOSED
+        meetings = [CLOSED]
         return reply(409)()
       },
     })

@@ -10,8 +10,7 @@ interface Props {
   tasks: Task[]
   label: string
   canChangeStatus: (task: Task) => boolean
-  canReword: boolean
-  canDelete: boolean
+  canCorrect: boolean
   pending: boolean
   onChangeStatus: (task: Task, status: TaskStatus) => void
   onReword: (task: Task, description: string, onSuccess: () => void) => void
@@ -43,8 +42,7 @@ function TaskRow({
   task,
   today,
   canChangeStatus,
-  canReword,
-  canDelete,
+  canCorrect,
   pending,
   onChangeStatus,
   onReword,
@@ -61,7 +59,7 @@ function TaskRow({
     }
   }
 
-  if (mode === 'edit' && canReword) {
+  if (mode === 'edit' && canCorrect) {
     return (
       <li className={styles.task}>
         <form className={styles.taskEdit} onSubmit={handleReword}>
@@ -84,7 +82,7 @@ function TaskRow({
       </li>
     )
   }
-  if (mode === 'delete' && canDelete) {
+  if (mode === 'delete' && canCorrect) {
     return (
       <li className={styles.task}>
         <div
@@ -124,7 +122,7 @@ function TaskRow({
         </p>
       </div>
       <span className={styles.taskDue}>{dueText(task, today)}</span>
-      {(canChangeStatus(task) || canReword || canDelete) && (
+      {(canChangeStatus(task) || canCorrect) && (
         <div className={styles.taskControls}>
           {canChangeStatus(task) && (
             <select
@@ -141,8 +139,8 @@ function TaskRow({
               ))}
             </select>
           )}
-          <span className={agendaStyles.actions}>
-            {canReword && (
+          {canCorrect && (
+            <span className={agendaStyles.actions}>
               <button
                 className={agendaStyles.action}
                 type="button"
@@ -151,8 +149,6 @@ function TaskRow({
               >
                 Edit
               </button>
-            )}
-            {canDelete && (
               <button
                 className={agendaStyles.action}
                 type="button"
@@ -161,8 +157,8 @@ function TaskRow({
               >
                 ×
               </button>
-            )}
-          </span>
+            </span>
+          )}
         </div>
       )}
     </li>

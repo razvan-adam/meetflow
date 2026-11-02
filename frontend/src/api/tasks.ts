@@ -120,8 +120,9 @@ export function useChangeTask(context: AgendaContext) {
   })
 }
 
-// For the organizer, while the task's own meeting runs. The task itself reloads only after a
-// failure: once deleted it answers 404, which the page leaving it shouldn't flash first.
+// For the organizer, while a meeting of the task's series runs. The task itself reloads only after
+// a failure: once deleted it answers 404, which the page leaving it shouldn't flash first. A 409
+// may mean the running meeting closed, so the series' meetings reload too.
 export function useDeleteTask(context: AgendaContext) {
   const queryClient = useQueryClient()
   const reload = useReloadAfterChange(context, tasksKey(context.meetingId))
@@ -130,6 +131,9 @@ export function useDeleteTask(context: AgendaContext) {
     onSettled: async (_data, error, taskId) => {
       if (error) {
         await queryClient.invalidateQueries({ queryKey: taskKey(taskId) })
+      }
+      if (error instanceof ApiError && error.status === 409) {
+        await queryClient.invalidateQueries({ queryKey: seriesMeetingsKey(context.seriesId) })
       }
       await reload(error)
     },

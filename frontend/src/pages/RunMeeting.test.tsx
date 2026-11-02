@@ -842,17 +842,25 @@ describe('creating tasks', () => {
       ).not.toBeInTheDocument()
     })
 
-    it('offers rewording but not deleting on a closed meeting while a later one runs', async () => {
+    it('offers rewording and deleting on a closed meeting while a later one runs', async () => {
+      let tasks = [DRAFT]
       api({
         [`GET ${MEETING}`]: () => Response.json(CLOSED),
-        [`GET ${TASKS}`]: () => Response.json([DRAFT]),
+        [`GET ${TASKS}`]: () => Response.json(tasks),
         [`GET /api/meeting-series/${WEEKLY.id}/meetings`]: () =>
           Response.json([{ ...RUNNING, id: 'later' }, CLOSED]),
+        [`DELETE /api/tasks/${DRAFT.id}`]: () => {
+          tasks = []
+          return new Response(null, { status: 204 })
+        },
       })
       renderApp(`/meetings/${SCHEDULED.id}`)
 
       expect(await screen.findByRole('button', { name: 'Edit task: Send the draft' })).toBeVisible()
-      expect(screen.queryByRole('button', { name: /Delete task/ })).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Delete task: Send the draft' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+
+      await waitFor(() => expect(screen.queryByText('Send the draft')).not.toBeInTheDocument())
     })
 
     it('offers neither on a closed meeting when no meeting of the series runs', async () => {

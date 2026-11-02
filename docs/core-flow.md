@@ -52,9 +52,9 @@ The organizer runs the meeting in the app and works through the agenda:
    - an owner, who must be a participant of this meeting
    - a deadline
 
-   Until the meeting closes, the organizer can delete a task created by mistake. The organizer can reword a task during its own meeting and any later meeting of the series.
+   The organizer can reword or delete a task during its own meeting and any later meeting of the series.
 5. Each agenda item is marked as covered or not covered. Items not covered carry over, and so do items left unmarked when the meeting closes.
-6. The organizer closes the meeting. After closing, its notes and decisions can no longer be changed, and tasks can no longer be added or deleted. A task's status, owner and deadline can still be updated, under the rules in *Commitment lifecycle*, and it can be reworded during a later meeting.
+6. The organizer closes the meeting. After closing, its notes and decisions can no longer be changed, and tasks can no longer be added to it. A task's status, owner and deadline can still be updated, under the rules in *Commitment lifecycle*, and it can be reworded or deleted during a later meeting.
 
 **MVP features:** 3 – Recording of agreements, 4 – Task assignment with owners.
 
@@ -107,7 +107,7 @@ When the organizer creates the next meeting of the series, the cycle starts agai
 | Update task status | | ✓ | ✓ (own tasks) | |
 | Change task owner or deadline | | ✓ | | |
 | Reword a task during its own or a later meeting | | ✓ | | |
-| Delete a task until its meeting closes | | ✓ | | |
+| Delete a task during its own or a later meeting | | ✓ | | |
 | Edit minutes | – | – | – | – |
 | View the team's meetings, tasks and minutes | ✓ | ✓ | ✓ | ✓ |
 
@@ -162,5 +162,5 @@ Resolved while building MF-17:
 
 Resolved while building MF-18:
 
-16. **Correcting tasks** – the organizer can reword a task while any meeting of its series runs, but not between meetings. Rewording during the task's own meeting stays out of the history, because it is a correction made before anyone is sent the task; rewording during a later meeting is recorded, because people have seen the old wording. A task can only be deleted until its own meeting closes. A deleted task lets go of its decision, so a decision whose tasks were all deleted can be removed again.
+16. **Correcting tasks** – the organizer can reword or delete a task while any meeting of its series runs, but not between meetings. Rewording during the task's own meeting stays out of the history, because it is a correction made before anyone is sent the task; rewording during a later meeting is recorded, because people have seen the old wording. A task deleted after its meeting closed also disappears from that meeting's page. A deleted task lets go of its decision, so a decision whose tasks were all deleted can be removed again.
 17. **Status changes** – any status can follow any other, so a done task can be reopened and a slip of the hand corrected.

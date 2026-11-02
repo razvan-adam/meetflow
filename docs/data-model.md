@@ -172,7 +172,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 | `status` | text | `OPEN`, `IN_PROGRESS` or `DONE` |
 | `created_by` | uuid | FK `app_user` |
 | `created_at`, `updated_at` | timestamptz | |
-| `deleted_at`, `deleted_by` | timestamptz, uuid | set when an admin deletes a removed member's task, or the organizer deletes a task while its meeting runs |
+| `deleted_at`, `deleted_by` | timestamptz, uuid | set when an admin deletes a removed member's task, or the organizer deletes a task while a meeting of its series runs |
 | `version` | bigint | |
 
 - When a task is created, its owner must be a participant of `meeting_id` (service check).

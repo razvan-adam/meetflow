@@ -17,9 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * A meeting's agenda: preparing it (MF-14) and working through it (MF-15). The series organizer
- * adds, renames, reorders and removes items until the meeting is closed, and takes notes and marks
- * items while it runs; every member of the team can read the agenda. As with the meeting itself,
- * the latest edit wins.
+ * adds, renames and reorders items until the meeting is closed, removes them until it starts, and
+ * takes notes and marks items while it runs; every member of the team can read the agenda. As with
+ * the meeting itself, the latest edit wins.
  */
 @Service
 public class AgendaService {
@@ -59,10 +59,14 @@ public class AgendaService {
     return toResponse(item);
   }
 
-  /** Items carried over from the previous meeting can be removed like any other. */
+  /**
+   * Only before the meeting starts: 409 afterwards. Decisions and tasks are only created during a
+   * meeting, so a removable item has none pointing at it, and no notes can be lost. Items carried
+   * over from the previous meeting can be removed like any other.
+   */
   @Transactional
   public void remove(UUID userId, UUID itemId) {
-    items.delete(findForOrganizerEdit(userId, itemId));
+    items.delete(lockAndLoad(userId, itemId, meetings::lockUnstartedMeeting));
   }
 
   /**
@@ -88,7 +92,7 @@ public class AgendaService {
   /** Notes are taken during the meeting: 409 before it starts and after it closes. */
   @Transactional
   public AgendaItemResponse writeNotes(UUID userId, UUID itemId, String notes) {
-    var item = lockAndLoad(userId, itemId, meetings::lockRunningMeeting);
+    var item = findInRunningMeeting(userId, itemId);
     item.writeNotes(notes);
     return toResponse(item);
   }
@@ -96,9 +100,14 @@ public class AgendaService {
   /** Items are marked during the meeting: 409 before it starts and after it closes. */
   @Transactional
   public AgendaItemResponse mark(UUID userId, UUID itemId, AgendaItemStatus status) {
-    var item = lockAndLoad(userId, itemId, meetings::lockRunningMeeting);
+    var item = findInRunningMeeting(userId, itemId);
     item.mark(status);
     return toResponse(item);
+  }
+
+  /** The item, for its series organizer, while its meeting runs. */
+  AgendaItem findInRunningMeeting(UUID userId, UUID itemId) {
+    return lockAndLoad(userId, itemId, meetings::lockRunningMeeting);
   }
 
   /** The item, for its series organizer. Outsiders get the same 404 as for an unknown item. */

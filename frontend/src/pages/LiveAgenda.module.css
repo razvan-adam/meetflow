@@ -1,0 +1,146 @@
+/* The agenda of a meeting that has started (S7). Shared layout comes from TeamPage.module.css. */
+
+.live {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .live {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.side {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.outline {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.outlineItem {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  background: none;
+  color: var(--ink);
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.outlineItem[aria-current] {
+  background: var(--wire-soft);
+  font-weight: 700;
+}
+
+.outlineItem[data-status='NOT_COVERED'] {
+  color: var(--muted);
+}
+
+.outlineItem[data-status='NOT_COVERED'] .outlineTitle {
+  text-decoration: line-through;
+}
+
+.symbol {
+  flex: none;
+  color: var(--muted);
+  font-family: var(--font-mono);
+}
+
+.outlineTitle {
+  min-width: 0;
+}
+
+.itemHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.marks {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.mark {
+  padding: 6px 12px;
+  background: var(--frame);
+  color: var(--ink);
+  border: 0;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.mark + .mark {
+  border-left: 1px solid var(--line);
+}
+
+.mark[aria-pressed='true'] {
+  background: var(--wire);
+  color: var(--frame);
+  font-weight: 700;
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.textarea {
+  font-weight: 400;
+  resize: vertical;
+}
+
+.record {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.recordTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tag {
+  padding: 1px 6px;
+  background: var(--wire-soft);
+  color: var(--wire);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.tag[data-status='NOT_COVERED'] {
+  background: var(--fill);
+  color: var(--muted);
+}
+
+.notes {
+  margin: 0;
+  font-size: 14px;
+  white-space: pre-wrap;
+}

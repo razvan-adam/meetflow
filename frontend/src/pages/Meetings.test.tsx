@@ -28,6 +28,7 @@ const MONDAY: Meeting = {
   seriesId: WEEKLY.id,
   scheduledAt: '2026-11-02T09:30:00.000Z',
   status: 'SCHEDULED',
+  closedAt: null,
   participants: [
     { id: ANA.id, name: ANA.name },
     { id: BO.id, name: BO.name },
@@ -155,7 +156,26 @@ describe('the meeting page', () => {
     })
   })
 
-  it('says so when the meeting was closed meanwhile', async () => {
+  it('removes the form and says why when the meeting was closed meanwhile', async () => {
+    let meeting = MONDAY
+    mockApi({
+      ...teamApi,
+      [`GET /api/meeting-series/${WEEKLY.id}`]: () => Response.json(WEEKLY),
+      [`GET /api/meetings/${MONDAY.id}`]: () => Response.json(meeting),
+      [`PUT /api/meetings/${MONDAY.id}`]: () => {
+        meeting = { ...MONDAY, status: 'CLOSED', closedAt: '2026-11-02T10:14:00.000Z' }
+        return Response.json({ status: 409 }, { status: 409 })
+      },
+    })
+    renderApp(`/meetings/${MONDAY.id}/edit`)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Save changes' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('was closed meanwhile')
+    expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument()
+  })
+
+  it('keeps the form when a save fails with a 409 but the meeting is still open', async () => {
     mockApi({
       ...teamApi,
       [`GET /api/meeting-series/${WEEKLY.id}`]: () => Response.json(WEEKLY),
@@ -166,7 +186,8 @@ describe('the meeting page', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Save changes' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('was closed meanwhile')
+    expect(await screen.findByRole('alert')).toHaveTextContent('changed meanwhile')
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeVisible()
   })
 
   it('removes the form and says why when the organizer role moved to someone else', async () => {

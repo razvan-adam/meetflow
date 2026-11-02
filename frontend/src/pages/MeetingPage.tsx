@@ -5,6 +5,8 @@ import { useSeries } from '../api/series.ts'
 import { useCurrentUser } from '../api/users.ts'
 import { Agenda } from './Agenda.tsx'
 import { Breadcrumb } from './Breadcrumb.tsx'
+import { LiveAgenda } from './LiveAgenda.tsx'
+import { MeetingActions } from './MeetingActions.tsx'
 import { formatMeetingTime } from './meetingTime.ts'
 import pageStyles from './TeamPage.module.css'
 import styles from './MeetingPage.module.css'
@@ -16,7 +18,7 @@ const STATUS_LABELS: Record<Meeting['status'], string> = {
 }
 
 // A meeting: when, who attends and its agenda. Every member of the team can open it; the series
-// organizer can change it until it is closed (MF-13, MF-14).
+// organizer can change it until it is closed, and starts and closes it (MF-13, MF-14, MF-15).
 export function MeetingPage() {
   const { meetingId = '' } = useParams()
   const meeting = useMeeting(meetingId)
@@ -40,15 +42,26 @@ export function MeetingPage() {
           </h1>
           <p className={pageStyles.sub}>{STATUS_LABELS[meeting.data.status]}</p>
         </div>
-        {canEdit && (
-          <Link
-            className={`${pageStyles.secondary} ${styles.linkButton}`}
-            to={`/meetings/${meeting.data.id}/edit`}
-          >
-            Edit date and participants
-          </Link>
-        )}
+        <div className={styles.actions}>
+          {canEdit && (
+            <Link
+              className={`${pageStyles.secondary} ${styles.linkButton}`}
+              to={`/meetings/${meeting.data.id}/edit`}
+            >
+              Edit date and participants
+            </Link>
+          )}
+          <MeetingActions meeting={meeting.data} canRun={canEdit} />
+        </div>
       </div>
+      {meeting.data.closedAt && (
+        <p className={`${styles.banner} ${styles.bannerClosed}`}>
+          <span>
+            <strong>This meeting was closed</strong> on {formatMeetingTime(meeting.data.closedAt)}.
+            It can no longer be changed.
+          </span>
+        </p>
+      )}
       <section aria-labelledby="participants-title">
         <h2 id="participants-title" className={pageStyles.sectionLabel}>
           Participants ({meeting.data.participants.length})
@@ -66,7 +79,16 @@ export function MeetingPage() {
           ))}
         </ul>
       </section>
-      <Agenda meetingId={meeting.data.id} seriesId={meeting.data.seriesId} canEdit={canEdit} />
+      {meeting.data.status === 'SCHEDULED' ? (
+        <Agenda meetingId={meeting.data.id} seriesId={meeting.data.seriesId} canEdit={canEdit} />
+      ) : (
+        <LiveAgenda
+          meetingId={meeting.data.id}
+          seriesId={meeting.data.seriesId}
+          canEdit={canEdit}
+          closed={meeting.data.status === 'CLOSED'}
+        />
+      )}
     </main>
   )
 }

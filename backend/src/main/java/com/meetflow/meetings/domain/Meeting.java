@@ -17,11 +17,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Persistable;
 
 /**
  * One meeting of a series, with its date and time and its participants. A series has at most one
- * meeting that isn't closed. The start and close timestamps are added with MF-15.
+ * meeting that isn't closed. A meeting is scheduled, then started, then closed.
  */
 @Entity
 public class Meeting implements Persistable<UUID> {
@@ -36,6 +37,14 @@ public class Meeting implements Persistable<UUID> {
 
   @Enumerated(EnumType.STRING)
   private MeetingStatus status;
+
+  @SuppressWarnings("UnusedVariable") // The table requires it once a meeting has started.
+  private @Nullable Instant startedAt;
+
+  private @Nullable Instant closedAt;
+
+  @SuppressWarnings("UnusedVariable") // The table requires it once a meeting is closed.
+  private @Nullable UUID closedBy;
 
   /** Team members, checked when they are added. */
   @ElementCollection
@@ -83,8 +92,23 @@ public class Meeting implements Persistable<UUID> {
     return status;
   }
 
+  public @Nullable Instant getClosedAt() {
+    return closedAt;
+  }
+
   public Set<UUID> getParticipantIds() {
     return Set.copyOf(participantIds);
+  }
+
+  public void start() {
+    this.status = MeetingStatus.IN_PROGRESS;
+    this.startedAt = Instant.now();
+  }
+
+  public void close(UUID closedBy) {
+    this.status = MeetingStatus.CLOSED;
+    this.closedAt = Instant.now();
+    this.closedBy = closedBy;
   }
 
   /** The participants must already be checked to be members of the team. */

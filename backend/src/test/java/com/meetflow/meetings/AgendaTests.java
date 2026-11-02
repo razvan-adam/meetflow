@@ -39,8 +39,6 @@ class AgendaTests {
 
   Cookie cy;
 
-  String anaId;
-
   String teamId;
 
   String seriesId;
@@ -53,7 +51,6 @@ class AgendaTests {
     ana = signUp("Ana Costa");
     bo = signUp("Bo Lind");
     cy = signUp("Cy Park");
-    anaId = userId(ana);
     teamId = JsonPath.read(body(post(ana, "/api/teams", "{\"name\": \"Ops team\"}")), "$.id");
     jdbc.update(
         "INSERT INTO team_membership (team_id, user_id, role, joined_at)"
@@ -185,9 +182,7 @@ class AgendaTests {
 
   @Test
   void theAgendaCanChangeWhileTheMeetingRuns() {
-    jdbc.update(
-        "UPDATE meeting SET status = 'IN_PROGRESS', started_at = now() WHERE id = ?::uuid",
-        meetingId);
+    post(ana, "/api/meetings/" + meetingId + "/start", "");
 
     assertThat(add(ana, "Raised in the meeting")).hasStatus(HttpStatus.CREATED);
   }
@@ -281,13 +276,9 @@ class AgendaTests {
     return JsonPath.read(body(created), "$.id");
   }
 
-  // Closing a meeting comes with MF-15; until then the tests close it in the database.
   private void close(String meeting) {
-    jdbc.update(
-        "UPDATE meeting SET status = 'CLOSED', started_at = now(), closed_at = now(),"
-            + " closed_by = ?::uuid WHERE id = ?::uuid",
-        anaId,
-        meeting);
+    post(ana, "/api/meetings/" + meeting + "/start", "");
+    post(ana, "/api/meetings/" + meeting + "/close", "");
   }
 
   /** Signs up a new user and returns their session cookie. */

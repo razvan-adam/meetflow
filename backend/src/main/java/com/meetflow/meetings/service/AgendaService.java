@@ -1,6 +1,7 @@
 package com.meetflow.meetings.service;
 
 import com.meetflow.meetings.domain.AgendaItem;
+import com.meetflow.meetings.domain.AgendaItemStatus;
 import com.meetflow.meetings.dto.AgendaItemResponse;
 import com.meetflow.meetings.exception.AgendaChangedException;
 import com.meetflow.meetings.exception.AgendaItemNotFoundException;
@@ -10,13 +11,15 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Preparing a meeting's agenda (MF-14). The series organizer adds, renames, reorders and removes
- * items until the meeting is closed; every member of the team can read the agenda. As with the
- * meeting itself, the latest edit wins.
+ * A meeting's agenda: preparing it (MF-14) and working through it (MF-15). The series organizer
+ * adds, renames, reorders and removes items until the meeting is closed, and takes notes and marks
+ * items while it runs; every member of the team can read the agenda. As with the meeting itself,
+ * the latest edit wins.
  */
 @Service
 public class AgendaService {
@@ -82,18 +85,45 @@ public class AgendaService {
         .toList();
   }
 
+  /** Notes are taken during the meeting: 409 before it starts and after it closes. */
+  @Transactional
+  public AgendaItemResponse writeNotes(UUID userId, UUID itemId, String notes) {
+    var item = lockAndLoad(userId, itemId, meetings::lockRunningMeeting);
+    item.writeNotes(notes);
+    return toResponse(item);
+  }
+
+  /** Items are marked during the meeting: 409 before it starts and after it closes. */
+  @Transactional
+  public AgendaItemResponse mark(UUID userId, UUID itemId, AgendaItemStatus status) {
+    var item = lockAndLoad(userId, itemId, meetings::lockRunningMeeting);
+    item.mark(status);
+    return toResponse(item);
+  }
+
   /** The item, for its series organizer. Outsiders get the same 404 as for an unknown item. */
   private AgendaItem findForOrganizerEdit(UUID userId, UUID itemId) {
-    var item =
+    return lockAndLoad(userId, itemId, meetings::lockForOrganizerEdit);
+  }
+
+  /**
+   * The item, loaded only once its meeting is locked. A copy loaded before waiting for the lock
+   * would miss a change made meanwhile, and saving it would fail on the version check; that happens
+   * whenever notes and a mark are sent together. An item removed meanwhile answers 404.
+   */
+  private AgendaItem lockAndLoad(
+      UUID userId, UUID itemId, BiConsumer<UUID, UUID> lockMeetingForUser) {
+    var place =
         items
-            .findById(itemId)
-            .filter(found -> teamMembers.isMember(userId, found.getTeamId()))
+            .findPlaceById(itemId)
+            .filter(found -> teamMembers.isMember(userId, found.teamId()))
             .orElseThrow(AgendaItemNotFoundException::new);
-    meetings.lockForOrganizerEdit(userId, item.getMeetingId());
-    return item;
+    lockMeetingForUser.accept(userId, place.meetingId());
+    return items.findById(itemId).orElseThrow(AgendaItemNotFoundException::new);
   }
 
   private static AgendaItemResponse toResponse(AgendaItem item) {
-    return new AgendaItemResponse(item.getId(), item.getTitle(), item.isCarriedOver());
+    return new AgendaItemResponse(
+        item.getId(), item.getTitle(), item.getNotes(), item.getStatus(), item.isCarriedOver());
   }
 }

@@ -9,6 +9,42 @@
   gap: 12px;
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.fullWidth {
+  flex-basis: 100%;
+}
+
+.banner {
+  display: grid;
+  flex-basis: 100%;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--fill);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.bannerClosed {
+  background: var(--wire-soft);
+}
+
+.bannerList {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.bannerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* A link that looks like the primary button. */
 .linkButton {
   display: inline-block;

@@ -136,12 +136,10 @@ describe('working through the agenda', () => {
 
     fireEvent.change(await notesBox(), { target: { value: 'Up by 35%' } })
 
-    await waitFor(
-      () =>
-        expect(requestBody(fetchMock, `PUT /api/agenda-items/${BUDGET.id}/notes`)).toEqual({
-          notes: 'Up by 35%',
-        }),
-      { timeout: 2000 },
+    await waitFor(() =>
+      expect(requestBody(fetchMock, `PUT /api/agenda-items/${BUDGET.id}/notes`)).toEqual({
+        notes: 'Up by 35%',
+      }),
     )
   })
 

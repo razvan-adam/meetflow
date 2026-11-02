@@ -88,7 +88,7 @@ function CloseConfirmation({ meetingId, pending, onConfirm, onCancel }: CloseCon
     <div className={styles.banner} role="group" aria-label="Confirm closing the meeting">
       <strong>Close this meeting?</strong>
       <ul className={styles.bannerList}>
-        <li>Notes and the agenda will be locked. This can’t be undone.</li>
+        <li>Notes, decisions and the agenda will be locked. This can’t be undone.</li>
         {unmarked > 0 && (
           <li>
             {unmarked === 1

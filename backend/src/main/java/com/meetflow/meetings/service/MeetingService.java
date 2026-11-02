@@ -8,6 +8,7 @@ import com.meetflow.meetings.domain.MeetingSeries;
 import com.meetflow.meetings.domain.MeetingStatus;
 import com.meetflow.meetings.dto.MeetingResponse;
 import com.meetflow.meetings.dto.ParticipantResponse;
+import com.meetflow.meetings.exception.MeetingAlreadyStartedException;
 import com.meetflow.meetings.exception.MeetingClosedException;
 import com.meetflow.meetings.exception.MeetingNotFoundException;
 import com.meetflow.meetings.exception.MeetingNotStartedException;
@@ -172,6 +173,15 @@ public class MeetingService {
     var meeting = lockForOrganizerEdit(userId, meetingId);
     if (meeting.getStatus() != MeetingStatus.IN_PROGRESS) {
       throw new MeetingNotStartedException();
+    }
+    return meeting;
+  }
+
+  /** Like {@link #lockForOrganizerEdit}, for what only happens before a meeting starts. */
+  Meeting lockUnstartedMeeting(UUID userId, UUID meetingId) {
+    var meeting = lockForOrganizerEdit(userId, meetingId);
+    if (meeting.getStatus() != MeetingStatus.SCHEDULED) {
+      throw new MeetingAlreadyStartedException();
     }
     return meeting;
   }

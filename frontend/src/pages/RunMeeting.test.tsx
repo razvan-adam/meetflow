@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { AgendaItem } from '../api/agenda.ts'
+import type { Decision } from '../api/decisions.ts'
 import type { Meeting } from '../api/meetings.ts'
 import type { Series } from '../api/series.ts'
 import type { Team } from '../api/teams.ts'
@@ -46,6 +47,7 @@ const STAFFING: AgendaItem = {
 
 const MEETING = `/api/meetings/${SCHEDULED.id}`
 const AGENDA = `${MEETING}/agenda-items`
+const DECISIONS = `${MEETING}/decisions`
 const CONFLICT = () => Response.json({ status: 409 }, { status: 409 })
 
 function api(overrides: Record<string, () => Response>) {
@@ -56,6 +58,7 @@ function api(overrides: Record<string, () => Response>) {
     [`GET /api/meeting-series/${WEEKLY.id}`]: () => Response.json(WEEKLY),
     [`GET ${MEETING}`]: () => Response.json(RUNNING),
     [`GET ${AGENDA}`]: () => Response.json([BUDGET, STAFFING]),
+    [`GET ${DECISIONS}`]: () => Response.json([]),
     ...overrides,
   })
 }
@@ -289,6 +292,189 @@ describe('working through the agenda', () => {
     await waitFor(() =>
       expect(screen.queryByRole('textbox', { name: 'Notes' })).not.toBeInTheDocument(),
     )
+  })
+})
+
+describe('recording decisions', () => {
+  const PICKERS: Decision = { id: 'pickers', agendaItemId: BUDGET.id, text: 'Hire 6 pickers' }
+  const QUOTES: Decision = { id: 'quotes', agendaItemId: STAFFING.id, text: 'Ask for two quotes' }
+
+  it('records a decision on the open item and clears the box', async () => {
+    let decisions: Decision[] = []
+    const fetchMock = api({
+      [`GET ${DECISIONS}`]: () => Response.json(decisions),
+      [`POST /api/agenda-items/${BUDGET.id}/decisions`]: () => {
+        decisions = [PICKERS]
+        return Response.json(PICKERS, { status: 201 })
+      },
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    const box = await screen.findByRole('textbox', { name: 'New decision' })
+    fireEvent.change(box, { target: { value: '  Hire 6 pickers  ' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add decision' }))
+
+    expect(await screen.findByText('Hire 6 pickers')).toBeVisible()
+    expect(requestBody(fetchMock, `POST /api/agenda-items/${BUDGET.id}/decisions`)).toEqual({
+      text: 'Hire 6 pickers',
+    })
+    await waitFor(() => expect(box).toHaveValue(''))
+  })
+
+  it('shows only the decisions of the open item', async () => {
+    api({ [`GET ${DECISIONS}`]: () => Response.json([PICKERS, QUOTES]) })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    // Every item shows until the page knows the user organizes the series, so wait for that.
+    await notesBox()
+    expect(await screen.findByText('Hire 6 pickers')).toBeVisible()
+    expect(screen.queryByText('Ask for two quotes')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Staffing: Not marked yet' }))
+
+    expect(await screen.findByText('Ask for two quotes')).toBeVisible()
+    expect(screen.queryByText('Hire 6 pickers')).not.toBeInTheDocument()
+  })
+
+  it('edits a decision', async () => {
+    let decisions = [PICKERS]
+    const fetchMock = api({
+      [`GET ${DECISIONS}`]: () => Response.json(decisions),
+      [`PUT /api/decisions/${PICKERS.id}`]: () => {
+        decisions = [{ ...PICKERS, text: 'Hire 8 pickers' }]
+        return Response.json(decisions[0])
+      },
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit decision: Hire 6 pickers' }))
+    const box = screen.getByRole('textbox', { name: 'Decision text' })
+    expect(box).toHaveValue('Hire 6 pickers')
+    fireEvent.change(box, { target: { value: 'Hire 8 pickers' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText('Hire 8 pickers')).toBeVisible()
+    expect(requestBody(fetchMock, `PUT /api/decisions/${PICKERS.id}`)).toEqual({
+      text: 'Hire 8 pickers',
+    })
+    expect(screen.queryByRole('textbox', { name: 'Decision text' })).not.toBeInTheDocument()
+  })
+
+  it('asks before removing a decision and starts on the safe choice', async () => {
+    let decisions = [PICKERS]
+    const fetchMock = api({
+      [`GET ${DECISIONS}`]: () => Response.json(decisions),
+      [`DELETE /api/decisions/${PICKERS.id}`]: () => {
+        decisions = []
+        return new Response(null, { status: 204 })
+      },
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    const removeButton = () =>
+      screen.findByRole('button', { name: 'Remove decision: Hire 6 pickers' })
+    fireEvent.click(await removeButton())
+    const keep = screen.getByRole('button', { name: 'Keep decision' })
+    expect(keep).toHaveFocus()
+    fireEvent.click(keep)
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
+
+    fireEvent.click(await removeButton())
+    fireEvent.click(screen.getByRole('button', { name: 'Remove decision' }))
+
+    await waitFor(() => expect(screen.queryByText('Hire 6 pickers')).not.toBeInTheDocument())
+  })
+
+  it('keeps the text and says so when a decision can’t be saved', async () => {
+    api({
+      [`POST /api/agenda-items/${BUDGET.id}/decisions`]: () =>
+        Response.json({ status: 500 }, { status: 500 }),
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    const box = await screen.findByRole('textbox', { name: 'New decision' })
+    fireEvent.change(box, { target: { value: 'Hire 6 pickers' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add decision' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('couldn’t be saved')
+    expect(box).toHaveValue('Hire 6 pickers')
+  })
+
+  it('turns read-only and says so when a decision is rejected because it was closed', async () => {
+    let meeting = RUNNING
+    api({
+      [`GET ${MEETING}`]: () => Response.json(meeting),
+      [`POST /api/agenda-items/${BUDGET.id}/decisions`]: () => {
+        meeting = CLOSED
+        return CONFLICT()
+      },
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    fireEvent.change(await screen.findByRole('textbox', { name: 'New decision' }), {
+      target: { value: 'Too late' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Add decision' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('was closed meanwhile')
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: 'New decision' })).not.toBeInTheDocument(),
+    )
+  })
+
+  it('shows members the decisions under each item, read-only', async () => {
+    api({
+      [`GET /api/meeting-series/${WEEKLY.id}`]: () =>
+        Response.json({ ...WEEKLY, organizerId: BO.id, organizerName: BO.name }),
+      [`GET ${DECISIONS}`]: () => Response.json([PICKERS, QUOTES]),
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    const budget = await screen.findByRole('list', { name: 'Decisions on Budget' })
+    expect(within(budget).getByText('Hire 6 pickers')).toBeVisible()
+    const staffing = screen.getByRole('list', { name: 'Decisions on Staffing' })
+    expect(within(staffing).getByText('Ask for two quotes')).toBeVisible()
+    expect(screen.queryByRole('textbox', { name: 'New decision' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /decision/i })).not.toBeInTheDocument()
+  })
+
+  it('keeps the decisions on the record of a closed meeting', async () => {
+    api({
+      [`GET ${MEETING}`]: () => Response.json(CLOSED),
+      [`GET ${DECISIONS}`]: () => Response.json([PICKERS]),
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    expect(await screen.findByText('Hire 6 pickers')).toBeVisible()
+    expect(screen.queryByRole('textbox', { name: 'New decision' })).not.toBeInTheDocument()
+  })
+
+  it('says so when the decisions can’t be loaded, rather than showing none', async () => {
+    api({ [`GET ${DECISIONS}`]: () => Response.json({ status: 500 }, { status: 500 }) })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('decisions couldn’t be loaded')
+  })
+})
+
+describe('removing an agenda item once the meeting has started', () => {
+  it('moves to the live agenda, where items can’t be removed', async () => {
+    let meeting = SCHEDULED
+    api({
+      [`GET ${MEETING}`]: () => Response.json(meeting),
+      [`DELETE /api/agenda-items/${BUDGET.id}`]: () => {
+        meeting = RUNNING
+        return CONFLICT()
+      },
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove Budget' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove item' }))
+
+    expect(await notesBox()).toBeVisible()
+    expect(screen.queryByRole('button', { name: /^Remove Budget/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Budget: Not marked yet' })).toBeVisible()
   })
 })
 

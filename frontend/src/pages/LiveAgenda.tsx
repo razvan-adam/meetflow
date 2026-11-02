@@ -8,6 +8,13 @@ import {
   type AgendaItemStatus,
 } from '../api/agenda.ts'
 import { ApiError } from '../api/client.ts'
+import {
+  useAddDecision,
+  useDecisions,
+  useEditDecision,
+  useRemoveDecision,
+} from '../api/decisions.ts'
+import { ItemDecisions } from './ItemDecisions.tsx'
 import pageStyles from './TeamPage.module.css'
 import styles from './LiveAgenda.module.css'
 
@@ -54,6 +61,10 @@ export function LiveAgenda({ meetingId, seriesId, canEdit, closed }: Props) {
   const add = useAddAgendaItem({ meetingId, seriesId })
   const saveNotes = useSaveNotes({ meetingId, seriesId })
   const mark = useMarkAgendaItem({ meetingId, seriesId })
+  const decisions = useDecisions(meetingId)
+  const addDecision = useAddDecision({ meetingId, seriesId })
+  const editDecision = useEditDecision({ meetingId, seriesId })
+  const removeDecision = useRemoveDecision({ meetingId, seriesId })
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   if (!items.data) {
@@ -65,7 +76,21 @@ export function LiveAgenda({ meetingId, seriesId, canEdit, closed }: Props) {
   }
   const agenda = items.data
   const selected = agenda.find((item) => item.id === selectedId) ?? agenda[0]
-  const failure = add.error ?? saveNotes.error ?? mark.error
+  const failure =
+    add.error ??
+    saveNotes.error ??
+    mark.error ??
+    addDecision.error ??
+    editDecision.error ??
+    removeDecision.error
+  const decisionsOf = (item: AgendaItem) =>
+    (decisions.data ?? []).filter((decision) => decision.agendaItemId === item.id)
+
+  function resetDecisionErrors() {
+    addDecision.reset()
+    editDecision.reset()
+    removeDecision.reset()
+  }
 
   function handleAdd(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -155,6 +180,25 @@ export function LiveAgenda({ meetingId, seriesId, canEdit, closed }: Props) {
                   saveNotes.mutate({ itemId: selected.id, notes }, { onError: onFailure })
                 }
               />
+              <ItemDecisions
+                key={`decisions-${selected.id}`}
+                decisions={decisionsOf(selected)}
+                pending={
+                  addDecision.isPending || editDecision.isPending || removeDecision.isPending
+                }
+                onAdd={(text, onSuccess) => {
+                  resetDecisionErrors()
+                  addDecision.mutate({ itemId: selected.id, text }, { onSuccess })
+                }}
+                onEdit={(decisionId, text, onSuccess) => {
+                  resetDecisionErrors()
+                  editDecision.mutate({ decisionId, text }, { onSuccess })
+                }}
+                onRemove={(decisionId, onSettled) => {
+                  resetDecisionErrors()
+                  removeDecision.mutate(decisionId, { onSettled })
+                }}
+              />
             </div>
           ) : (
             <p className={pageStyles.empty}>
@@ -177,9 +221,23 @@ export function LiveAgenda({ meetingId, seriesId, canEdit, closed }: Props) {
                 )}
               </div>
               {item.notes && <p className={styles.notes}>{item.notes}</p>}
+              {decisionsOf(item).length > 0 && (
+                <ul className={styles.decisions} aria-label={`Decisions on ${item.title}`}>
+                  {decisionsOf(item).map((decision) => (
+                    <li key={decision.id} className={styles.decision}>
+                      <p className={styles.decisionText}>{decision.text}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ol>
+      )}
+      {decisions.isError && (
+        <p role="alert" className={`${pageStyles.error} ${pageStyles.below}`}>
+          The decisions couldn’t be loaded. Try again in a few minutes.
+        </p>
       )}
       {failure && (
         <p role="alert" className={`${pageStyles.error} ${pageStyles.below}`}>

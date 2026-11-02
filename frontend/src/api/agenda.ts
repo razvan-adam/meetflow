@@ -37,8 +37,12 @@ export function useAgendaItems(meetingId: string) {
 // The changes below are for the series organizer only, until the meeting is closed. They reload
 // the agenda even when they fail, since a failure usually means the page was out of date. A 403
 // means the user is no longer the organizer, so the series reloads too and the page turns read-only.
-// A 409 may mean the meeting was closed, so it reloads as well and the page can tell.
-function useReloadAfterChange({ meetingId, seriesId }: AgendaContext) {
+// A 409 may mean the meeting was closed, so it reloads as well and the page can tell. Decisions pass
+// their own list as `changed`, to leave the agenda alone while notes are being saved.
+export function useReloadAfterChange(
+  { meetingId, seriesId }: AgendaContext,
+  changed: string[] = agendaKey(meetingId),
+) {
   const queryClient = useQueryClient()
   return async (error: Error | null) => {
     if (error instanceof ApiError && error.status === 403) {
@@ -47,7 +51,7 @@ function useReloadAfterChange({ meetingId, seriesId }: AgendaContext) {
     if (error instanceof ApiError && error.status === 409) {
       await queryClient.invalidateQueries({ queryKey: meetingKey(meetingId), exact: true })
     }
-    await queryClient.invalidateQueries({ queryKey: agendaKey(meetingId) })
+    await queryClient.invalidateQueries({ queryKey: changed })
   }
 }
 
@@ -77,6 +81,7 @@ export function useRenameAgendaItem(context: AgendaContext) {
   })
 }
 
+// Only before the meeting starts.
 export function useRemoveAgendaItem(context: AgendaContext) {
   const reload = useReloadAfterChange(context)
   return useMutation({

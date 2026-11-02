@@ -2,7 +2,7 @@
 
 The agreed build order for the MVP user stories and bugs, plus every other issue registered in Jira so the whole project can be followed from here. **This document is the source of truth for priority**; the order of issues in the Jira backlog is not maintained.
 
-Stories and their acceptance criteria live in Jira (project MF). The flow they implement is described in `docs/core-flow.md`. Statuses below mirror Jira as of 2026-11-01.
+Stories and their acceptance criteria live in Jira (project MF). The flow they implement is described in `docs/core-flow.md`. Statuses below mirror Jira as of 2026-11-02.
 
 ## MVP stories and bugs
 
@@ -14,24 +14,25 @@ Stories and their acceptance criteria live in Jira (project MF). The flow they i
 | 4 | MF-12 | Create a meeting series | MF-5 Core | Done |
 | 5 | MF-13 | Schedule a meeting with participants | MF-5 Core | Done |
 | 6 | MF-14 | Prepare the meeting agenda | MF-5 Core | Done |
-| 7 | MF-38 | Bug: edit meeting form shows a misleading error after the organizer role moves | MF-5 Core | To Do |
+| 7 | MF-38 | Bug: edit meeting form shows a misleading error after the organizer role moves | MF-5 Core | Done |
 | 8 | MF-15 | Run a meeting: notes per agenda item and closing | MF-5 Core | To Do |
-| 9 | MF-39 | Bug: agenda keeps its edit controls after the meeting closes while the page is open | MF-5 Core | To Do |
-| 10 | MF-16 | Record decisions during a meeting | MF-5 Core | To Do |
-| 11 | MF-17 | Create tasks with owner and deadline | MF-6 Commitment tracking | To Do |
-| 12 | MF-18 | Update a task's status, owner and deadline | MF-6 Commitment tracking | To Do |
-| 13 | MF-19 | Carry over open tasks and uncovered items to the next meeting | MF-6 Commitment tracking | To Do |
-| 14 | MF-21 | Pending-tasks dashboard | MF-6 Commitment tracking | To Do |
-| 15 | MF-22 | Generate and email minutes when a meeting is closed | MF-7 Minutes and history | To Do |
-| 16 | MF-20 | Email task owners their tasks after the meeting | MF-6 Commitment tracking | To Do |
-| 17 | MF-23 | Browse and search meeting history | MF-7 Minutes and history | To Do |
-| 18 | MF-11 | Manage team members and admins | MF-5 Core | To Do |
+| 9 | MF-39 | Bug: agenda and edit meeting form keep their edit controls after the meeting closes while the page is open | MF-5 Core | To Do |
+| 10 | MF-40 | Bug: frontend tests fail intermittently on the first test of a file | MF-32 Development foundations | To Do |
+| 11 | MF-16 | Record decisions during a meeting | MF-5 Core | To Do |
+| 12 | MF-17 | Create tasks with owner and deadline | MF-6 Commitment tracking | To Do |
+| 13 | MF-18 | Update a task's status, owner and deadline | MF-6 Commitment tracking | To Do |
+| 14 | MF-19 | Carry over open tasks and uncovered items to the next meeting | MF-6 Commitment tracking | To Do |
+| 15 | MF-21 | Pending-tasks dashboard | MF-6 Commitment tracking | To Do |
+| 16 | MF-22 | Generate and email minutes when a meeting is closed | MF-7 Minutes and history | To Do |
+| 17 | MF-20 | Email task owners their tasks after the meeting | MF-6 Commitment tracking | To Do |
+| 18 | MF-23 | Browse and search meeting history | MF-7 Minutes and history | To Do |
+| 19 | MF-11 | Manage team members and admins | MF-5 Core | To Do |
 
 ## Rationale
 
-- **Ranks 1–10** provide the minimum needed to hold a meeting. MF-38 comes before MF-15 because it can be fixed now; MF-39 comes right after because it needs the closing that MF-15 builds.
-- **Ranks 11–14** deliver commitment tracking, MeetFlow's differentiator, as early as possible. Completing rank 14 is the milestone for a first internal demo: a team can run a meeting, assign tasks and see them carry over.
-- **Ranks 15–18** complete the MVP. They are valuable, but the core loop can be tried without them.
+- **Ranks 1–11** provide the minimum needed to hold a meeting. MF-38 comes before MF-15 because it can be fixed now; MF-39 comes right after because it needs the closing that MF-15 builds. MF-40 comes before more features because every story adds tests, and tests that fail at random make real failures harder to trust.
+- **Ranks 12–15** deliver commitment tracking, MeetFlow's differentiator, as early as possible. Completing rank 15 is the milestone for a first internal demo: a team can run a meeting, assign tasks and see them carry over.
+- **Ranks 16–19** complete the MVP. They are valuable, but the core loop can be tried without them.
 
 ## Epics
 

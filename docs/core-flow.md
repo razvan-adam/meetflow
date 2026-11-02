@@ -51,7 +51,7 @@ The organizer runs the meeting in the app and works through the agenda:
    - a description
    - an owner, who must be a participant of this meeting
    - a deadline
-5. Agenda items not covered are marked as such, so they carry over.
+5. Each agenda item is marked as covered or not covered. Items not covered carry over, and so do items left unmarked when the meeting closes.
 6. The organizer closes the meeting. After closing, its notes, decisions and tasks can no longer be added or edited; task status can still be updated.
 
 **MVP features:** 3 – Recording of agreements, 4 – Task assignment with owners.

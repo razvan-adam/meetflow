@@ -42,7 +42,7 @@ Screens are referred to by the IDs in *Key screens* below. Example data used thr
 1. Starts the meeting (S7). Carried-over tasks come first.
 2. For each carried-over task, the owner reports progress and the owner or the organizer updates its status; the organizer can also change owner or deadline (S7, S8).
 3. Works through the agenda items: takes short notes, records decisions linked to the item, and creates tasks from a decision or item with description, owner (a participant) and deadline (S7).
-4. Marks items that were not discussed as not covered, so they carry over.
+4. Marks each item as covered or not covered. Not covered items carry over, and so do items left unmarked when the meeting closes.
 5. Closes the meeting after a confirmation step. Notes, decisions and tasks are locked; task status stays updatable. Closing generates the minutes and sends the emails (J5).
 
 ### J5. Follow up after the meeting

@@ -18,7 +18,7 @@ Stories and their acceptance criteria live in Jira (project MF). The flow they i
 | 8 | MF-15 | Run a meeting: notes per agenda item and closing | MF-5 Core | Done |
 | 9 | MF-39 | Bug: agenda and edit meeting form keep their edit controls after the meeting closes while the page is open | MF-5 Core | Done |
 | 10 | MF-40 | Bug: frontend tests fail intermittently on the first test of a file | MF-32 Development foundations | Done |
-| 11 | MF-16 | Record decisions during a meeting | MF-5 Core | To Do |
+| 11 | MF-16 | Record decisions during a meeting | MF-5 Core | Done |
 | 12 | MF-17 | Create tasks with owner and deadline | MF-6 Commitment tracking | To Do |
 | 13 | MF-18 | Update a task's status, owner and deadline | MF-6 Commitment tracking | To Do |
 | 14 | MF-19 | Carry over open tasks and uncovered items to the next meeting | MF-6 Commitment tracking | To Do |

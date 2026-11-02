@@ -13,14 +13,20 @@ import {
   useDecisions,
   useEditDecision,
   useRemoveDecision,
+  type Decision,
 } from '../api/decisions.ts'
+import type { Meeting } from '../api/meetings.ts'
+import { useAddTask, useTasks, type NewTask, type TaskOrigin } from '../api/tasks.ts'
 import { ItemDecisions } from './ItemDecisions.tsx'
+import { NewTaskForm } from './NewTaskForm.tsx'
+import { TaskList } from './TaskList.tsx'
 import pageStyles from './TeamPage.module.css'
 import styles from './LiveAgenda.module.css'
 
 interface Props {
   meetingId: string
   seriesId: string
+  participants: Meeting['participants']
   // The series organizer, while the meeting runs.
   canEdit: boolean
   closed: boolean
@@ -41,6 +47,10 @@ const STATUS_SYMBOLS: Record<AgendaItemStatus, string> = {
 const SAVE_NOTES_AFTER_MS = 1000
 
 function failureMessage(failure: Error, closed: boolean): string {
+  // Only a new task can get this far with a 400: the form has checked everything else.
+  if (failure instanceof ApiError && failure.status === 400) {
+    return 'That owner is no longer a participant of this meeting, so the task wasn’t saved. Choose another owner.'
+  }
   if (failure instanceof ApiError && failure.status === 403) {
     return 'You’re no longer the organizer of this series, so your last change wasn’t saved.'
   }
@@ -56,7 +66,7 @@ function failureMessage(failure: Error, closed: boolean): string {
 // The agenda of a meeting that has started (S7). The organizer works through it one item at a time
 // while the meeting runs; everyone else, and everyone once it is closed, reads all of it. This stays
 // on the page when it turns read-only, so a change that was rejected can still say why.
-export function LiveAgenda({ meetingId, seriesId, canEdit, closed }: Props) {
+export function LiveAgenda({ meetingId, seriesId, participants, canEdit, closed }: Props) {
   const items = useAgendaItems(meetingId)
   const add = useAddAgendaItem({ meetingId, seriesId })
   const saveNotes = useSaveNotes({ meetingId, seriesId })
@@ -65,6 +75,8 @@ export function LiveAgenda({ meetingId, seriesId, canEdit, closed }: Props) {
   const addDecision = useAddDecision({ meetingId, seriesId })
   const editDecision = useEditDecision({ meetingId, seriesId })
   const removeDecision = useRemoveDecision({ meetingId, seriesId })
+  const tasks = useTasks(meetingId)
+  const addTask = useAddTask({ meetingId, seriesId })
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   if (!items.data) {
@@ -82,14 +94,26 @@ export function LiveAgenda({ meetingId, seriesId, canEdit, closed }: Props) {
     mark.error ??
     addDecision.error ??
     editDecision.error ??
-    removeDecision.error
+    removeDecision.error ??
+    addTask.error
   const decisionsOf = (item: AgendaItem) =>
     (decisions.data ?? []).filter((decision) => decision.agendaItemId === item.id)
+  const tasksOfDecision = (decision: Decision) =>
+    (tasks.data ?? []).filter((task) => task.decisionId === decision.id)
+  // The tasks that came straight from the item, not from one of its decisions.
+  const tasksOfItem = (item: AgendaItem) =>
+    (tasks.data ?? []).filter((task) => task.agendaItemId === item.id && !task.decisionId)
 
-  function resetDecisionErrors() {
+  function resetRecordErrors() {
     addDecision.reset()
     editDecision.reset()
     removeDecision.reset()
+    addTask.reset()
+  }
+
+  function handleAddTask(origin: TaskOrigin, task: NewTask, onSuccess: () => void) {
+    resetRecordErrors()
+    addTask.mutate({ origin, task }, { onSuccess })
   }
 
   function handleAdd(event: FormEvent<HTMLFormElement>) {
@@ -186,18 +210,39 @@ export function LiveAgenda({ meetingId, seriesId, canEdit, closed }: Props) {
                 pending={
                   addDecision.isPending || editDecision.isPending || removeDecision.isPending
                 }
+                tasksOf={tasksOfDecision}
+                newTaskForm={(decision) => (
+                  <NewTaskForm
+                    label={`Add task from decision: ${decision.text}`}
+                    participants={participants}
+                    pending={addTask.isPending}
+                    onAdd={(task, onSuccess) =>
+                      handleAddTask({ decisionId: decision.id }, task, onSuccess)
+                    }
+                  />
+                )}
                 onAdd={(text, onSuccess) => {
-                  resetDecisionErrors()
+                  resetRecordErrors()
                   addDecision.mutate({ itemId: selected.id, text }, { onSuccess })
                 }}
                 onEdit={(decisionId, text, onSuccess) => {
-                  resetDecisionErrors()
+                  resetRecordErrors()
                   editDecision.mutate({ decisionId, text }, { onSuccess })
                 }}
                 onRemove={(decisionId, onSettled) => {
-                  resetDecisionErrors()
+                  resetRecordErrors()
                   removeDecision.mutate(decisionId, { onSettled })
                 }}
+              />
+              <TaskList tasks={tasksOfItem(selected)} label={`Tasks on ${selected.title}`} />
+              <NewTaskForm
+                key={`task-${selected.id}`}
+                label={`Add task on ${selected.title}`}
+                participants={participants}
+                pending={addTask.isPending}
+                onAdd={(task, onSuccess) =>
+                  handleAddTask({ agendaItemId: selected.id }, task, onSuccess)
+                }
               />
             </div>
           ) : (
@@ -226,10 +271,15 @@ export function LiveAgenda({ meetingId, seriesId, canEdit, closed }: Props) {
                   {decisionsOf(item).map((decision) => (
                     <li key={decision.id} className={styles.decision}>
                       <p className={styles.decisionText}>{decision.text}</p>
+                      <TaskList
+                        tasks={tasksOfDecision(decision)}
+                        label={`Tasks from: ${decision.text}`}
+                      />
                     </li>
                   ))}
                 </ul>
               )}
+              <TaskList tasks={tasksOfItem(item)} label={`Tasks on ${item.title}`} />
             </li>
           ))}
         </ol>
@@ -237,6 +287,11 @@ export function LiveAgenda({ meetingId, seriesId, canEdit, closed }: Props) {
       {decisions.isError && (
         <p role="alert" className={`${pageStyles.error} ${pageStyles.below}`}>
           The decisions couldn’t be loaded. Try again in a few minutes.
+        </p>
+      )}
+      {tasks.isError && (
+        <p role="alert" className={`${pageStyles.error} ${pageStyles.below}`}>
+          The tasks couldn’t be loaded. Try again in a few minutes.
         </p>
       )}
       {failure && (

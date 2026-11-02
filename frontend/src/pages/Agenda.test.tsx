@@ -57,6 +57,7 @@ function api(overrides: Record<string, () => Response>) {
     [`GET /api/meeting-series/${WEEKLY.id}`]: () => Response.json(WEEKLY),
     [`GET /api/meetings/${MONDAY.id}`]: () => Response.json(MONDAY),
     [`GET /api/meetings/${MONDAY.id}/decisions`]: () => Response.json([]),
+    [`GET /api/meetings/${MONDAY.id}/tasks`]: () => Response.json([]),
     ...overrides,
   })
 }

@@ -106,7 +106,7 @@ public class AgendaService {
   }
 
   /** The item, for its series organizer, while its meeting runs. */
-  AgendaItem findInRunningMeeting(UUID userId, UUID itemId) {
+  public AgendaItem findInRunningMeeting(UUID userId, UUID itemId) {
     return lockAndLoad(userId, itemId, meetings::lockRunningMeeting);
   }
 

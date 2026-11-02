@@ -4,8 +4,10 @@ import type { AgendaItem } from '../api/agenda.ts'
 import type { Decision } from '../api/decisions.ts'
 import type { Meeting } from '../api/meetings.ts'
 import type { Series } from '../api/series.ts'
+import type { Task } from '../api/tasks.ts'
 import type { Team } from '../api/teams.ts'
 import { ANA, mockApi, renderApp, requestBody } from '../test/renderApp.tsx'
+import { formatDeadline } from './taskDeadline.ts'
 
 const OPS: Team = { id: '6d0c1a52-3c1e-4f0b-9a57-2d4b8e7f1c10', name: 'Ops team', role: 'MEMBER' }
 const BO = { id: '9c8b7a6d-5e4f-4321-8765-0fedcba98765', name: 'Bo Lind' }
@@ -48,6 +50,7 @@ const STAFFING: AgendaItem = {
 const MEETING = `/api/meetings/${SCHEDULED.id}`
 const AGENDA = `${MEETING}/agenda-items`
 const DECISIONS = `${MEETING}/decisions`
+const TASKS = `${MEETING}/tasks`
 const CONFLICT = () => Response.json({ status: 409 }, { status: 409 })
 
 function api(overrides: Record<string, () => Response>) {
@@ -59,6 +62,7 @@ function api(overrides: Record<string, () => Response>) {
     [`GET ${MEETING}`]: () => Response.json(RUNNING),
     [`GET ${AGENDA}`]: () => Response.json([BUDGET, STAFFING]),
     [`GET ${DECISIONS}`]: () => Response.json([]),
+    [`GET ${TASKS}`]: () => Response.json([]),
     ...overrides,
   })
 }
@@ -454,6 +458,209 @@ describe('recording decisions', () => {
     renderApp(`/meetings/${SCHEDULED.id}`)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('decisions couldn’t be loaded')
+  })
+})
+
+describe('creating tasks', () => {
+  const PICKERS: Decision = { id: 'pickers', agendaItemId: BUDGET.id, text: 'Hire 6 pickers' }
+  const CONTRACT: Task = {
+    id: 'contract',
+    agendaItemId: BUDGET.id,
+    decisionId: PICKERS.id,
+    description: 'Sign the contract',
+    ownerId: BO.id,
+    ownerName: BO.name,
+    deadline: '2026-11-20',
+    status: 'OPEN',
+  }
+  const DRAFT: Task = { ...CONTRACT, id: 'draft', decisionId: null, description: 'Send the draft' }
+  const FROM_DECISION = 'Add task from decision: Hire 6 pickers'
+  const FROM_ITEM = 'Add task on Budget'
+
+  function fillIn(form: HTMLElement, description: string, ownerId: string, deadline: string) {
+    fireEvent.change(within(form).getByRole('textbox', { name: 'New task' }), {
+      target: { value: description },
+    })
+    fireEvent.change(within(form).getByRole('combobox', { name: 'Owner' }), {
+      target: { value: ownerId },
+    })
+    fireEvent.change(within(form).getByLabelText('Deadline'), { target: { value: deadline } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Save task' }))
+  }
+
+  it('creates a task from a decision and shows it with its owner and deadline', async () => {
+    let tasks: Task[] = []
+    const fetchMock = api({
+      [`GET ${DECISIONS}`]: () => Response.json([PICKERS]),
+      [`GET ${TASKS}`]: () => Response.json(tasks),
+      [`POST /api/decisions/${PICKERS.id}/tasks`]: () => {
+        tasks = [CONTRACT]
+        return Response.json(CONTRACT, { status: 201 })
+      },
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: FROM_DECISION }))
+    fillIn(
+      screen.getByRole('form', { name: FROM_DECISION }),
+      '  Sign the contract  ',
+      BO.id,
+      '2026-11-20',
+    )
+
+    const list = await screen.findByRole('list', { name: 'Tasks from: Hire 6 pickers' })
+    expect(within(list).getByText('Sign the contract')).toBeVisible()
+    expect(within(list).getByText('Bo Lind · Open')).toBeVisible()
+    expect(within(list).getByText(`Due ${formatDeadline('2026-11-20')}`)).toBeVisible()
+    expect(requestBody(fetchMock, `POST /api/decisions/${PICKERS.id}/tasks`)).toEqual({
+      description: 'Sign the contract',
+      ownerId: BO.id,
+      deadline: '2026-11-20',
+    })
+    expect(screen.queryByRole('form', { name: FROM_DECISION })).not.toBeInTheDocument()
+  })
+
+  it('creates a task straight from the open agenda item', async () => {
+    let tasks: Task[] = []
+    const fetchMock = api({
+      [`GET ${TASKS}`]: () => Response.json(tasks),
+      [`POST /api/agenda-items/${BUDGET.id}/tasks`]: () => {
+        tasks = [DRAFT]
+        return Response.json(DRAFT, { status: 201 })
+      },
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: FROM_ITEM }))
+    fillIn(screen.getByRole('form', { name: FROM_ITEM }), 'Send the draft', BO.id, '2026-11-20')
+
+    const list = await screen.findByRole('list', { name: 'Tasks on Budget' })
+    expect(within(list).getByText('Send the draft')).toBeVisible()
+    expect(requestBody(fetchMock, `POST /api/agenda-items/${BUDGET.id}/tasks`)).toEqual({
+      description: 'Send the draft',
+      ownerId: BO.id,
+      deadline: '2026-11-20',
+    })
+  })
+
+  it('offers only the meeting’s participants as owners', async () => {
+    api({})
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: FROM_ITEM }))
+
+    const owners = within(screen.getByRole('combobox', { name: 'Owner' })).getAllByRole('option')
+    expect(owners.map((option) => option.textContent)).toEqual(['Participant…', ANA.name, BO.name])
+  })
+
+  it('won’t save a task without a description, an owner and a deadline', async () => {
+    const fetchMock = api({})
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: FROM_ITEM }))
+    const form = screen.getByRole('form', { name: FROM_ITEM })
+    for (const [description, ownerId, deadline] of [
+      ['   ', BO.id, '2026-11-20'],
+      ['Send the draft', '', '2026-11-20'],
+      ['Send the draft', BO.id, ''],
+    ]) {
+      fillIn(form, description, ownerId, deadline)
+
+      expect(await within(form).findByRole('alert')).toHaveTextContent('Every task needs all three')
+    }
+    expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false)
+  })
+
+  it('keeps the form and says why when the owner is no longer a participant', async () => {
+    let meeting = RUNNING
+    api({
+      [`GET ${MEETING}`]: () => Response.json(meeting),
+      [`POST /api/agenda-items/${BUDGET.id}/tasks`]: () => {
+        meeting = { ...RUNNING, participants: [{ id: ANA.id, name: ANA.name }] }
+        return Response.json({ status: 400 }, { status: 400 })
+      },
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: FROM_ITEM }))
+    const form = screen.getByRole('form', { name: FROM_ITEM })
+    fillIn(form, 'Send the draft', BO.id, '2026-11-20')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('no longer a participant')
+    expect(within(form).getByRole('textbox', { name: 'New task' })).toHaveValue('Send the draft')
+    await waitFor(() =>
+      expect(within(form).queryByRole('option', { name: BO.name })).not.toBeInTheDocument(),
+    )
+  })
+
+  it('turns read-only and says so when a task is rejected because it was closed', async () => {
+    let meeting = RUNNING
+    api({
+      [`GET ${MEETING}`]: () => Response.json(meeting),
+      [`POST /api/agenda-items/${BUDGET.id}/tasks`]: () => {
+        meeting = CLOSED
+        return CONFLICT()
+      },
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: FROM_ITEM }))
+    fillIn(screen.getByRole('form', { name: FROM_ITEM }), 'Too late', BO.id, '2026-11-20')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('was closed meanwhile')
+    await waitFor(() =>
+      expect(screen.queryByRole('form', { name: FROM_ITEM })).not.toBeInTheDocument(),
+    )
+  })
+
+  it('doesn’t offer removing a decision that tasks came from, but still editing it', async () => {
+    api({
+      [`GET ${DECISIONS}`]: () => Response.json([PICKERS]),
+      [`GET ${TASKS}`]: () => Response.json([CONTRACT]),
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    // Every item shows until the page knows the user organizes the series, so wait for that.
+    await notesBox()
+    expect(await screen.findByText('Sign the contract')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Edit decision: Hire 6 pickers' })).toBeVisible()
+    expect(
+      screen.queryByRole('button', { name: 'Remove decision: Hire 6 pickers' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows members the tasks under each decision and item, read-only', async () => {
+    api({
+      [`GET /api/meeting-series/${WEEKLY.id}`]: () =>
+        Response.json({ ...WEEKLY, organizerId: BO.id, organizerName: BO.name }),
+      [`GET ${DECISIONS}`]: () => Response.json([PICKERS]),
+      [`GET ${TASKS}`]: () => Response.json([CONTRACT, DRAFT]),
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    const fromDecision = await screen.findByRole('list', { name: 'Tasks from: Hire 6 pickers' })
+    expect(within(fromDecision).getByText('Sign the contract')).toBeVisible()
+    const fromItem = screen.getByRole('list', { name: 'Tasks on Budget' })
+    expect(within(fromItem).getByText('Send the draft')).toBeVisible()
+    expect(screen.queryByRole('button', { name: /Add task/ })).not.toBeInTheDocument()
+  })
+
+  it('keeps the tasks on the record of a closed meeting', async () => {
+    api({
+      [`GET ${MEETING}`]: () => Response.json(CLOSED),
+      [`GET ${TASKS}`]: () => Response.json([DRAFT]),
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    expect(await screen.findByText('Send the draft')).toBeVisible()
+    expect(screen.queryByRole('button', { name: /Add task/ })).not.toBeInTheDocument()
+  })
+
+  it('says so when the tasks can’t be loaded, rather than showing none', async () => {
+    api({ [`GET ${TASKS}`]: () => Response.json({ status: 500 }, { status: 500 }) })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('tasks couldn’t be loaded')
   })
 })
 

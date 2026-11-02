@@ -1,12 +1,16 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import type { Decision } from '../api/decisions.ts'
+import type { Task } from '../api/tasks.ts'
 import agendaStyles from './Agenda.module.css'
 import styles from './LiveAgenda.module.css'
+import { TaskList } from './TaskList.tsx'
 import pageStyles from './TeamPage.module.css'
 
 interface Props {
   decisions: Decision[]
   pending: boolean
+  tasksOf: (decision: Decision) => Task[]
+  newTaskForm: (decision: Decision) => ReactNode
   onAdd: (text: string, onSuccess: () => void) => void
   onEdit: (decisionId: string, text: string, onSuccess: () => void) => void
   onRemove: (decisionId: string, onSettled: () => void) => void
@@ -14,9 +18,18 @@ interface Props {
 
 const textOf = (form: HTMLFormElement) => String(new FormData(form).get('text')).trim()
 
-// The decisions on the open agenda item, for the organizer while the meeting runs (S7). The changes
-// themselves live in LiveAgenda, so a rejected one can still say why after this turns read-only.
-export function ItemDecisions({ decisions, pending, onAdd, onEdit, onRemove }: Props) {
+// The decisions on the open agenda item with their tasks, for the organizer while the meeting runs
+// (S7). The changes themselves live in LiveAgenda, so a rejected one can still say why after this
+// turns read-only. A decision that tasks came from can't be removed, so it doesn't offer that.
+export function ItemDecisions({
+  decisions,
+  pending,
+  tasksOf,
+  newTaskForm,
+  onAdd,
+  onEdit,
+  onRemove,
+}: Props) {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
 
@@ -84,20 +97,24 @@ export function ItemDecisions({ decisions, pending, onAdd, onEdit, onRemove }: P
                     >
                       Edit
                     </button>
-                    <button
-                      className={agendaStyles.action}
-                      type="button"
-                      aria-label={`Remove decision: ${decision.text}`}
-                      onClick={() => {
-                        setEditingId(null)
-                        setRemovingId(decision.id)
-                      }}
-                    >
-                      ×
-                    </button>
+                    {tasksOf(decision).length === 0 && (
+                      <button
+                        className={agendaStyles.action}
+                        type="button"
+                        aria-label={`Remove decision: ${decision.text}`}
+                        onClick={() => {
+                          setEditingId(null)
+                          setRemovingId(decision.id)
+                        }}
+                      >
+                        ×
+                      </button>
+                    )}
                   </span>
                 </div>
               )}
+              <TaskList tasks={tasksOf(decision)} label={`Tasks from: ${decision.text}`} />
+              {newTaskForm(decision)}
             </li>
           ))}
         </ul>

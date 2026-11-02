@@ -46,7 +46,7 @@ The organizer runs the meeting in the app and works through the agenda:
 
 1. **Review open commitments first.** For each carried-over task, the owner reports progress and the owner or the organizer updates the status (open, in progress, done). Only the organizer can change a task's owner or deadline.
 2. **Discuss each agenda item** and take short notes.
-3. **Record decisions**: what was agreed, linked to the agenda item. The organizer can edit or remove a decision until the meeting closes.
+3. **Record decisions**: what was agreed, linked to the agenda item. The organizer can edit a decision until the meeting closes, and remove it until a task comes from it.
 4. **Create tasks** from decisions or agenda items. Each task requires:
    - a description
    - an owner, who must be a participant of this meeting
@@ -101,6 +101,7 @@ When the organizer creates the next meeting of the series, the cycle starts agai
 | Reassign or delete open tasks of a member being removed | ✓ | | | |
 | Create a meeting series | ✓ | ✓ | ✓ | ✓ |
 | Create meetings and edit the agenda of a series | | ✓ | | |
+| Record decisions and create tasks during a meeting | | ✓ | | |
 | Update task status | | ✓ | ✓ (own tasks) | |
 | Change task owner or deadline | | ✓ | | |
 | Edit minutes | – | – | – | – |
@@ -150,3 +151,7 @@ Resolved during roadmap step 4 (MF-30, see `docs/data-model.md`):
 Resolved while building MF-16:
 
 14. **Removing agenda items** – only before the meeting starts. Once it has started, items can still be added, renamed and reordered until it closes. Decisions and tasks are only created during a meeting, so a removable item never has any pointing at it, and no notes can be lost.
+
+Resolved while building MF-17:
+
+15. **Removing decisions** – a decision that tasks came from can't be removed, so no commitment loses its origin. It can still be edited.

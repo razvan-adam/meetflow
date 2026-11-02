@@ -176,6 +176,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 | `version` | bigint | |
 
 - When a task is created, its owner must be a participant of `meeting_id` (service check).
+- A task created from a decision stores both `decision_id` and the decision's `agenda_item_id`; one created from an agenda item leaves `decision_id` null. A decision with tasks can't be removed.
 - **Overdue** is not stored. A task is overdue when it isn't `DONE` and `deadline` is before the current date: today for the viewer on the dashboard, and the meeting date on the agenda and in the minutes.
 - Index on (`owner_id`, `status`, `deadline`) for the pending-tasks dashboard, and on (`series_id`, `status`) for carry-over.
 

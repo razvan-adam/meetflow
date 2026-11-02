@@ -473,7 +473,7 @@ describe('creating tasks', () => {
     description: 'Sign the contract',
     ownerId: BO.id,
     ownerName: BO.name,
-    deadline: '2026-11-20',
+    deadline: '2999-11-20',
     status: 'OPEN',
   }
   const DRAFT: Task = { ...CONTRACT, id: 'draft', decisionId: null, description: 'Send the draft' }
@@ -508,7 +508,7 @@ describe('creating tasks', () => {
       screen.getByRole('form', { name: FROM_DECISION }),
       '  Sign the contract  ',
       BO.id,
-      '2026-11-20',
+      '2999-11-20',
     )
 
     const list = await screen.findByRole('list', { name: 'Tasks from: Hire 6 pickers' })
@@ -517,11 +517,11 @@ describe('creating tasks', () => {
     expect(within(list).getByRole('combobox', { name: 'Status of Sign the contract' })).toHaveValue(
       'OPEN',
     )
-    expect(within(list).getByText(`Due ${formatDeadline('2026-11-20')}`)).toBeVisible()
+    expect(within(list).getByText(`Due ${formatDeadline('2999-11-20')}`)).toBeVisible()
     expect(requestBody(fetchMock, `POST /api/decisions/${PICKERS.id}/tasks`)).toEqual({
       description: 'Sign the contract',
       ownerId: BO.id,
-      deadline: '2026-11-20',
+      deadline: '2999-11-20',
     })
     expect(screen.queryByRole('form', { name: FROM_DECISION })).not.toBeInTheDocument()
   })
@@ -538,14 +538,14 @@ describe('creating tasks', () => {
     renderApp(`/meetings/${SCHEDULED.id}`)
 
     fireEvent.click(await screen.findByRole('button', { name: FROM_ITEM }))
-    fillIn(screen.getByRole('form', { name: FROM_ITEM }), 'Send the draft', BO.id, '2026-11-20')
+    fillIn(screen.getByRole('form', { name: FROM_ITEM }), 'Send the draft', BO.id, '2999-11-20')
 
     const list = await screen.findByRole('list', { name: 'Tasks on Budget' })
     expect(within(list).getByText('Send the draft')).toBeVisible()
     expect(requestBody(fetchMock, `POST /api/agenda-items/${BUDGET.id}/tasks`)).toEqual({
       description: 'Send the draft',
       ownerId: BO.id,
-      deadline: '2026-11-20',
+      deadline: '2999-11-20',
     })
   })
 
@@ -566,8 +566,8 @@ describe('creating tasks', () => {
     fireEvent.click(await screen.findByRole('button', { name: FROM_ITEM }))
     const form = screen.getByRole('form', { name: FROM_ITEM })
     for (const [description, ownerId, deadline] of [
-      ['   ', BO.id, '2026-11-20'],
-      ['Send the draft', '', '2026-11-20'],
+      ['   ', BO.id, '2999-11-20'],
+      ['Send the draft', '', '2999-11-20'],
       ['Send the draft', BO.id, ''],
     ]) {
       fillIn(form, description, ownerId, deadline)
@@ -590,7 +590,7 @@ describe('creating tasks', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: FROM_ITEM }))
     const form = screen.getByRole('form', { name: FROM_ITEM })
-    fillIn(form, 'Send the draft', BO.id, '2026-11-20')
+    fillIn(form, 'Send the draft', BO.id, '2999-11-20')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('no longer a participant')
     expect(within(form).getByRole('textbox', { name: 'New task' })).toHaveValue('Send the draft')
@@ -611,7 +611,7 @@ describe('creating tasks', () => {
     renderApp(`/meetings/${SCHEDULED.id}`)
 
     fireEvent.click(await screen.findByRole('button', { name: FROM_ITEM }))
-    fillIn(screen.getByRole('form', { name: FROM_ITEM }), 'Too late', BO.id, '2026-11-20')
+    fillIn(screen.getByRole('form', { name: FROM_ITEM }), 'Too late', BO.id, '2999-11-20')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('was closed meanwhile')
     await waitFor(() =>
@@ -738,16 +738,16 @@ describe('creating tasks', () => {
       )
     })
 
-    it('shows tasks overdue as of the meeting’s date, unless they’re done', async () => {
+    it('shows how many days overdue a task is, unless it’s done', async () => {
       api({
         [`GET ${TASKS}`]: () =>
           Response.json([
-            { ...DRAFT, id: 'late', description: 'Late', deadline: '2026-10-30' },
+            { ...DRAFT, id: 'late', description: 'Late', deadline: '2020-01-06' },
             {
               ...DRAFT,
               id: 'finished',
               description: 'Finished',
-              deadline: '2026-10-30',
+              deadline: '2020-01-06',
               status: 'DONE',
             },
           ]),
@@ -756,8 +756,119 @@ describe('creating tasks', () => {
 
       // Every item shows until the page knows the user organizes the series, so wait for that.
       await notesBox()
-      expect(await screen.findByText(`Due ${formatDeadline('2026-10-30')} · overdue`)).toBeVisible()
-      expect(screen.getByText(`Due ${formatDeadline('2026-10-30')}`)).toBeVisible()
+      const due = `Due ${formatDeadline('2020-01-06')}`
+      expect(await screen.findByText(new RegExp(`^${due} · \\d+ days overdue$`))).toBeVisible()
+      expect(screen.getByText(due)).toBeVisible()
+    })
+
+    it('rewords a task right on the agenda', async () => {
+      let task = DRAFT
+      const fetchMock = api({
+        [`GET ${TASKS}`]: () => Response.json([task]),
+        [`PUT /api/tasks/${DRAFT.id}/description`]: () => {
+          task = { ...DRAFT, description: 'Send the final draft' }
+          return Response.json(task)
+        },
+      })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Edit task: Send the draft' }))
+      const box = screen.getByRole('textbox', { name: 'Task description' })
+      expect(box).toHaveValue('Send the draft')
+      fireEvent.change(box, { target: { value: '  Send the final draft  ' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+      expect(await screen.findByRole('link', { name: 'Send the final draft' })).toBeVisible()
+      expect(requestBody(fetchMock, `PUT /api/tasks/${DRAFT.id}/description`)).toEqual({
+        description: 'Send the final draft',
+      })
+      expect(screen.queryByRole('textbox', { name: 'Task description' })).not.toBeInTheDocument()
+    })
+
+    it('keeps the words and says why when rewording fails', async () => {
+      api({
+        [`GET ${TASKS}`]: () => Response.json([DRAFT]),
+        [`PUT /api/tasks/${DRAFT.id}/description`]: () =>
+          Response.json({ status: 500 }, { status: 500 }),
+      })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Edit task: Send the draft' }))
+      const box = screen.getByRole('textbox', { name: 'Task description' })
+      fireEvent.change(box, { target: { value: 'Send the final draft' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('couldn’t be saved')
+      expect(box).toHaveValue('Send the final draft')
+    })
+
+    it('asks before deleting a task right on the agenda, then frees its decision', async () => {
+      let tasks = [CONTRACT]
+      const fetchMock = api({
+        [`GET ${DECISIONS}`]: () => Response.json([PICKERS]),
+        [`GET ${TASKS}`]: () => Response.json(tasks),
+        [`DELETE /api/tasks/${CONTRACT.id}`]: () => {
+          tasks = []
+          return new Response(null, { status: 204 })
+        },
+      })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      const deleteButton = () =>
+        screen.findByRole('button', { name: 'Delete task: Sign the contract' })
+      fireEvent.click(await deleteButton())
+      const keep = screen.getByRole('button', { name: 'Keep task' })
+      expect(keep).toHaveFocus()
+      fireEvent.click(keep)
+      expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
+
+      fireEvent.click(await deleteButton())
+      fireEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+
+      await waitFor(() => expect(screen.queryByText('Sign the contract')).not.toBeInTheDocument())
+      expect(
+        await screen.findByRole('button', { name: 'Remove decision: Hire 6 pickers' }),
+      ).toBeVisible()
+    })
+
+    it('doesn’t offer rewording or deleting to other members, even a task’s owner', async () => {
+      const mine = { ...DRAFT, ownerId: ANA.id, ownerName: ANA.name }
+      api({ ...AS_MEMBER, [`GET ${TASKS}`]: () => Response.json([mine]) })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      expect(await screen.findByRole('combobox', { name: STATUS })).toBeVisible()
+      expect(
+        screen.queryByRole('button', { name: /Edit task|Delete task/ }),
+      ).not.toBeInTheDocument()
+    })
+
+    it('offers rewording but not deleting on a closed meeting while a later one runs', async () => {
+      api({
+        [`GET ${MEETING}`]: () => Response.json(CLOSED),
+        [`GET ${TASKS}`]: () => Response.json([DRAFT]),
+        [`GET /api/meeting-series/${WEEKLY.id}/meetings`]: () =>
+          Response.json([{ ...RUNNING, id: 'later' }, CLOSED]),
+      })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      expect(await screen.findByRole('button', { name: 'Edit task: Send the draft' })).toBeVisible()
+      expect(screen.queryByRole('button', { name: /Delete task/ })).not.toBeInTheDocument()
+    })
+
+    it('offers neither on a closed meeting when no meeting of the series runs', async () => {
+      api({
+        [`GET ${MEETING}`]: () => Response.json(CLOSED),
+        [`GET ${TASKS}`]: () => Response.json([DRAFT]),
+        [`GET /api/meeting-series/${WEEKLY.id}/meetings`]: () => Response.json([CLOSED]),
+      })
+      renderApp(`/meetings/${SCHEDULED.id}`)
+
+      expect(await screen.findByRole('combobox', { name: STATUS })).toBeVisible()
+      await waitFor(() =>
+        expect(
+          screen.queryByRole('button', { name: /Edit task|Delete task/ }),
+        ).not.toBeInTheDocument(),
+      )
     })
 
     it('offers removing a decision again once its tasks are gone', async () => {

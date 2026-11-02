@@ -12,6 +12,7 @@ import com.meetflow.meetings.exception.MeetingAlreadyStartedException;
 import com.meetflow.meetings.exception.MeetingClosedException;
 import com.meetflow.meetings.exception.MeetingNotFoundException;
 import com.meetflow.meetings.exception.MeetingNotStartedException;
+import com.meetflow.meetings.exception.NoRunningMeetingException;
 import com.meetflow.meetings.exception.NotOrganizerException;
 import com.meetflow.meetings.exception.OpenMeetingExistsException;
 import com.meetflow.meetings.exception.ParticipantNotMemberException;
@@ -181,6 +182,17 @@ public class MeetingService {
       throw new MeetingNotStartedException();
     }
     return meeting;
+  }
+
+  /**
+   * The series' running meeting, locked, for a change by the series organizer: 403 for other
+   * members, 409 if none is running. Returns its ID.
+   */
+  public UUID lockRunningMeetingOf(UUID userId, UUID seriesId) {
+    requireOrganizer(userId, series.findVisible(userId, seriesId));
+    var meetingId = runningMeetingOf(seriesId).orElseThrow(NoRunningMeetingException::new);
+    lockRunningMeeting(userId, meetingId);
+    return meetingId;
   }
 
   /** Like {@link #lockForOrganizerEdit}, for what only happens before a meeting starts. */

@@ -28,8 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Tasks: creating them during a meeting (MF-17) and keeping them up to date (MF-18). Every member
  * of the team can read a task. Its owner and the series organizer change its status, and the
- * organizer its owner and deadline, during a meeting or between meetings. While the task's own
- * meeting runs, the organizer can also create, reword and delete it.
+ * organizer its owner and deadline, during a meeting or between meetings. The organizer can also
+ * reword it while any meeting of its series runs, and create and delete it while its own runs.
  */
 @Service
 public class TaskService {
@@ -144,11 +144,24 @@ public class TaskService {
     return toResponse(task);
   }
 
-  /** Corrects the description while the task's own meeting runs. Not kept in the history. */
+  /**
+   * The organizer only, while any meeting of the task's series runs. During the task's own meeting
+   * this is a correction before anyone is sent the task, so it stays out of the history; during a
+   * later one people have seen the old wording, so the change is recorded.
+   */
   @Transactional
   public TaskResponse reword(UUID userId, UUID taskId, String description) {
-    var task = findInRunningMeeting(userId, taskId);
-    task.reword(description.strip());
+    var place = findPlace(userId, taskId);
+    var runningMeetingId = meetings.lockRunningMeetingOf(userId, place.seriesId());
+    var task = tasks.findByIdAndDeletedAtIsNull(taskId).orElseThrow(TaskNotFoundException::new);
+    var old = task.getDescription();
+    var reworded = description.strip();
+    if (!old.equals(reworded)) {
+      task.reword(reworded);
+      if (!runningMeetingId.equals(task.getMeetingId())) {
+        changes.save(TaskChange.ofDescription(task, userId, runningMeetingId, old, reworded));
+      }
+    }
     return toResponse(task);
   }
 
@@ -181,13 +194,16 @@ public class TaskService {
    * Outsiders get the same 404 as for an unknown task.
    */
   private Task findInRunningMeeting(UUID userId, UUID taskId) {
-    var place =
-        tasks
-            .findPlaceByIdAndDeletedAtIsNull(taskId)
-            .filter(found -> teamMembers.isMember(userId, found.teamId()))
-            .orElseThrow(TaskNotFoundException::new);
-    meetings.lockRunningMeeting(userId, place.meetingId());
+    meetings.lockRunningMeeting(userId, findPlace(userId, taskId).meetingId());
     return tasks.findByIdAndDeletedAtIsNull(taskId).orElseThrow(TaskNotFoundException::new);
+  }
+
+  /** Where the task belongs, read before taking a lock, without loading the task itself. */
+  private TaskRepository.TaskPlace findPlace(UUID userId, UUID taskId) {
+    return tasks
+        .findPlaceByIdAndDeletedAtIsNull(taskId)
+        .filter(found -> teamMembers.isMember(userId, found.teamId()))
+        .orElseThrow(TaskNotFoundException::new);
   }
 
   private void requireOrganizer(UUID userId, Task task) {
@@ -230,7 +246,9 @@ public class TaskService {
         nameOf(change.getOldOwnerId(), names),
         nameOf(change.getNewOwnerId(), names),
         change.getOldDeadline(),
-        change.getNewDeadline());
+        change.getNewDeadline(),
+        change.getOldDescription(),
+        change.getNewDescription());
   }
 
   private static @Nullable String nameOf(@Nullable UUID userId, Map<UUID, String> names) {

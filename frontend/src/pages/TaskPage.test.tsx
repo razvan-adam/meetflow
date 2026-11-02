@@ -58,9 +58,12 @@ const CREATED: TaskHistoryEntry = {
   newOwnerName: BO.name,
   oldDeadline: null,
   newDeadline: '2999-11-20',
+  oldDescription: null,
+  newDescription: null,
 }
 
 const TASK = `/api/tasks/${CONTRACT.id}`
+const SERIES_MEETINGS = `GET /api/meeting-series/${WEEKLY.id}/meetings`
 const reply = (status: number) => () => Response.json({ status }, { status })
 
 function api(overrides: Record<string, () => Response>) {
@@ -71,6 +74,7 @@ function api(overrides: Record<string, () => Response>) {
     [`GET /api/teams/${OPS.id}/members`]: () => Response.json(MEMBERS),
     [`GET /api/meeting-series/${WEEKLY.id}`]: () => Response.json(WEEKLY),
     [`GET /api/meetings/${RUNNING.id}`]: () => Response.json(RUNNING),
+    [SERIES_MEETINGS]: () => Response.json([RUNNING]),
     [`GET /api/meetings/${RUNNING.id}/decisions`]: () => Response.json([PICKERS]),
     [`GET ${TASK}`]: () => Response.json(CONTRACT),
     [`GET ${TASK}/changes`]: () => Response.json([CREATED]),
@@ -130,11 +134,35 @@ describe('showing a task', () => {
     ).toBeVisible()
   })
 
-  it('shows a task past its deadline as overdue', async () => {
+  it('shows how many days overdue a task past its deadline is', async () => {
     api({ [`GET ${TASK}`]: () => Response.json({ ...CONTRACT, deadline: '2020-01-06' }) })
     renderApp(`/tasks/${CONTRACT.id}`)
 
-    expect(await screen.findByText(`Due ${formatDeadline('2020-01-06')} · overdue`)).toBeVisible()
+    const due = `Due ${formatDeadline('2020-01-06')}`
+    expect(await screen.findByText(new RegExp(`^${due} · \\d+ days overdue$`))).toBeVisible()
+  })
+
+  it('shows a rewording in the history with the old and new words', async () => {
+    api({
+      [`GET ${TASK}/changes`]: () =>
+        Response.json([
+          {
+            ...CREATED,
+            newStatus: null,
+            newOwnerName: null,
+            newDeadline: null,
+            oldDescription: 'Sign it',
+            newDescription: 'Sign the contract',
+          },
+        ]),
+    })
+    renderApp(`/tasks/${CONTRACT.id}`)
+
+    expect(
+      await screen.findByText(
+        'Ana Costa reworded the task “Sign it” → “Sign the contract” (during a meeting)',
+      ),
+    ).toBeVisible()
   })
 
   it('doesn’t show a done task as overdue', async () => {
@@ -341,8 +369,23 @@ describe('correcting a task while its meeting runs', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe(`/meetings/${RUNNING.id}`))
   })
 
-  it('isn’t offered once the meeting is closed, though the status still is', async () => {
-    api({ [`GET /api/meetings/${RUNNING.id}`]: () => Response.json(CLOSED) })
+  it('offers rewording but not deleting while a later meeting runs', async () => {
+    api({
+      [`GET /api/meetings/${RUNNING.id}`]: () => Response.json(CLOSED),
+      [SERIES_MEETINGS]: () => Response.json([{ ...RUNNING, id: 'later' }, CLOSED]),
+    })
+    renderApp(`/tasks/${CONTRACT.id}`)
+
+    expect(await screen.findByRole('button', { name: 'Change description' })).toBeVisible()
+    await screen.findByRole('link', { name: /Weekly ops sync,/ })
+    expect(screen.queryByRole('button', { name: 'Delete this task' })).not.toBeInTheDocument()
+  })
+
+  it('isn’t offered between meetings, though the status still is', async () => {
+    api({
+      [`GET /api/meetings/${RUNNING.id}`]: () => Response.json(CLOSED),
+      [SERIES_MEETINGS]: () => Response.json([CLOSED]),
+    })
     renderApp(`/tasks/${CONTRACT.id}`)
 
     expect(await statusButton('Done')).toBeEnabled()

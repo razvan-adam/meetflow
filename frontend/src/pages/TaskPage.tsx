@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ApiError } from '../api/client.ts'
 import { useDecisions } from '../api/decisions.ts'
-import { useMeeting } from '../api/meetings.ts'
+import { useMeeting, useSeriesMeetings } from '../api/meetings.ts'
 import { useSeries } from '../api/series.ts'
 import {
   useChangeTask,
@@ -23,6 +23,7 @@ import {
   isOverdue,
   TASK_STATUS_LABELS,
   taskChangeFailure,
+  taskCorrectionFailure,
   todayDate,
 } from './taskDisplay.ts'
 import { TaskField } from './TaskField.tsx'
@@ -70,10 +71,11 @@ function TaskDetails({ task }: { task: Task }) {
   const { data: user } = useCurrentUser()
   const series = useSeries(task.seriesId)
   const meeting = useMeeting(task.meetingId)
+  const seriesMeetings = useSeriesMeetings(task.seriesId)
   const decisions = useDecisions(task.meetingId)
   const members = useTeamMembers(task.teamId)
   const change = useChangeTask(context)
-  // Apart from the rest because a 409 here means the meeting closed, not a change at the same time.
+  // Apart from the rest because a 409 here means a meeting closed, not a change at the same time.
   const correct = useChangeTask(context)
   const remove = useDeleteTask(context)
   const navigate = useNavigate()
@@ -82,7 +84,11 @@ function TaskDetails({ task }: { task: Task }) {
 
   const organizes = Boolean(user && series.data?.organizerId === user.id)
   const owns = task.ownerId === user?.id
-  const canCorrect = organizes && meeting.data?.status === 'IN_PROGRESS'
+  // During any meeting of the series, including one after the task's own.
+  const canReword =
+    organizes && Boolean(seriesMeetings.data?.some((found) => found.status === 'IN_PROGRESS'))
+  // Only during the task's own meeting.
+  const canDelete = organizes && meeting.data?.status === 'IN_PROGRESS'
   const decision = decisions.data?.find((found) => found.id === task.decisionId)
 
   function save(fields: TaskFieldChange, onSuccess?: () => void) {
@@ -106,8 +112,7 @@ function TaskDetails({ task }: { task: Task }) {
     })
   }
 
-  const closedMeanwhile = correct.error ?? remove.error
-  const failure = change.error ?? closedMeanwhile
+  const correctionFailure = correct.error ?? remove.error
 
   return (
     <main className={pageStyles.page}>
@@ -137,7 +142,7 @@ function TaskDetails({ task }: { task: Task }) {
         <p className={styles.status}>Status: {TASK_STATUS_LABELS[task.status]}</p>
       )}
       <dl className={styles.details}>
-        {canCorrect && (
+        {canReword && (
           <TaskField
             label="Description"
             value={task.description}
@@ -210,14 +215,14 @@ function TaskDetails({ task }: { task: Task }) {
         )}
       </dl>
       <p className={styles.callout}>{permissionsText(organizes, owns)}</p>
-      {failure && (
+      {(change.error || correctionFailure) && (
         <p role="alert" className={pageStyles.error}>
-          {closedMeanwhile instanceof ApiError && closedMeanwhile.status === 409
-            ? 'This task’s meeting was closed meanwhile, so the task can’t be corrected or deleted any more.'
-            : taskChangeFailure(failure)}
+          {change.error
+            ? taskChangeFailure(change.error)
+            : correctionFailure && taskCorrectionFailure(correctionFailure)}
         </p>
       )}
-      {canCorrect &&
+      {canDelete &&
         (confirming ? (
           <div
             className={styles.confirmation}
@@ -255,7 +260,7 @@ function TaskDetails({ task }: { task: Task }) {
               Delete this task
             </button>
             <p className={`${pageStyles.meta} ${styles.hint}`}>
-              A task can be corrected or deleted until its meeting closes.
+              A task can be deleted until its meeting closes.
             </p>
           </div>
         ))}

@@ -12,9 +12,10 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * What the tasks module asks about meetings. Tasks are created, reworded and deleted by the series
- * organizer while the task's meeting runs, so the same rules as for decisions apply: 404 for
- * outsiders, 403 for other members and 409 before the meeting starts and after it closes.
+ * What the tasks module asks about meetings. Tasks are created and deleted by the series organizer
+ * while the task's meeting runs, and reworded while any meeting of its series runs, so the same
+ * rules as for decisions apply: 404 for outsiders, 403 for other members and 409 when no such
+ * meeting is running.
  *
  * <p>The methods for those changes lock the meeting's row until the caller's transaction ends, so
  * the caller must have one: otherwise a change could slip in after closing.
@@ -53,6 +54,12 @@ public class TaskMeetings {
   @Transactional(propagation = Propagation.MANDATORY)
   public void lockRunningMeeting(UUID userId, UUID meetingId) {
     meetings.lockRunningMeeting(userId, meetingId);
+  }
+
+  /** Locks the series' running meeting, whichever it is, and returns its ID. */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public UUID lockRunningMeetingOf(UUID userId, UUID seriesId) {
+    return meetings.lockRunningMeetingOf(userId, seriesId);
   }
 
   /** Throws a 404 error response if the user isn't a member of the meeting's team. */

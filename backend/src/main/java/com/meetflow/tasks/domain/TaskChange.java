@@ -14,9 +14,9 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Persistable;
 
 /**
- * One line of a task's history: who changed its status, owner or deadline, and when. Rows are only
- * inserted, never updated. Correcting a description during the meeting isn't recorded: nobody has
- * been sent the task yet, and it keeps a second copy of customer text out of this table.
+ * One line of a task's history: who changed its status, owner, deadline or description, and when.
+ * Rows are only inserted, never updated. Correcting a description during the task's own meeting
+ * isn't recorded: nobody has been sent the task yet.
  */
 @Entity
 public class TaskChange implements Persistable<UUID> {
@@ -48,6 +48,10 @@ public class TaskChange implements Persistable<UUID> {
   private @Nullable LocalDate oldDeadline;
 
   private @Nullable LocalDate newDeadline;
+
+  private @Nullable String oldDescription;
+
+  private @Nullable String newDescription;
 
   // The ID is assigned here, so Spring Data can't tell a new row from a stored one by its ID.
   @Transient private boolean isNew = true;
@@ -82,6 +86,14 @@ public class TaskChange implements Persistable<UUID> {
     var change = new TaskChange(task, changedBy, meetingId);
     change.oldDeadline = from;
     change.newDeadline = to;
+    return change;
+  }
+
+  public static TaskChange ofDescription(
+      Task task, UUID changedBy, UUID meetingId, String from, String to) {
+    var change = new TaskChange(task, changedBy, meetingId);
+    change.oldDescription = from;
+    change.newDescription = to;
     return change;
   }
 
@@ -136,6 +148,14 @@ public class TaskChange implements Persistable<UUID> {
 
   public @Nullable LocalDate getNewDeadline() {
     return newDeadline;
+  }
+
+  public @Nullable String getOldDescription() {
+    return oldDescription;
+  }
+
+  public @Nullable String getNewDescription() {
+    return newDescription;
   }
 
   @Override

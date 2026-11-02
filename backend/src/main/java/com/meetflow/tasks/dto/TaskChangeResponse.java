@@ -19,4 +19,6 @@ public record TaskChangeResponse(
     @Nullable String oldOwnerName,
     @Nullable String newOwnerName,
     @Nullable LocalDate oldDeadline,
-    @Nullable LocalDate newDeadline) {}
+    @Nullable LocalDate newDeadline,
+    @Nullable String oldDescription,
+    @Nullable String newDescription) {}

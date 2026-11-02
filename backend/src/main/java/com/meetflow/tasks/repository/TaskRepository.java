@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface TaskRepository extends JpaRepository<Task, UUID> {
 
   /** Where a task belongs, read without loading the task itself. */
-  record TaskPlace(UUID teamId, UUID meetingId) {}
+  record TaskPlace(UUID teamId, UUID seriesId, UUID meetingId) {}
 
   /** The tasks created in a meeting, without the deleted ones, oldest first. */
   List<Task> findByMeetingIdAndDeletedAtIsNullOrderByCreatedAt(UUID meetingId);

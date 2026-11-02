@@ -26,14 +26,15 @@ export interface MeetingChanges {
 }
 
 const MEETINGS = ['meetings']
-const seriesMeetingsKey = (seriesId: string) => [...MEETINGS, 'series', seriesId]
+export const seriesMeetingsKey = (seriesId: string) => [...MEETINGS, 'series', seriesId]
 export const meetingKey = (meetingId: string) => [...MEETINGS, meetingId]
 
 // The series' meetings, latest first.
-export function useSeriesMeetings(seriesId: string) {
+export function useSeriesMeetings(seriesId: string, enabled = true) {
   return useQuery({
     queryKey: seriesMeetingsKey(seriesId),
     queryFn: () => apiFetch<Meeting[]>(`/meeting-series/${encodeURIComponent(seriesId)}/meetings`),
+    enabled,
   })
 }
 

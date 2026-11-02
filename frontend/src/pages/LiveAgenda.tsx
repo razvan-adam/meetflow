@@ -15,10 +15,11 @@ import {
   useRemoveDecision,
   type Decision,
 } from '../api/decisions.ts'
-import type { Meeting } from '../api/meetings.ts'
+import { useSeriesMeetings, type Meeting } from '../api/meetings.ts'
 import {
   useAddTask,
   useChangeTask,
+  useDeleteTask,
   useTasks,
   type NewTask,
   type Task,
@@ -26,9 +27,8 @@ import {
 } from '../api/tasks.ts'
 import { useCurrentUser } from '../api/users.ts'
 import { ItemDecisions } from './ItemDecisions.tsx'
-import { toDateAndTime } from './meetingTime.ts'
 import { NewTaskForm } from './NewTaskForm.tsx'
-import { taskChangeFailure } from './taskDisplay.ts'
+import { taskChangeFailure, taskCorrectionFailure } from './taskDisplay.ts'
 import { TaskList } from './TaskList.tsx'
 import pageStyles from './TeamPage.module.css'
 import styles from './LiveAgenda.module.css'
@@ -36,7 +36,6 @@ import styles from './LiveAgenda.module.css'
 interface Props {
   meetingId: string
   seriesId: string
-  scheduledAt: string
   participants: Meeting['participants']
   // The series organizer, while the meeting runs.
   canEdit: boolean
@@ -82,7 +81,6 @@ function failureMessage(failure: Error, closed: boolean): string {
 export function LiveAgenda({
   meetingId,
   seriesId,
-  scheduledAt,
   participants,
   canEdit,
   organizes,
@@ -99,6 +97,11 @@ export function LiveAgenda({
   const tasks = useTasks(meetingId)
   const addTask = useAddTask({ meetingId, seriesId })
   const changeTask = useChangeTask({ meetingId, seriesId })
+  // Apart from the status, because a 409 here means a meeting closed.
+  const rewordTask = useChangeTask({ meetingId, seriesId })
+  const deleteTask = useDeleteTask({ meetingId, seriesId })
+  // On a closed meeting's page, its tasks can still be reworded while a later meeting runs.
+  const seriesMeetings = useSeriesMeetings(seriesId, closed && organizes)
   const { data: user } = useCurrentUser()
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
@@ -126,14 +129,39 @@ export function LiveAgenda({
   // The tasks that came straight from the item, not from one of its decisions.
   const tasksOfItem = (item: AgendaItem) =>
     (tasks.data ?? []).filter((task) => task.agendaItemId === item.id && !task.decisionId)
+  const canReword =
+    canEdit ||
+    (closed &&
+      organizes &&
+      Boolean(seriesMeetings.data?.some((found) => found.status === 'IN_PROGRESS')))
+  const correctionFailure = rewordTask.error ?? deleteTask.error
+
+  function resetTaskErrors() {
+    changeTask.reset()
+    rewordTask.reset()
+    deleteTask.reset()
+  }
+
   const taskList = (list: Task[], label: string) => (
     <TaskList
       tasks={list}
       label={label}
-      overdueOn={toDateAndTime(scheduledAt).date}
       canChangeStatus={(task) => organizes || task.ownerId === user?.id}
-      pending={changeTask.isPending}
-      onChangeStatus={(task, status) => changeTask.mutate({ taskId: task.id, change: { status } })}
+      canReword={canReword}
+      canDelete={canEdit}
+      pending={changeTask.isPending || rewordTask.isPending || deleteTask.isPending}
+      onChangeStatus={(task, status) => {
+        resetTaskErrors()
+        changeTask.mutate({ taskId: task.id, change: { status } })
+      }}
+      onReword={(task, description, onSuccess) => {
+        resetTaskErrors()
+        rewordTask.mutate({ taskId: task.id, change: { description } }, { onSuccess })
+      }}
+      onDelete={(task, onSettled) => {
+        resetTaskErrors()
+        deleteTask.mutate(task.id, { onSettled })
+      }}
     />
   )
 
@@ -330,6 +358,11 @@ export function LiveAgenda({
       {changeTask.error && (
         <p role="alert" className={`${pageStyles.error} ${pageStyles.below}`}>
           {taskChangeFailure(changeTask.error)}
+        </p>
+      )}
+      {correctionFailure && (
+        <p role="alert" className={`${pageStyles.error} ${pageStyles.below}`}>
+          {taskCorrectionFailure(correctionFailure)}
         </p>
       )}
       {failure && (

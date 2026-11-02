@@ -26,16 +26,32 @@ export function todayDate(): string {
   return toDateAndTime(new Date().toISOString()).date
 }
 
-// Overdue isn't a status: the task isn't done and its deadline is before this date (YYYY-MM-DD),
-// which is today on the task screen and the meeting's date on its agenda. These compare as text.
-export function isOverdue(task: Task, onDate: string): boolean {
-  return task.status !== 'DONE' && task.deadline < onDate
+// Overdue isn't a status: the task isn't done and its deadline is before today (YYYY-MM-DD). These
+// compare as text.
+export function isOverdue(task: Task, today: string): boolean {
+  return task.status !== 'DONE' && task.deadline < today
 }
 
-// "Due Fri 20 Nov 2026", saying so in words when it is overdue, not only with a color.
-export function dueText(task: Task, onDate: string): string {
+// Whole calendar days, counted in UTC so a clock change can't make a day shorter.
+function daysBetween(from: string, to: string): number {
+  return Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000)
+}
+
+// "Due Fri 20 Nov 2026", saying how late it is in words when overdue, not only with a color.
+export function dueText(task: Task, today: string): string {
   const due = `Due ${formatDeadline(task.deadline)}`
-  return isOverdue(task, onDate) ? `${due} · overdue` : due
+  if (!isOverdue(task, today)) {
+    return due
+  }
+  const days = daysBetween(task.deadline, today)
+  return `${due} · ${days} ${days === 1 ? 'day' : 'days'} overdue`
+}
+
+// For rewording and deleting, which need a meeting running: a 409 means it closed.
+export function taskCorrectionFailure(failure: Error): string {
+  return failure instanceof ApiError && failure.status === 409
+    ? 'The meeting was closed meanwhile, so the task wasn’t changed.'
+    : taskChangeFailure(failure)
 }
 
 export function taskChangeFailure(failure: Error): string {

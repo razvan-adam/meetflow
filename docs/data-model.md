@@ -177,7 +177,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 
 - When a task is created, its owner must be a participant of `meeting_id` (service check).
 - A task created from a decision stores both `decision_id` and the decision's `agenda_item_id`; one created from an agenda item leaves `decision_id` null. A decision with tasks can't be removed; deleting a task clears its `decision_id`, so a decision whose tasks were all deleted can be.
-- **Overdue** is not stored. A task is overdue when it isn't `DONE` and `deadline` is before the current date: today for the viewer on the dashboard, and the meeting date on the agenda and in the minutes.
+- **Overdue** is not stored. A task is overdue when it isn't `DONE` and `deadline` is before the current date: today for the viewer on every screen, which also says how many days overdue it is, and the meeting date in the minutes, which are a record of that meeting.
 - Index on (`owner_id`, `status`, `deadline`) for the pending-tasks dashboard, and on (`series_id`, `status`) for carry-over.
 
 **`task_change`** – the status history. One row per change, including the creation.
@@ -193,6 +193,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 | `old_status`, `new_status` | text | null when the status didn't change |
 | `old_owner_id`, `new_owner_id` | uuid | null when the owner didn't change |
 | `old_deadline`, `new_deadline` | date | null when the deadline didn't change |
+| `old_description`, `new_description` | text | null unless the task was reworded during a later meeting; 500 characters at most |
 
 Rows are only inserted, never updated or deleted.
 
@@ -261,7 +262,7 @@ Once `meeting.status` is `CLOSED`, the `meetings` and `tasks` services reject an
 
 ### Status history
 
-Every change to a task's status, owner or deadline inserts a `task_change` row, in the same transaction as the change. The minutes and the meeting history read it to show how a commitment evolved. Rewording a task while its meeting runs inserts no row: it is a correction made before anyone is sent the task, and customer text stays out of the history.
+Every change to a task's status, owner, deadline or description inserts a `task_change` row, in the same transaction as the change. The minutes and the meeting history read it to show how a commitment evolved. Rewording a task during its own meeting inserts no row: it is a correction made before anyone is sent the task.
 
 ## Team scoping
 
@@ -287,7 +288,7 @@ Because `team_id` is a direct column on the main tables, access checks are a pla
 | `invitation` | `email` | invite a person who may not have an account yet |
 | `email_delivery` | `recipient_email` | avoid duplicate emails |
 | `spring_session*` | session ID, user reference | keep the user logged in |
-| `agenda_item.notes`, `agenda_item.title`, `decision.text`, `task.description`, `minutes.content` | free text written by customers, which may mention people | the meeting content itself |
+| `agenda_item.notes`, `agenda_item.title`, `decision.text`, `task.description`, `task_change.old_description`, `task_change.new_description`, `minutes.content` | free text written by customers, which may mention people | the meeting content itself |
 | `*_by`, `owner_id`, `meeting_participant` | user references | who did what |
 
 Free text is customer content: MeetFlow processes it on the customer's behalf and never writes it to logs.

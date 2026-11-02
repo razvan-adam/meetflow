@@ -244,6 +244,22 @@
   font-weight: 600;
 }
 
+/* A line of its own, so every row's controls sit in the same place. */
+.taskControls {
+  display: flex;
+  flex-basis: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.taskEdit {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .taskStatus {
   padding: 4px 6px;
   background: var(--frame);

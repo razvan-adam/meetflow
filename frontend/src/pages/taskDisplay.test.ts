@@ -26,8 +26,19 @@ describe('overdue', () => {
     expect(isOverdue({ ...TASK, status: 'DONE' }, '2026-12-01')).toBe(false)
   })
 
-  it('is said in words, not only with a color', () => {
-    expect(dueText(TASK, '2026-12-01')).toMatch(/· overdue$/)
+  it('says how many days late the task is', () => {
+    expect(dueText(TASK, '2026-11-21')).toMatch(/· 1 day overdue$/)
+    expect(dueText(TASK, '2026-11-24')).toMatch(/· 4 days overdue$/)
+    expect(dueText(TASK, '2026-12-01')).toMatch(/· 11 days overdue$/)
+  })
+
+  it('counts across a clock change and a new year', () => {
+    expect(dueText({ ...TASK, deadline: '2026-10-20' }, '2026-11-02')).toMatch(/· 13 days overdue$/)
+    expect(dueText({ ...TASK, deadline: '2026-12-30' }, '2027-01-02')).toMatch(/· 3 days overdue$/)
+  })
+
+  it('says nothing on the deadline itself or before it', () => {
+    expect(dueText(TASK, '2026-11-20')).not.toMatch(/overdue/)
     expect(dueText(TASK, '2026-11-02')).not.toMatch(/overdue/)
   })
 })

@@ -265,15 +265,74 @@ class TaskUpdateTests {
   }
 
   @Test
-  void aTaskCantBeRewordedOrDeletedOnceItsMeetingClosedEvenDuringALaterOne() {
+  void aTaskCantBeRewordedBetweenMeetings() {
     close();
 
     assertThat(reword(ana, "Too late")).hasStatus(HttpStatus.CONFLICT);
+
+    // A scheduled meeting that hasn't started doesn't count.
+    post(
+        ana,
+        "/api/meeting-series/" + seriesId + "/meetings",
+        "{\"scheduledAt\": \"2026-11-09T08:30:00Z\", \"participantIds\": []}");
+    assertThat(reword(ana, "Too late")).hasStatus(HttpStatus.CONFLICT);
+
+    assertThat(body(get(ana, "/api/tasks/" + task))).contains("Sign the contract");
+  }
+
+  @Test
+  void theOrganizerRewordsATaskDuringALaterMeetingAndTheHistoryRecordsIt() {
+    close();
+    String next = scheduleAndStart();
+
+    assertThat(reword(ana, " Sign the Temporis contract "))
+        .hasStatusOk()
+        .bodyJson()
+        .extractingPath("$.description")
+        .isEqualTo("Sign the Temporis contract");
+
+    assertThat(get(bo, "/api/tasks/" + task + "/changes"))
+        .bodyJson()
+        .isLenientlyEqualTo(
+            """
+            [{"changedByName": "Ana Costa", "duringMeeting": true,
+              "oldDescription": "Sign the contract",
+              "newDescription": "Sign the Temporis contract",
+              "newStatus": null, "newOwnerName": null, "newDeadline": null},
+             {"oldDescription": null, "newDescription": null, "newStatus": "OPEN"}]""");
+    assertThat(meetingOfLatestChange()).isEqualTo(next);
+  }
+
+  @Test
+  void rewordingWithTheSameWordsDuringALaterMeetingChangesNothing() {
+    close();
+    scheduleAndStart();
+
+    assertThat(reword(ana, "Sign the contract")).hasStatusOk();
+
+    assertThat(historySize()).isEqualTo(1);
+  }
+
+  @Test
+  void onlyTheOrganizerRewordsDuringALaterMeeting() {
+    close();
+    scheduleAndStart();
+
+    assertThat(reword(bo, "Mine")).hasStatus(HttpStatus.FORBIDDEN);
+    assertThat(reword(di, "Mine")).hasStatus(HttpStatus.FORBIDDEN);
+    assertThat(reword(cy, "Mine")).hasStatus(HttpStatus.NOT_FOUND);
+
+    assertThat(body(get(ana, "/api/tasks/" + task))).contains("Sign the contract");
+  }
+
+  @Test
+  void aTaskCantBeDeletedOnceItsMeetingClosedEvenDuringALaterOne() {
+    close();
+
     assertThat(delete(ana)).hasStatus(HttpStatus.CONFLICT);
 
     scheduleAndStart();
 
-    assertThat(reword(ana, "Too late")).hasStatus(HttpStatus.CONFLICT);
     assertThat(delete(ana)).hasStatus(HttpStatus.CONFLICT);
     assertThat(body(get(ana, "/api/tasks/" + task))).contains("Sign the contract");
   }

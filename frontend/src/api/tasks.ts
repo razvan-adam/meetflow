@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useReloadAfterChange, type AgendaContext } from './agenda.ts'
 import { ApiError, apiFetch } from './client.ts'
-import { meetingKey } from './meetings.ts'
+import { meetingKey, seriesMeetingsKey } from './meetings.ts'
 
 export type TaskStatus = 'OPEN' | 'IN_PROGRESS' | 'DONE'
 
@@ -43,6 +43,8 @@ export interface TaskHistoryEntry {
   newOwnerName: string | null
   oldDeadline: string | null
   newDeadline: string | null
+  oldDescription: string | null
+  newDescription: string | null
 }
 
 // One thing to change on a task; the field's name is also the end of its URL's path.
@@ -95,8 +97,9 @@ export function useTaskHistory(taskId: string) {
 }
 
 // The server decides who may change what: the owner the status; the organizer that, the owner and
-// the deadline, and the description while the task's own meeting runs. The context is the task's
-// meeting, whose list of tasks reloads, even after a failure, since the page may be out of date.
+// the deadline, and the description while a meeting of the series runs. The context is the task's
+// meeting, whose list of tasks reloads, even after a failure, since the page may be out of date. A
+// 409 may mean the running meeting closed, so the series' meetings reload too.
 export function useChangeTask(context: AgendaContext) {
   const queryClient = useQueryClient()
   const reload = useReloadAfterChange(context, tasksKey(context.meetingId))
@@ -109,6 +112,9 @@ export function useChangeTask(context: AgendaContext) {
       }),
     onSettled: async (_data, error, { taskId }) => {
       await queryClient.invalidateQueries({ queryKey: taskKey(taskId) })
+      if (error instanceof ApiError && error.status === 409) {
+        await queryClient.invalidateQueries({ queryKey: seriesMeetingsKey(context.seriesId) })
+      }
       await reload(error)
     },
   })

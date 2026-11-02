@@ -20,6 +20,9 @@ function describe(entry: TaskHistoryEntry): string {
     const from = formatDeadline(entry.oldDeadline)
     return `${who} changed deadline ${from} → ${formatDeadline(entry.newDeadline)}`
   }
+  if (entry.oldDescription && entry.newDescription) {
+    return `${who} reworded the task “${entry.oldDescription}” → “${entry.newDescription}”`
+  }
   return `${who} changed the task`
 }
 

@@ -21,7 +21,6 @@ public class Decision implements Persistable<UUID> {
   @SuppressWarnings("UnusedVariable") // The table requires it.
   private UUID teamId;
 
-  @SuppressWarnings("UnusedVariable") // Decisions are looked up by this column.
   private UUID meetingId;
 
   private UUID agendaItemId;
@@ -53,6 +52,10 @@ public class Decision implements Persistable<UUID> {
   @Override
   public UUID getId() {
     return id;
+  }
+
+  public UUID getMeetingId() {
+    return meetingId;
   }
 
   public UUID getAgendaItemId() {

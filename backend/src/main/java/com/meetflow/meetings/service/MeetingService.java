@@ -143,7 +143,7 @@ public class MeetingService {
   }
 
   /** The meeting, if the user is a member of its team; otherwise 404, as if it didn't exist. */
-  Meeting findVisible(UUID userId, UUID meetingId) {
+  public Meeting findVisible(UUID userId, UUID meetingId) {
     return meetings
         .findById(meetingId)
         .filter(found -> teamMembers.isMember(userId, found.getTeamId()))

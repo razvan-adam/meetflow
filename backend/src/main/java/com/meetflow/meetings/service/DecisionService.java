@@ -2,11 +2,13 @@ package com.meetflow.meetings.service;
 
 import com.meetflow.meetings.domain.Decision;
 import com.meetflow.meetings.dto.DecisionResponse;
+import com.meetflow.meetings.exception.DecisionHasTasksException;
 import com.meetflow.meetings.exception.DecisionNotFoundException;
 import com.meetflow.meetings.repository.DecisionRepository;
 import com.meetflow.teams.TeamMembers;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,16 +61,26 @@ public class DecisionService {
     return toResponse(decision);
   }
 
+  /**
+   * A decision that tasks came from can't be removed: 409. The tasks module depends on this one, so
+   * this can't ask it about tasks; the foreign key on the task table answers instead. The meeting's
+   * lock means no task can arrive between this check and the end of the transaction.
+   */
   @Transactional
   public void remove(UUID userId, UUID decisionId) {
     decisions.delete(findInRunningMeeting(userId, decisionId));
+    try {
+      decisions.flush();
+    } catch (DataIntegrityViolationException e) {
+      throw new DecisionHasTasksException();
+    }
   }
 
   /**
    * The decision, loaded only once its meeting is locked, so one removed meanwhile answers 404.
    * Outsiders get the same 404 as for an unknown decision.
    */
-  private Decision findInRunningMeeting(UUID userId, UUID decisionId) {
+  public Decision findInRunningMeeting(UUID userId, UUID decisionId) {
     var place =
         decisions
             .findPlaceById(decisionId)

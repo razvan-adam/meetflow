@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
 
 public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
 
@@ -17,6 +18,10 @@ public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
   List<Meeting> findBySeriesIdOrderByScheduledAtDesc(UUID seriesId);
 
   boolean existsBySeriesIdAndStatusNot(UUID seriesId, MeetingStatus status);
+
+  /** A series has at most one meeting that isn't closed, so at most one matches. */
+  @Query("SELECT m.id FROM Meeting m WHERE m.seriesId = :seriesId AND m.status = :status")
+  Optional<UUID> findIdBySeriesIdAndStatus(UUID seriesId, MeetingStatus status);
 
   /** Holds the meeting's row until the transaction ends, so its agenda has one writer at a time. */
   @Lock(LockModeType.PESSIMISTIC_WRITE)

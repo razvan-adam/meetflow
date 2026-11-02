@@ -58,7 +58,8 @@ export function MeetingPage() {
         <p className={`${styles.banner} ${styles.bannerClosed}`}>
           <span>
             <strong>This meeting was closed</strong> on {formatMeetingTime(meeting.data.closedAt)}.
-            It can no longer be changed.
+            Its agenda, notes and decisions can no longer be changed; its tasks can still be
+            updated.
           </span>
         </p>
       )}
@@ -87,6 +88,7 @@ export function MeetingPage() {
           seriesId={meeting.data.seriesId}
           participants={meeting.data.participants}
           canEdit={canEdit}
+          organizes={Boolean(user && series.data?.organizerId === user.id)}
           closed={meeting.data.status === 'CLOSED'}
         />
       )}

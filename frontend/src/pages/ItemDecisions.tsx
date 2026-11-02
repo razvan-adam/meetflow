@@ -3,13 +3,13 @@ import type { Decision } from '../api/decisions.ts'
 import type { Task } from '../api/tasks.ts'
 import agendaStyles from './Agenda.module.css'
 import styles from './LiveAgenda.module.css'
-import { TaskList } from './TaskList.tsx'
 import pageStyles from './TeamPage.module.css'
 
 interface Props {
   decisions: Decision[]
   pending: boolean
   tasksOf: (decision: Decision) => Task[]
+  taskList: (decision: Decision) => ReactNode
   newTaskForm: (decision: Decision) => ReactNode
   onAdd: (text: string, onSuccess: () => void) => void
   onEdit: (decisionId: string, text: string, onSuccess: () => void) => void
@@ -25,6 +25,7 @@ export function ItemDecisions({
   decisions,
   pending,
   tasksOf,
+  taskList,
   newTaskForm,
   onAdd,
   onEdit,
@@ -113,7 +114,7 @@ export function ItemDecisions({
                   </span>
                 </div>
               )}
-              <TaskList tasks={tasksOf(decision)} label={`Tasks from: ${decision.text}`} />
+              {taskList(decision)}
               {newTaskForm(decision)}
             </li>
           ))}

@@ -26,7 +26,6 @@ public class Task implements Persistable<UUID> {
 
   private UUID teamId;
 
-  @SuppressWarnings("UnusedVariable") // The table requires it; carry-over (MF-19) reads it.
   private UUID seriesId;
 
   private UUID meetingId;
@@ -50,11 +49,14 @@ public class Task implements Persistable<UUID> {
   @SuppressWarnings("UnusedVariable") // Tasks are sorted by this column.
   private Instant createdAt;
 
-  @SuppressWarnings("UnusedVariable") // The table requires it; MF-18 changes it.
+  @SuppressWarnings("UnusedVariable") // The table requires it.
   private Instant updatedAt;
 
-  @SuppressWarnings("UnusedVariable") // Deleted tasks are filtered out by this column.
   private @Nullable Instant deletedAt;
+
+  private @Nullable UUID deletedBy;
+
+  private @Nullable UUID deletedInMeetingId;
 
   // Stops two changes to a task made at the very same moment from overwriting each other.
   @SuppressWarnings("UnusedVariable") // Hibernate reads and increments it.
@@ -93,6 +95,10 @@ public class Task implements Persistable<UUID> {
     return teamId;
   }
 
+  public UUID getSeriesId() {
+    return seriesId;
+  }
+
   public UUID getMeetingId() {
     return meetingId;
   }
@@ -119,6 +125,54 @@ public class Task implements Persistable<UUID> {
 
   public TaskStatus getStatus() {
     return status;
+  }
+
+  public @Nullable Instant getDeletedAt() {
+    return deletedAt;
+  }
+
+  public @Nullable UUID getDeletedBy() {
+    return deletedBy;
+  }
+
+  public @Nullable UUID getDeletedInMeetingId() {
+    return deletedInMeetingId;
+  }
+
+  public void changeStatus(TaskStatus status) {
+    this.status = status;
+    this.updatedAt = Instant.now();
+  }
+
+  public void changeOwner(UUID ownerId) {
+    this.ownerId = ownerId;
+    this.updatedAt = Instant.now();
+  }
+
+  public void changeDeadline(LocalDate deadline) {
+    this.deadline = deadline;
+    this.updatedAt = Instant.now();
+  }
+
+  public void reword(String description) {
+    this.description = description;
+    this.updatedAt = Instant.now();
+  }
+
+  /**
+   * Stops the task from being worked on but keeps it, with its history. During its own meeting it
+   * lets go of its decision, so a decision whose tasks were all deleted can be removed again. After
+   * that the decision can't be removed anyway, and the closed meeting still shows the task under
+   * it.
+   */
+  public void delete(UUID deletedBy, UUID duringMeetingId) {
+    this.deletedAt = Instant.now();
+    this.deletedBy = deletedBy;
+    this.deletedInMeetingId = duringMeetingId;
+    if (duringMeetingId.equals(meetingId)) {
+      this.decisionId = null;
+    }
+    this.updatedAt = this.deletedAt;
   }
 
   @Override

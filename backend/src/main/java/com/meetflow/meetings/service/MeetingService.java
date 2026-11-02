@@ -12,6 +12,7 @@ import com.meetflow.meetings.exception.MeetingAlreadyStartedException;
 import com.meetflow.meetings.exception.MeetingClosedException;
 import com.meetflow.meetings.exception.MeetingNotFoundException;
 import com.meetflow.meetings.exception.MeetingNotStartedException;
+import com.meetflow.meetings.exception.NoRunningMeetingException;
 import com.meetflow.meetings.exception.NotOrganizerException;
 import com.meetflow.meetings.exception.OpenMeetingExistsException;
 import com.meetflow.meetings.exception.ParticipantNotMemberException;
@@ -26,8 +27,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -150,6 +153,17 @@ public class MeetingService {
         .orElseThrow(MeetingNotFoundException::new);
   }
 
+  /** When the meetings are scheduled, by ID. */
+  public Map<UUID, Instant> scheduledTimesOf(Collection<UUID> meetingIds) {
+    return meetings.findAllById(meetingIds).stream()
+        .collect(Collectors.toMap(Meeting::getId, Meeting::getScheduledAt));
+  }
+
+  /** The series' meeting that is running right now, if any. */
+  public Optional<UUID> runningMeetingOf(UUID seriesId) {
+    return meetings.findIdBySeriesIdAndStatus(seriesId, MeetingStatus.IN_PROGRESS);
+  }
+
   /**
    * The meeting, locked until the transaction ends, for a change by its organizer. The lock keeps
    * agenda positions consistent, and the status read here is current because it comes with the
@@ -169,12 +183,23 @@ public class MeetingService {
   }
 
   /** Like {@link #lockForOrganizerEdit}, for what only happens during a meeting. */
-  Meeting lockRunningMeeting(UUID userId, UUID meetingId) {
+  public Meeting lockRunningMeeting(UUID userId, UUID meetingId) {
     var meeting = lockForOrganizerEdit(userId, meetingId);
     if (meeting.getStatus() != MeetingStatus.IN_PROGRESS) {
       throw new MeetingNotStartedException();
     }
     return meeting;
+  }
+
+  /**
+   * The series' running meeting, locked, for a change by the series organizer: 403 for other
+   * members, 409 if none is running. Returns its ID.
+   */
+  public UUID lockRunningMeetingOf(UUID userId, UUID seriesId) {
+    requireOrganizer(userId, series.findVisible(userId, seriesId));
+    var meetingId = runningMeetingOf(seriesId).orElseThrow(NoRunningMeetingException::new);
+    lockRunningMeeting(userId, meetingId);
+    return meetingId;
   }
 
   /** Like {@link #lockForOrganizerEdit}, for what only happens before a meeting starts. */

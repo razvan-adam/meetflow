@@ -15,10 +15,20 @@ import {
   useRemoveDecision,
   type Decision,
 } from '../api/decisions.ts'
-import type { Meeting } from '../api/meetings.ts'
-import { useAddTask, useTasks, type NewTask, type TaskOrigin } from '../api/tasks.ts'
+import { useSeriesMeetings, type Meeting } from '../api/meetings.ts'
+import {
+  useAddTask,
+  useChangeTask,
+  useDeleteTask,
+  useTasks,
+  type NewTask,
+  type Task,
+  type TaskOrigin,
+} from '../api/tasks.ts'
+import { useCurrentUser } from '../api/users.ts'
 import { ItemDecisions } from './ItemDecisions.tsx'
 import { NewTaskForm } from './NewTaskForm.tsx'
+import { taskChangeFailure, taskCorrectionFailure } from './taskDisplay.ts'
 import { TaskList } from './TaskList.tsx'
 import pageStyles from './TeamPage.module.css'
 import styles from './LiveAgenda.module.css'
@@ -29,6 +39,8 @@ interface Props {
   participants: Meeting['participants']
   // The series organizer, while the meeting runs.
   canEdit: boolean
+  // The series organizer, also once the meeting is closed: task status stays open to changes.
+  organizes: boolean
   closed: boolean
 }
 
@@ -66,7 +78,14 @@ function failureMessage(failure: Error, closed: boolean): string {
 // The agenda of a meeting that has started (S7). The organizer works through it one item at a time
 // while the meeting runs; everyone else, and everyone once it is closed, reads all of it. This stays
 // on the page when it turns read-only, so a change that was rejected can still say why.
-export function LiveAgenda({ meetingId, seriesId, participants, canEdit, closed }: Props) {
+export function LiveAgenda({
+  meetingId,
+  seriesId,
+  participants,
+  canEdit,
+  organizes,
+  closed,
+}: Props) {
   const items = useAgendaItems(meetingId)
   const add = useAddAgendaItem({ meetingId, seriesId })
   const saveNotes = useSaveNotes({ meetingId, seriesId })
@@ -77,6 +96,13 @@ export function LiveAgenda({ meetingId, seriesId, participants, canEdit, closed 
   const removeDecision = useRemoveDecision({ meetingId, seriesId })
   const tasks = useTasks(meetingId)
   const addTask = useAddTask({ meetingId, seriesId })
+  const changeTask = useChangeTask({ meetingId, seriesId })
+  // Apart from the status, because a 409 here means a meeting closed.
+  const rewordTask = useChangeTask({ meetingId, seriesId })
+  const deleteTask = useDeleteTask({ meetingId, seriesId })
+  // On a closed meeting's page, its tasks can still be reworded and deleted while a later one runs.
+  const seriesMeetings = useSeriesMeetings(seriesId, closed && organizes)
+  const { data: user } = useCurrentUser()
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   if (!items.data) {
@@ -103,6 +129,40 @@ export function LiveAgenda({ meetingId, seriesId, participants, canEdit, closed 
   // The tasks that came straight from the item, not from one of its decisions.
   const tasksOfItem = (item: AgendaItem) =>
     (tasks.data ?? []).filter((task) => task.agendaItemId === item.id && !task.decisionId)
+  const canCorrect =
+    canEdit ||
+    (closed &&
+      organizes &&
+      Boolean(seriesMeetings.data?.some((found) => found.status === 'IN_PROGRESS')))
+  const correctionFailure = rewordTask.error ?? deleteTask.error
+
+  function resetTaskErrors() {
+    changeTask.reset()
+    rewordTask.reset()
+    deleteTask.reset()
+  }
+
+  const taskList = (list: Task[], label: string) => (
+    <TaskList
+      tasks={list}
+      label={label}
+      canChangeStatus={(task) => organizes || task.ownerId === user?.id}
+      canCorrect={canCorrect}
+      pending={changeTask.isPending || rewordTask.isPending || deleteTask.isPending}
+      onChangeStatus={(task, status) => {
+        resetTaskErrors()
+        changeTask.mutate({ taskId: task.id, change: { status } })
+      }}
+      onReword={(task, description, onSuccess) => {
+        resetTaskErrors()
+        rewordTask.mutate({ taskId: task.id, change: { description } }, { onSuccess })
+      }}
+      onDelete={(task, onSettled) => {
+        resetTaskErrors()
+        deleteTask.mutate(task.id, { onSettled })
+      }}
+    />
+  )
 
   function resetRecordErrors() {
     addDecision.reset()
@@ -211,6 +271,9 @@ export function LiveAgenda({ meetingId, seriesId, participants, canEdit, closed 
                   addDecision.isPending || editDecision.isPending || removeDecision.isPending
                 }
                 tasksOf={tasksOfDecision}
+                taskList={(decision) =>
+                  taskList(tasksOfDecision(decision), `Tasks from: ${decision.text}`)
+                }
                 newTaskForm={(decision) => (
                   <NewTaskForm
                     label={`Add task from decision: ${decision.text}`}
@@ -234,7 +297,7 @@ export function LiveAgenda({ meetingId, seriesId, participants, canEdit, closed 
                   removeDecision.mutate(decisionId, { onSettled })
                 }}
               />
-              <TaskList tasks={tasksOfItem(selected)} label={`Tasks on ${selected.title}`} />
+              {taskList(tasksOfItem(selected), `Tasks on ${selected.title}`)}
               <NewTaskForm
                 key={`task-${selected.id}`}
                 label={`Add task on ${selected.title}`}
@@ -271,15 +334,12 @@ export function LiveAgenda({ meetingId, seriesId, participants, canEdit, closed 
                   {decisionsOf(item).map((decision) => (
                     <li key={decision.id} className={styles.decision}>
                       <p className={styles.decisionText}>{decision.text}</p>
-                      <TaskList
-                        tasks={tasksOfDecision(decision)}
-                        label={`Tasks from: ${decision.text}`}
-                      />
+                      {taskList(tasksOfDecision(decision), `Tasks from: ${decision.text}`)}
                     </li>
                   ))}
                 </ul>
               )}
-              <TaskList tasks={tasksOfItem(item)} label={`Tasks on ${item.title}`} />
+              {taskList(tasksOfItem(item), `Tasks on ${item.title}`)}
             </li>
           ))}
         </ol>
@@ -292,6 +352,16 @@ export function LiveAgenda({ meetingId, seriesId, participants, canEdit, closed 
       {tasks.isError && (
         <p role="alert" className={`${pageStyles.error} ${pageStyles.below}`}>
           The tasks couldn’t be loaded. Try again in a few minutes.
+        </p>
+      )}
+      {changeTask.error && (
+        <p role="alert" className={`${pageStyles.error} ${pageStyles.below}`}>
+          {taskChangeFailure(changeTask.error)}
+        </p>
+      )}
+      {correctionFailure && (
+        <p role="alert" className={`${pageStyles.error} ${pageStyles.below}`}>
+          {taskCorrectionFailure(correctionFailure)}
         </p>
       )}
       {failure && (

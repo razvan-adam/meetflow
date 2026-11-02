@@ -1,0 +1,118 @@
+/* The task screen (S8). Shared layout comes from TeamPage.module.css. */
+
+.title {
+  overflow-wrap: anywhere;
+}
+
+.due {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.due[data-overdue] {
+  color: var(--overdue);
+  font-weight: 600;
+}
+
+/* Only as wide as its buttons, in a page that stretches its children. */
+.statuses {
+  align-self: flex-start;
+}
+
+.status {
+  margin: 0;
+  font-size: 14px;
+}
+
+.details {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px 12px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.details dt {
+  color: var(--muted);
+}
+
+.details dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.decision {
+  white-space: pre-wrap;
+}
+
+.change {
+  padding: 0;
+  background: none;
+  color: var(--wire);
+  border: 0;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.fieldForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.callout {
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--wire-soft);
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.confirmation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.confirmationText {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 14px;
+}
+
+.hint {
+  margin: 6px 0 0;
+}
+
+.history {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.history li {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.history time {
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 560px) {
+  .history li {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}

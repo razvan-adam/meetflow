@@ -18,5 +18,9 @@ import org.springframework.context.annotation.Import;
 @Documented
 @SpringBootTest
 @AutoConfigureMockMvc
-@Import({TestcontainersConfiguration.class, RecordingEmailSender.class})
+@Import({
+  TestcontainersConfiguration.class,
+  RecordingEmailSender.class,
+  RecordingMeetingClosedListener.class
+})
 public @interface IntegrationTest {}

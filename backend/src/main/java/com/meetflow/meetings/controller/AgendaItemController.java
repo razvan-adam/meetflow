@@ -3,6 +3,8 @@ package com.meetflow.meetings.controller;
 import com.meetflow.identity.CurrentUser;
 import com.meetflow.meetings.dto.AgendaItemRequest;
 import com.meetflow.meetings.dto.AgendaItemResponse;
+import com.meetflow.meetings.dto.AgendaNotesRequest;
+import com.meetflow.meetings.dto.AgendaStatusRequest;
 import com.meetflow.meetings.dto.ReorderAgendaRequest;
 import com.meetflow.meetings.service.AgendaService;
 import jakarta.validation.Valid;
@@ -57,6 +59,22 @@ class AgendaItemController {
       @PathVariable UUID itemId,
       @Valid @RequestBody AgendaItemRequest body) {
     return agendaService.rename(user.id(), itemId, body.title());
+  }
+
+  @PutMapping("/api/agenda-items/{itemId}/notes")
+  AgendaItemResponse writeNotes(
+      @AuthenticationPrincipal CurrentUser user,
+      @PathVariable UUID itemId,
+      @Valid @RequestBody AgendaNotesRequest body) {
+    return agendaService.writeNotes(user.id(), itemId, body.notes());
+  }
+
+  @PutMapping("/api/agenda-items/{itemId}/status")
+  AgendaItemResponse mark(
+      @AuthenticationPrincipal CurrentUser user,
+      @PathVariable UUID itemId,
+      @Valid @RequestBody AgendaStatusRequest body) {
+    return agendaService.mark(user.id(), itemId, body.status());
   }
 
   @DeleteMapping("/api/agenda-items/{itemId}")

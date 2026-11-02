@@ -229,13 +229,9 @@ class MeetingTests {
     return mvc.get().uri("/api/meeting-series/{id}/meetings", seriesId).cookie(session).exchange();
   }
 
-  // Closing a meeting comes with MF-15; until then the tests close it in the database.
   private void close(String meetingId) {
-    jdbc.update(
-        "UPDATE meeting SET status = 'CLOSED', started_at = now(), closed_at = now(),"
-            + " closed_by = ?::uuid WHERE id = ?::uuid",
-        anaId,
-        meetingId);
+    post(ana, "/api/meetings/" + meetingId + "/start", "");
+    post(ana, "/api/meetings/" + meetingId + "/close", "");
   }
 
   private void addMember(String userId) {

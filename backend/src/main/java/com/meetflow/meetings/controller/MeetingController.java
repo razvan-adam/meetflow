@@ -53,4 +53,14 @@ class MeetingController {
       @Valid @RequestBody MeetingRequest body) {
     return meetingService.update(user.id(), meetingId, body.scheduledAt(), body.participantIds());
   }
+
+  @PostMapping("/api/meetings/{meetingId}/start")
+  MeetingResponse start(@AuthenticationPrincipal CurrentUser user, @PathVariable UUID meetingId) {
+    return meetingService.start(user.id(), meetingId);
+  }
+
+  @PostMapping("/api/meetings/{meetingId}/close")
+  MeetingResponse close(@AuthenticationPrincipal CurrentUser user, @PathVariable UUID meetingId) {
+    return meetingService.close(user.id(), meetingId);
+  }
 }

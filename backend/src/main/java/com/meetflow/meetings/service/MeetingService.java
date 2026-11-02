@@ -1,6 +1,8 @@
 package com.meetflow.meetings.service;
 
 import com.meetflow.identity.UserDirectory;
+import com.meetflow.meetings.MeetingClosedEvent;
+import com.meetflow.meetings.domain.AgendaItem;
 import com.meetflow.meetings.domain.Meeting;
 import com.meetflow.meetings.domain.MeetingSeries;
 import com.meetflow.meetings.domain.MeetingStatus;
@@ -8,9 +10,11 @@ import com.meetflow.meetings.dto.MeetingResponse;
 import com.meetflow.meetings.dto.ParticipantResponse;
 import com.meetflow.meetings.exception.MeetingClosedException;
 import com.meetflow.meetings.exception.MeetingNotFoundException;
+import com.meetflow.meetings.exception.MeetingNotStartedException;
 import com.meetflow.meetings.exception.NotOrganizerException;
 import com.meetflow.meetings.exception.OpenMeetingExistsException;
 import com.meetflow.meetings.exception.ParticipantNotMemberException;
+import com.meetflow.meetings.repository.AgendaItemRepository;
 import com.meetflow.meetings.repository.MeetingRepository;
 import com.meetflow.teams.TeamMembers;
 import java.text.Collator;
@@ -23,32 +27,39 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Scheduling meetings (MF-13). The series organizer schedules the next meeting and chooses its
- * participants from the team, and can change both until the meeting is closed. Every member of the
- * team can see the series' meetings.
+ * Scheduling meetings (MF-13), starting and closing them (MF-15). The series organizer schedules
+ * the next meeting and chooses its participants from the team, and can change both until the
+ * meeting is closed. Every member of the team can see the series' meetings.
  */
 @Service
 public class MeetingService {
 
   private final MeetingRepository meetings;
+  private final AgendaItemRepository agendaItems;
   private final MeetingSeriesService series;
   private final TeamMembers teamMembers;
   private final UserDirectory users;
+  private final ApplicationEventPublisher events;
 
   MeetingService(
       MeetingRepository meetings,
+      AgendaItemRepository agendaItems,
       MeetingSeriesService series,
       TeamMembers teamMembers,
-      UserDirectory users) {
+      UserDirectory users,
+      ApplicationEventPublisher events) {
     this.meetings = meetings;
+    this.agendaItems = agendaItems;
     this.series = series;
     this.teamMembers = teamMembers;
     this.users = users;
+    this.events = events;
   }
 
   /** Schedules the series' next meeting. Organizer only, and only once the last one is closed. */
@@ -103,6 +114,33 @@ public class MeetingService {
     return toResponse(meeting, names(List.of(meeting)));
   }
 
+  /**
+   * Starts the meeting, which lets the organizer take notes. Organizer only. Starting one that is
+   * already running changes nothing, so a page that was out of date just catches up.
+   */
+  @Transactional
+  public MeetingResponse start(UUID userId, UUID meetingId) {
+    var meeting = lockForOrganizerEdit(userId, meetingId);
+    if (meeting.getStatus() == MeetingStatus.SCHEDULED) {
+      meeting.start();
+    }
+    return toResponse(meeting, names(List.of(meeting)));
+  }
+
+  /**
+   * Closes a running meeting, which locks it. Organizer only. Items nobody marked count as not
+   * covered, and other modules react to the published event once this transaction commits.
+   */
+  @Transactional
+  public MeetingResponse close(UUID userId, UUID meetingId) {
+    var meeting = lockRunningMeeting(userId, meetingId);
+    agendaItems.findByMeetingIdOrderByPosition(meetingId).forEach(AgendaItem::settleOnClosing);
+    meeting.close(userId);
+    events.publishEvent(
+        new MeetingClosedEvent(meeting.getId(), meeting.getTeamId(), meeting.getSeriesId()));
+    return toResponse(meeting, names(List.of(meeting)));
+  }
+
   /** The meeting, if the user is a member of its team; otherwise 404, as if it didn't exist. */
   Meeting findVisible(UUID userId, UUID meetingId) {
     return meetings
@@ -125,6 +163,15 @@ public class MeetingService {
     requireOrganizer(userId, series.findVisible(userId, meeting.getSeriesId()));
     if (meeting.getStatus() == MeetingStatus.CLOSED) {
       throw new MeetingClosedException();
+    }
+    return meeting;
+  }
+
+  /** Like {@link #lockForOrganizerEdit}, for what only happens during a meeting. */
+  Meeting lockRunningMeeting(UUID userId, UUID meetingId) {
+    var meeting = lockForOrganizerEdit(userId, meetingId);
+    if (meeting.getStatus() != MeetingStatus.IN_PROGRESS) {
+      throw new MeetingNotStartedException();
     }
     return meeting;
   }
@@ -163,6 +210,7 @@ public class MeetingService {
         meeting.getSeriesId(),
         meeting.getScheduledAt(),
         meeting.getStatus(),
+        meeting.getClosedAt(),
         participants);
   }
 }

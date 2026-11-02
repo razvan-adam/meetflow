@@ -13,8 +13,8 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Persistable;
 
 /**
- * A topic on a meeting's agenda. Items carried over from the previous meeting are created by MF-19,
- * and notes are added with MF-15.
+ * A topic on a meeting's agenda, with the notes taken on it and whether it was covered. Items
+ * carried over from the previous meeting are created by MF-19.
  */
 @Entity
 public class AgendaItem implements Persistable<UUID> {
@@ -29,7 +29,8 @@ public class AgendaItem implements Persistable<UUID> {
 
   private String title;
 
-  @SuppressWarnings("UnusedVariable") // The table requires it; running a meeting reads it (MF-15).
+  private @Nullable String notes;
+
   @Enumerated(EnumType.STRING)
   private AgendaItemStatus status;
 
@@ -74,8 +75,32 @@ public class AgendaItem implements Persistable<UUID> {
     return title;
   }
 
+  public @Nullable String getNotes() {
+    return notes;
+  }
+
+  public AgendaItemStatus getStatus() {
+    return status;
+  }
+
   public boolean isCarriedOver() {
     return carriedOverFromId != null;
+  }
+
+  /** Blank notes count as no notes. */
+  public void writeNotes(String notes) {
+    this.notes = notes.isBlank() ? null : notes;
+  }
+
+  public void mark(AgendaItemStatus status) {
+    this.status = status;
+  }
+
+  /** When a meeting closes, an item nobody marked counts as not covered, so it isn't lost. */
+  public void settleOnClosing() {
+    if (status == AgendaItemStatus.PENDING) {
+      status = AgendaItemStatus.NOT_COVERED;
+    }
   }
 
   public void rename(String title) {

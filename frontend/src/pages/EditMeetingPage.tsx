@@ -26,12 +26,15 @@ export function EditMeetingPage() {
   return <EditMeeting meeting={meeting.data} series={series.data} />
 }
 
-function failureMessage(failure: Error): string {
+function failureMessage(failure: Error, closed: boolean): string {
   if (failure instanceof ApiError && failure.status === 403) {
     return 'You’re no longer the organizer of this series, so you can’t change this meeting.'
   }
   if (failure instanceof ApiError && failure.status === 409) {
-    return 'This meeting was closed meanwhile, so it can’t be changed any more.'
+    // The other 409 is two saves at the very same moment, which is worth trying again.
+    return closed
+      ? 'This meeting was closed meanwhile, so it can’t be changed any more.'
+      : 'This meeting changed meanwhile. Check the form and try again.'
   }
   return 'The changes couldn’t be saved. Try again in a few minutes.'
 }
@@ -71,7 +74,7 @@ function EditMeeting({ meeting, series }: { meeting: Meeting; series: Series }) 
       )}
       {update.isError && (
         <p role="alert" className={styles.error}>
-          {failureMessage(update.error)}
+          {failureMessage(update.error, meeting.status === 'CLOSED')}
         </p>
       )}
     </main>

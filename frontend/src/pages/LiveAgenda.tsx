@@ -1,0 +1,243 @@
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import {
+  useAddAgendaItem,
+  useAgendaItems,
+  useMarkAgendaItem,
+  useSaveNotes,
+  type AgendaItem,
+  type AgendaItemStatus,
+} from '../api/agenda.ts'
+import { ApiError } from '../api/client.ts'
+import pageStyles from './TeamPage.module.css'
+import styles from './LiveAgenda.module.css'
+
+interface Props {
+  meetingId: string
+  seriesId: string
+  // The series organizer, while the meeting runs.
+  canEdit: boolean
+  closed: boolean
+}
+
+const STATUS_LABELS: Record<AgendaItemStatus, string> = {
+  PENDING: 'Not marked yet',
+  COVERED: 'Covered',
+  NOT_COVERED: 'Not covered',
+}
+
+const STATUS_SYMBOLS: Record<AgendaItemStatus, string> = {
+  PENDING: '○',
+  COVERED: '✓',
+  NOT_COVERED: '–',
+}
+
+const SAVE_NOTES_AFTER_MS = 1000
+
+function failureMessage(failure: Error, closed: boolean): string {
+  if (failure instanceof ApiError && failure.status === 403) {
+    return 'You’re no longer the organizer of this series, so your last change wasn’t saved.'
+  }
+  if (failure instanceof ApiError && failure.status === 409 && closed) {
+    return 'This meeting was closed meanwhile, so your last change wasn’t saved.'
+  }
+  if (failure instanceof ApiError && (failure.status === 409 || failure.status === 404)) {
+    return 'The agenda changed meanwhile. Check it and try again.'
+  }
+  return 'Your last change couldn’t be saved. Try again in a few minutes.'
+}
+
+// The agenda of a meeting that has started (S7). The organizer works through it one item at a time
+// while the meeting runs; everyone else, and everyone once it is closed, reads all of it. This stays
+// on the page when it turns read-only, so a change that was rejected can still say why.
+export function LiveAgenda({ meetingId, seriesId, canEdit, closed }: Props) {
+  const items = useAgendaItems(meetingId)
+  const add = useAddAgendaItem({ meetingId, seriesId })
+  const saveNotes = useSaveNotes({ meetingId, seriesId })
+  const mark = useMarkAgendaItem({ meetingId, seriesId })
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+
+  if (!items.data) {
+    return items.isError ? (
+      <p role="alert" className={pageStyles.error}>
+        The agenda couldn’t be loaded. Try again in a few minutes.
+      </p>
+    ) : null
+  }
+  const agenda = items.data
+  const selected = agenda.find((item) => item.id === selectedId) ?? agenda[0]
+  const failure = add.error ?? saveNotes.error ?? mark.error
+
+  function handleAdd(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const form = event.currentTarget
+    const title = String(new FormData(form).get('title')).trim()
+    if (title) {
+      add.mutate(title, {
+        onSuccess: (created) => {
+          form.reset()
+          setSelectedId(created.id)
+        },
+      })
+    }
+  }
+
+  function handleMark(item: AgendaItem, status: AgendaItemStatus) {
+    // Pressing the current mark again takes it back.
+    mark.mutate({ itemId: item.id, status: item.status === status ? 'PENDING' : status })
+  }
+
+  return (
+    <section aria-labelledby="agenda-title">
+      <h2 id="agenda-title" className={pageStyles.sectionLabel}>
+        Agenda items
+      </h2>
+      {canEdit ? (
+        <div className={styles.live}>
+          <div className={styles.side}>
+            {agenda.length > 0 && (
+              <ol className={styles.outline}>
+                {agenda.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      className={styles.outlineItem}
+                      type="button"
+                      aria-current={item.id === selected?.id || undefined}
+                      aria-label={`${item.title}: ${STATUS_LABELS[item.status]}`}
+                      data-status={item.status}
+                      onClick={() => setSelectedId(item.id)}
+                    >
+                      <span aria-hidden="true" className={styles.symbol}>
+                        {STATUS_SYMBOLS[item.status]}
+                      </span>
+                      <span className={styles.outlineTitle}>{item.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <form className={pageStyles.addRow} onSubmit={handleAdd}>
+              <input
+                className={pageStyles.input}
+                name="title"
+                aria-label="New agenda item"
+                placeholder="Add an agenda item"
+                maxLength={200}
+                required
+              />
+              <button className={pageStyles.secondary} type="submit" disabled={add.isPending}>
+                Add
+              </button>
+            </form>
+          </div>
+          {selected ? (
+            <div className={pageStyles.card}>
+              <div className={styles.itemHead}>
+                <h3 className={pageStyles.cardTitle}>{selected.title}</h3>
+                <div className={styles.marks} role="group" aria-label="Was this item covered?">
+                  {(['COVERED', 'NOT_COVERED'] as const).map((status) => (
+                    <button
+                      key={status}
+                      className={styles.mark}
+                      type="button"
+                      aria-pressed={selected.status === status}
+                      onClick={() => handleMark(selected, status)}
+                    >
+                      {STATUS_LABELS[status]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {selected.carriedOver && <p className={pageStyles.meta}>Not covered last time.</p>}
+              <NotesEditor
+                key={selected.id}
+                item={selected}
+                onSave={(notes, onFailure) =>
+                  saveNotes.mutate({ itemId: selected.id, notes }, { onError: onFailure })
+                }
+              />
+            </div>
+          ) : (
+            <p className={pageStyles.empty}>
+              No items yet. Add the first topic to take notes on it.
+            </p>
+          )}
+        </div>
+      ) : agenda.length === 0 ? (
+        <p className={pageStyles.empty}>No agenda items.</p>
+      ) : (
+        <ol className={pageStyles.list}>
+          {agenda.map((item) => (
+            <li key={item.id} className={`${pageStyles.row} ${styles.record}`}>
+              <div className={styles.itemHead}>
+                <span className={styles.recordTitle}>{item.title}</span>
+                {(closed || item.status !== 'PENDING') && (
+                  <span className={styles.tag} data-status={item.status}>
+                    {STATUS_LABELS[item.status]}
+                  </span>
+                )}
+              </div>
+              {item.notes && <p className={styles.notes}>{item.notes}</p>}
+            </li>
+          ))}
+        </ol>
+      )}
+      {failure && (
+        <p role="alert" className={`${pageStyles.error} ${pageStyles.below}`}>
+          {failureMessage(failure, closed)}
+        </p>
+      )}
+    </section>
+  )
+}
+
+interface NotesEditorProps {
+  item: AgendaItem
+  onSave: (notes: string, onFailure: () => void) => void
+}
+
+// Saves on its own: shortly after typing stops, when focus leaves, and when another item is opened,
+// so nobody has to think about saving during a meeting. A save that fails is tried again on the next
+// change or when focus leaves, and the text stays in the box meanwhile.
+function NotesEditor({ item, onSave }: NotesEditorProps) {
+  const [draft, setDraft] = useState(item.notes ?? '')
+  // Kept in a ref because the save on leaving the item runs after the last render.
+  const latest = useRef({ draft, saved: draft as string | null, onSave })
+
+  const save = useCallback(() => {
+    const { draft: text, saved, onSave: send } = latest.current
+    if (text !== saved) {
+      latest.current.saved = text
+      send(text, () => {
+        latest.current.saved = null
+      })
+    }
+  }, [])
+
+  useEffect(() => {
+    latest.current.onSave = onSave
+  })
+
+  useEffect(() => {
+    const timer = setTimeout(save, SAVE_NOTES_AFTER_MS)
+    return () => clearTimeout(timer)
+  }, [draft, save])
+
+  useEffect(() => save, [save])
+
+  return (
+    <label className={styles.field}>
+      Notes
+      <textarea
+        className={`${pageStyles.input} ${styles.textarea}`}
+        value={draft}
+        maxLength={10000}
+        rows={8}
+        onChange={(event) => {
+          latest.current.draft = event.target.value
+          setDraft(event.target.value)
+        }}
+        onBlur={save}
+      />
+    </label>
+  )
+}

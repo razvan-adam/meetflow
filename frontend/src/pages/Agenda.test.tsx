@@ -21,19 +21,29 @@ const MONDAY: Meeting = {
   seriesId: WEEKLY.id,
   scheduledAt: '2026-11-02T09:30:00.000Z',
   status: 'SCHEDULED',
+  closedAt: null,
   participants: [
     { id: ANA.id, name: ANA.name },
     { id: BO.id, name: BO.name },
   ],
 }
+const CLOSED_MONDAY: Meeting = {
+  ...MONDAY,
+  status: 'CLOSED',
+  closedAt: '2026-11-02T10:14:00.000Z',
+}
 const BUDGET: AgendaItem = {
   id: '11111111-1111-4111-8111-111111111111',
   title: 'Budget',
+  notes: null,
+  status: 'PENDING',
   carriedOver: false,
 }
 const RETURNS: AgendaItem = {
   id: '22222222-2222-4222-8222-222222222222',
   title: 'Returns backlog',
+  notes: null,
+  status: 'PENDING',
   carriedOver: true,
 }
 
@@ -260,7 +270,7 @@ describe('the agenda', () => {
 
   it('shows the agenda of a closed meeting read-only to the organizer', async () => {
     api({
-      [`GET /api/meetings/${MONDAY.id}`]: () => Response.json({ ...MONDAY, status: 'CLOSED' }),
+      [`GET /api/meetings/${MONDAY.id}`]: () => Response.json(CLOSED_MONDAY),
       [`GET ${AGENDA}`]: () => Response.json([BUDGET]),
     })
     renderApp(`/meetings/${MONDAY.id}`)
@@ -269,5 +279,42 @@ describe('the agenda', () => {
     expect(await screen.findByRole('link', { name: 'Weekly ops sync' })).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Remove Budget' })).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'New agenda item' })).not.toBeInTheDocument()
+  })
+
+  it('turns read-only and says so when a change fails because the meeting was closed', async () => {
+    let meeting = MONDAY
+    api({
+      [`GET /api/meetings/${MONDAY.id}`]: () => Response.json(meeting),
+      [`GET ${AGENDA}`]: () => Response.json([BUDGET]),
+      [`PUT /api/agenda-items/${BUDGET.id}`]: () => {
+        meeting = CLOSED_MONDAY
+        return Response.json({ status: 409 }, { status: 409 })
+      },
+    })
+    renderApp(`/meetings/${MONDAY.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Edit Budget' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText('This meeting was closed')).toBeVisible()
+    expect(screen.getByText('Budget')).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Remove|Move|Edit/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'New agenda item' })).not.toBeInTheDocument()
+  })
+
+  it('stays editable when a change fails with a 409 for another reason', async () => {
+    api({
+      [`GET ${AGENDA}`]: () => Response.json([BUDGET, RETURNS]),
+      [`PUT ${AGENDA}/order`]: () => Response.json({ status: 409 }, { status: 409 }),
+    })
+    renderApp(`/meetings/${MONDAY.id}`)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Move Budget down' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('changed meanwhile')
+    expect(screen.queryByText('This meeting was closed')).not.toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'New agenda item' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Remove Budget' })).toBeVisible()
   })
 })

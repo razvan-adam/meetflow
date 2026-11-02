@@ -14,7 +14,7 @@ import styles from './Agenda.module.css'
 interface Props {
   meetingId: string
   seriesId: string
-  // The series organizer, until the meeting is closed.
+  // The series organizer.
   canEdit: boolean
 }
 
@@ -28,8 +28,9 @@ function failureMessage(failure: Error): string {
   return 'The agenda couldn’t be saved. Try again in a few minutes.'
 }
 
-// The agenda of a meeting (S6): read-only for everyone but the organizer. MF-19 adds the open
-// commitments above the items; they can't be removed.
+// The agenda of a meeting that hasn't started (S6): read-only for everyone but the organizer. If a
+// change fails because the meeting has been closed, the page replaces this with LiveAgenda and says
+// the meeting is closed. MF-19 adds the open commitments above the items; they can't be removed.
 export function Agenda({ meetingId, seriesId, canEdit }: Props) {
   const items = useAgendaItems(meetingId)
   const add = useAddAgendaItem({ meetingId, seriesId })

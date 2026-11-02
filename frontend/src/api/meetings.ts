@@ -14,6 +14,8 @@ export interface Meeting {
   // ISO-8601 in UTC.
   scheduledAt: string
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'CLOSED'
+  // ISO-8601 in UTC, once the meeting is closed.
+  closedAt: string | null
   // Sorted by name; the series organizer is always one of them.
   participants: Participant[]
 }
@@ -25,7 +27,7 @@ export interface MeetingChanges {
 
 const MEETINGS = ['meetings']
 const seriesMeetingsKey = (seriesId: string) => [...MEETINGS, 'series', seriesId]
-const meetingKey = (meetingId: string) => [...MEETINGS, meetingId]
+export const meetingKey = (meetingId: string) => [...MEETINGS, meetingId]
 
 // The series' meetings, latest first.
 export function useSeriesMeetings(seriesId: string) {
@@ -61,25 +63,64 @@ export function useScheduleMeeting(seriesId: string) {
   })
 }
 
-// The series organizer only, until the meeting is closed. The latest edit wins. A 403 means the
-// user is no longer the organizer, so the series reloads and the page stops offering the form.
-export function useUpdateMeeting(meetingId: string, seriesId: string) {
+// A rejected change usually means the page was out of date. A 403 means the user is no longer the
+// organizer, so the series reloads; a 409 usually means the meeting was closed, so it reloads. Either
+// way the page stops offering what can't be done any more.
+function useReloadAfterRejection(meetingId: string, seriesId: string) {
   const queryClient = useQueryClient()
+  return async (error: Error) => {
+    if (error instanceof ApiError && error.status === 403) {
+      await queryClient.invalidateQueries({ queryKey: seriesKey(seriesId), exact: true })
+    }
+    if (error instanceof ApiError && error.status === 409) {
+      await queryClient.invalidateQueries({ queryKey: meetingKey(meetingId), exact: true })
+    }
+  }
+}
+
+function useMeetingChange<Variables>(
+  meetingId: string,
+  seriesId: string,
+  request: (variables: Variables) => Promise<Meeting>,
+) {
+  const queryClient = useQueryClient()
+  const reload = useReloadAfterRejection(meetingId, seriesId)
   return useMutation({
-    mutationFn: (changes: MeetingChanges) =>
-      apiFetch<Meeting>(`/meetings/${encodeURIComponent(meetingId)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(changes),
-      }),
+    mutationFn: request,
     onSuccess: (updated) => {
       queryClient.setQueryData(meetingKey(updated.id), updated)
       return queryClient.invalidateQueries({ queryKey: seriesMeetingsKey(updated.seriesId) })
     },
-    onError: (error) => {
-      if (error instanceof ApiError && error.status === 403) {
-        return queryClient.invalidateQueries({ queryKey: seriesKey(seriesId), exact: true })
-      }
-    },
+    onError: reload,
+  })
+}
+
+// The series organizer only, until the meeting is closed. The latest edit wins.
+export function useUpdateMeeting(meetingId: string, seriesId: string) {
+  return useMeetingChange(meetingId, seriesId, (changes: MeetingChanges) =>
+    apiFetch<Meeting>(`/meetings/${encodeURIComponent(meetingId)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(changes),
+    }),
+  )
+}
+
+// The series organizer only.
+export function useStartMeeting(meetingId: string, seriesId: string) {
+  return useMeetingChange(meetingId, seriesId, () =>
+    apiFetch<Meeting>(`/meetings/${encodeURIComponent(meetingId)}/start`, { method: 'POST' }),
+  )
+}
+
+// The series organizer only. Items nobody marked become not covered, so the agenda reloads too.
+export function useCloseMeeting(meetingId: string, seriesId: string) {
+  const queryClient = useQueryClient()
+  return useMeetingChange(meetingId, seriesId, async () => {
+    const closed = await apiFetch<Meeting>(`/meetings/${encodeURIComponent(meetingId)}/close`, {
+      method: 'POST',
+    })
+    await queryClient.invalidateQueries({ queryKey: [...meetingKey(meetingId), 'agenda-items'] })
+    return closed
   })
 }

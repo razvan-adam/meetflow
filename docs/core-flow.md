@@ -35,7 +35,7 @@ Each series has one organizer. A team admin can reassign the organizer to anothe
 2. The agenda is pre-filled with **carried-over items** from the previous meeting of the same series:
    - every task still open or in progress
    - agenda items marked as not covered
-3. The organizer adds new agenda items, reorders them and can remove carried-over agenda items. Open tasks cannot be removed from the agenda; they leave only when they are done (see *Commitment lifecycle*).
+3. The organizer adds new agenda items, reorders them and can remove agenda items, including carried-over ones, until the meeting starts. Open tasks cannot be removed from the agenda; they leave only when they are done (see *Commitment lifecycle*).
 4. Participants can see the meeting and its agenda in advance.
 
 **MVP features:** 2 – Meeting creation.
@@ -46,7 +46,7 @@ The organizer runs the meeting in the app and works through the agenda:
 
 1. **Review open commitments first.** For each carried-over task, the owner reports progress and the owner or the organizer updates the status (open, in progress, done). Only the organizer can change a task's owner or deadline.
 2. **Discuss each agenda item** and take short notes.
-3. **Record decisions**: what was agreed, linked to the agenda item.
+3. **Record decisions**: what was agreed, linked to the agenda item. The organizer can edit or remove a decision until the meeting closes.
 4. **Create tasks** from decisions or agenda items. Each task requires:
    - a description
    - an owner, who must be a participant of this meeting
@@ -146,3 +146,7 @@ Resolved during roadmap step 4 (MF-30, see `docs/data-model.md`):
 11. **Unmarked agenda items** – items not marked as covered when a meeting closes count as not covered and carry over.
 12. **Deleted tasks** – tasks deleted by an admin are hidden but kept, so their history stays intact.
 13. **Account deletion** – a deleted user is anonymized, not removed from meeting records.
+
+Resolved while building MF-16:
+
+14. **Removing agenda items** – only before the meeting starts. Once it has started, items can still be added, renamed and reordered until it closes. Decisions and tasks are only created during a meeting, so a removable item never has any pointing at it, and no notes can be lost.

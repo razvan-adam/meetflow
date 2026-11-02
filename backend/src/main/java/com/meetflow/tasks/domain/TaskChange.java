@@ -14,17 +14,19 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Persistable;
 
 /**
- * One line of a task's history: who changed what and when. Rows are only inserted, never updated.
- * Nothing reads them yet; the task screen (MF-18) and the minutes (MF-22) will.
+ * One line of a task's history: who changed its status, owner or deadline, and when. Rows are only
+ * inserted, never updated. Correcting a description during the meeting isn't recorded: nobody has
+ * been sent the task yet, and it keeps a second copy of customer text out of this table.
  */
 @Entity
-@SuppressWarnings("UnusedVariable")
 public class TaskChange implements Persistable<UUID> {
 
   @Id private UUID id;
 
+  @SuppressWarnings("UnusedVariable") // Changes are looked up by this column.
   private UUID taskId;
 
+  @SuppressWarnings("UnusedVariable") // The table requires it.
   private UUID teamId;
 
   private UUID changedBy;
@@ -34,9 +36,16 @@ public class TaskChange implements Persistable<UUID> {
   private @Nullable UUID meetingId;
 
   @Enumerated(EnumType.STRING)
+  private @Nullable TaskStatus oldStatus;
+
+  @Enumerated(EnumType.STRING)
   private @Nullable TaskStatus newStatus;
 
+  private @Nullable UUID oldOwnerId;
+
   private @Nullable UUID newOwnerId;
+
+  private @Nullable LocalDate oldDeadline;
 
   private @Nullable LocalDate newDeadline;
 
@@ -45,25 +54,88 @@ public class TaskChange implements Persistable<UUID> {
 
   /** The first line of a task's history: it was created, during the meeting it belongs to. */
   public static TaskChange creationOf(Task task, UUID createdBy) {
-    var change = new TaskChange();
-    change.id = UUID.randomUUID();
-    change.taskId = task.getId();
-    change.teamId = task.getTeamId();
-    change.changedBy = createdBy;
-    change.changedAt = Instant.now();
-    change.meetingId = task.getMeetingId();
+    var change = new TaskChange(task, createdBy, task.getMeetingId());
     change.newStatus = task.getStatus();
     change.newOwnerId = task.getOwnerId();
     change.newDeadline = task.getDeadline();
     return change;
   }
 
-  @SuppressWarnings("NullAway.Init") // For JPA and creationOf, which fill the fields.
+  public static TaskChange ofStatus(
+      Task task, UUID changedBy, @Nullable UUID meetingId, TaskStatus from, TaskStatus to) {
+    var change = new TaskChange(task, changedBy, meetingId);
+    change.oldStatus = from;
+    change.newStatus = to;
+    return change;
+  }
+
+  public static TaskChange ofOwner(
+      Task task, UUID changedBy, @Nullable UUID meetingId, UUID from, UUID to) {
+    var change = new TaskChange(task, changedBy, meetingId);
+    change.oldOwnerId = from;
+    change.newOwnerId = to;
+    return change;
+  }
+
+  public static TaskChange ofDeadline(
+      Task task, UUID changedBy, @Nullable UUID meetingId, LocalDate from, LocalDate to) {
+    var change = new TaskChange(task, changedBy, meetingId);
+    change.oldDeadline = from;
+    change.newDeadline = to;
+    return change;
+  }
+
+  private TaskChange(Task task, UUID changedBy, @Nullable UUID meetingId) {
+    this.id = UUID.randomUUID();
+    this.taskId = task.getId();
+    this.teamId = task.getTeamId();
+    this.changedBy = changedBy;
+    this.changedAt = Instant.now();
+    this.meetingId = meetingId;
+  }
+
+  @SuppressWarnings("NullAway.Init") // For JPA only; it fills the fields.
   protected TaskChange() {}
 
   @Override
   public UUID getId() {
     return id;
+  }
+
+  public UUID getChangedBy() {
+    return changedBy;
+  }
+
+  public Instant getChangedAt() {
+    return changedAt;
+  }
+
+  public @Nullable UUID getMeetingId() {
+    return meetingId;
+  }
+
+  public @Nullable TaskStatus getOldStatus() {
+    return oldStatus;
+  }
+
+  public @Nullable TaskStatus getNewStatus() {
+    return newStatus;
+  }
+
+  public @Nullable UUID getOldOwnerId() {
+    return oldOwnerId;
+  }
+
+  public @Nullable UUID getNewOwnerId() {
+    return newOwnerId;
+  }
+
+  public @Nullable LocalDate getOldDeadline() {
+    return oldDeadline;
+  }
+
+  public @Nullable LocalDate getNewDeadline() {
+    return newDeadline;
   }
 
   @Override

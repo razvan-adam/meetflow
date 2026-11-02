@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
@@ -150,6 +151,11 @@ public class MeetingService {
         .orElseThrow(MeetingNotFoundException::new);
   }
 
+  /** The series' meeting that is running right now, if any. */
+  public Optional<UUID> runningMeetingOf(UUID seriesId) {
+    return meetings.findIdBySeriesIdAndStatus(seriesId, MeetingStatus.IN_PROGRESS);
+  }
+
   /**
    * The meeting, locked until the transaction ends, for a change by its organizer. The lock keeps
    * agenda positions consistent, and the status read here is current because it comes with the
@@ -169,7 +175,7 @@ public class MeetingService {
   }
 
   /** Like {@link #lockForOrganizerEdit}, for what only happens during a meeting. */
-  Meeting lockRunningMeeting(UUID userId, UUID meetingId) {
+  public Meeting lockRunningMeeting(UUID userId, UUID meetingId) {
     var meeting = lockForOrganizerEdit(userId, meetingId);
     if (meeting.getStatus() != MeetingStatus.IN_PROGRESS) {
       throw new MeetingNotStartedException();

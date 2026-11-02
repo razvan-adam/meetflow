@@ -26,7 +26,6 @@ public class Task implements Persistable<UUID> {
 
   private UUID teamId;
 
-  @SuppressWarnings("UnusedVariable") // The table requires it; carry-over (MF-19) reads it.
   private UUID seriesId;
 
   private UUID meetingId;
@@ -50,11 +49,14 @@ public class Task implements Persistable<UUID> {
   @SuppressWarnings("UnusedVariable") // Tasks are sorted by this column.
   private Instant createdAt;
 
-  @SuppressWarnings("UnusedVariable") // The table requires it; MF-18 changes it.
+  @SuppressWarnings("UnusedVariable") // The table requires it.
   private Instant updatedAt;
 
   @SuppressWarnings("UnusedVariable") // Deleted tasks are filtered out by this column.
   private @Nullable Instant deletedAt;
+
+  @SuppressWarnings("UnusedVariable") // The table requires it once a task is deleted.
+  private @Nullable UUID deletedBy;
 
   // Stops two changes to a task made at the very same moment from overwriting each other.
   @SuppressWarnings("UnusedVariable") // Hibernate reads and increments it.
@@ -93,6 +95,10 @@ public class Task implements Persistable<UUID> {
     return teamId;
   }
 
+  public UUID getSeriesId() {
+    return seriesId;
+  }
+
   public UUID getMeetingId() {
     return meetingId;
   }
@@ -119,6 +125,37 @@ public class Task implements Persistable<UUID> {
 
   public TaskStatus getStatus() {
     return status;
+  }
+
+  public void changeStatus(TaskStatus status) {
+    this.status = status;
+    this.updatedAt = Instant.now();
+  }
+
+  public void changeOwner(UUID ownerId) {
+    this.ownerId = ownerId;
+    this.updatedAt = Instant.now();
+  }
+
+  public void changeDeadline(LocalDate deadline) {
+    this.deadline = deadline;
+    this.updatedAt = Instant.now();
+  }
+
+  public void reword(String description) {
+    this.description = description;
+    this.updatedAt = Instant.now();
+  }
+
+  /**
+   * Hides the task but keeps it, with its history. It lets go of its decision, so a decision whose
+   * tasks were all deleted can be removed again.
+   */
+  public void delete(UUID deletedBy) {
+    this.deletedAt = Instant.now();
+    this.deletedBy = deletedBy;
+    this.decisionId = null;
+    this.updatedAt = this.deletedAt;
   }
 
   @Override

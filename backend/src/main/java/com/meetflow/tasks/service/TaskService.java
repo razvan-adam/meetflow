@@ -168,8 +168,12 @@ public class TaskService {
   /** The organizer only, while any meeting of the task's series runs. */
   @Transactional
   public void delete(UUID userId, UUID taskId) {
-    meetings.lockRunningMeetingOf(userId, findPlace(userId, taskId).seriesId());
-    tasks.findByIdAndDeletedAtIsNull(taskId).orElseThrow(TaskNotFoundException::new).delete(userId);
+    var runningMeetingId =
+        meetings.lockRunningMeetingOf(userId, findPlace(userId, taskId).seriesId());
+    tasks
+        .findByIdAndDeletedAtIsNull(taskId)
+        .orElseThrow(TaskNotFoundException::new)
+        .delete(userId, runningMeetingId);
   }
 
   private TaskResponse create(

@@ -344,17 +344,32 @@ class TaskUpdateTests {
   @Test
   void theOrganizerDeletesATaskDuringALaterMeeting() {
     close();
-    scheduleAndStart();
+    String next = scheduleAndStart();
 
     assertThat(delete(bo)).hasStatus(HttpStatus.FORBIDDEN);
     assertThat(delete(ana)).hasStatus(HttpStatus.NO_CONTENT);
 
     assertThat(get(ana, "/api/tasks/" + task)).hasStatus(HttpStatus.NOT_FOUND);
     assertThat(body(get(ana, "/api/meetings/" + meetingId + "/tasks"))).isEqualTo("[]");
+    var row =
+        jdbc.queryForMap(
+            "SELECT deleted_by::text AS by, deleted_in_meeting_id::text AS meeting"
+                + " FROM task WHERE id = ?::uuid",
+            task);
+    assertThat(row.get("by")).isEqualTo(userId(ana));
+    assertThat(row.get("meeting")).isEqualTo(next);
+  }
+
+  @Test
+  void aTaskDeletedDuringItsOwnMeetingRecordsThatMeeting() {
+    assertThat(delete(ana)).hasStatus(HttpStatus.NO_CONTENT);
+
     assertThat(
             jdbc.queryForObject(
-                "SELECT deleted_by::text FROM task WHERE id = ?::uuid", String.class, task))
-        .isEqualTo(userId(ana));
+                "SELECT deleted_in_meeting_id::text FROM task WHERE id = ?::uuid",
+                String.class,
+                task))
+        .isEqualTo(meetingId);
   }
 
   @Test

@@ -172,11 +172,11 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 | `status` | text | `OPEN`, `IN_PROGRESS` or `DONE` |
 | `created_by` | uuid | FK `app_user` |
 | `created_at`, `updated_at` | timestamptz | |
-| `deleted_at`, `deleted_by` | timestamptz, uuid | set when an admin deletes a removed member's task |
+| `deleted_at`, `deleted_by` | timestamptz, uuid | set when an admin deletes a removed member's task, or the organizer deletes a task while its meeting runs |
 | `version` | bigint | |
 
 - When a task is created, its owner must be a participant of `meeting_id` (service check).
-- A task created from a decision stores both `decision_id` and the decision's `agenda_item_id`; one created from an agenda item leaves `decision_id` null. A decision with tasks can't be removed.
+- A task created from a decision stores both `decision_id` and the decision's `agenda_item_id`; one created from an agenda item leaves `decision_id` null. A decision with tasks can't be removed; deleting a task clears its `decision_id`, so a decision whose tasks were all deleted can be.
 - **Overdue** is not stored. A task is overdue when it isn't `DONE` and `deadline` is before the current date: today for the viewer on the dashboard, and the meeting date on the agenda and in the minutes.
 - Index on (`owner_id`, `status`, `deadline`) for the pending-tasks dashboard, and on (`series_id`, `status`) for carry-over.
 
@@ -261,7 +261,7 @@ Once `meeting.status` is `CLOSED`, the `meetings` and `tasks` services reject an
 
 ### Status history
 
-Every change to a task inserts a `task_change` row, in the same transaction as the change. The minutes and the meeting history read it to show how a commitment evolved.
+Every change to a task's status, owner or deadline inserts a `task_change` row, in the same transaction as the change. The minutes and the meeting history read it to show how a commitment evolved. Rewording a task while its meeting runs inserts no row: it is a correction made before anyone is sent the task, and customer text stays out of the history.
 
 ## Team scoping
 

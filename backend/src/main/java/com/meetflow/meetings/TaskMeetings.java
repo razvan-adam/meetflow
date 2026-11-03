@@ -103,6 +103,12 @@ public class TaskMeetings {
     return meetings.openMeetingOf(seriesId);
   }
 
+  /** The names of the series, by ID. */
+  @Transactional(readOnly = true)
+  public Map<UUID, String> seriesNamesOf(Collection<UUID> seriesIds) {
+    return series.namesOf(seriesIds);
+  }
+
   /** When the meetings are scheduled, by ID. */
   @Transactional(readOnly = true)
   public Map<UUID, Instant> scheduledTimesOf(Collection<UUID> meetingIds) {

@@ -20,7 +20,7 @@ describe('LogInPage', () => {
 
     fillInAndSubmit('correct horse battery')
 
-    expect(await screen.findByRole('heading', { name: 'Your tasks' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'My tasks' })).toBeInTheDocument()
     expect(requestBody(fetchMock, 'POST /api/session')).toEqual({
       email: 'ana@example.com',
       password: 'correct horse battery',

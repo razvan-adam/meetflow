@@ -43,6 +43,16 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
 
   Optional<TaskPlace> findPlaceByIdAndDeletedAtIsNull(UUID id);
 
+  /** What the user still has to do, soonest deadline first. */
+  @Query(
+      """
+      SELECT t FROM Task t
+      WHERE t.ownerId = :ownerId AND t.status <> com.meetflow.tasks.domain.TaskStatus.DONE
+        AND t.deletedAt IS NULL
+      ORDER BY t.deadline, t.createdAt
+      """)
+  List<Task> findPendingOwnedBy(UUID ownerId);
+
   /** The tasks carried over to a meeting, soonest deadline first. */
   @Query(
       nativeQuery = true,

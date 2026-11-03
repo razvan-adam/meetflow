@@ -1,11 +1,14 @@
 package com.meetflow.tasks.service;
 
+import static java.util.Objects.requireNonNull;
+
 import com.meetflow.identity.UserDirectory;
 import com.meetflow.meetings.TaskMeetings;
 import com.meetflow.meetings.TaskOrigin;
 import com.meetflow.tasks.domain.Task;
 import com.meetflow.tasks.domain.TaskChange;
 import com.meetflow.tasks.domain.TaskStatus;
+import com.meetflow.tasks.dto.PendingTaskResponse;
 import com.meetflow.tasks.dto.TaskChangeResponse;
 import com.meetflow.tasks.dto.TaskResponse;
 import com.meetflow.tasks.exception.NotAllowedToChangeTaskException;
@@ -53,6 +56,39 @@ public class TaskService {
     this.meetings = meetings;
     this.teamMembers = teamMembers;
     this.users = users;
+  }
+
+  /**
+   * The user's dashboard (MF-21): the tasks they own that aren't done or removed, soonest deadline
+   * first, across the teams they belong to. Membership is checked here too, so a task can't show a
+   * team the user has left.
+   */
+  @Transactional(readOnly = true)
+  public List<PendingTaskResponse> listPending(UUID userId) {
+    var teamNames = teamMembers.teamNamesOf(userId);
+    var found =
+        tasks.findPendingOwnedBy(userId).stream()
+            .filter(task -> teamNames.containsKey(task.getTeamId()))
+            .toList();
+    var seriesNames =
+        meetings.seriesNamesOf(found.stream().map(Task::getSeriesId).distinct().toList());
+    var meetingTimes =
+        meetings.scheduledTimesOf(found.stream().map(Task::getMeetingId).distinct().toList());
+    return found.stream()
+        .map(
+            task ->
+                new PendingTaskResponse(
+                    task.getId(),
+                    task.getDescription(),
+                    task.getDeadline(),
+                    task.getStatus(),
+                    task.getTeamId(),
+                    requireNonNull(teamNames.get(task.getTeamId())),
+                    task.getSeriesId(),
+                    requireNonNull(seriesNames.get(task.getSeriesId())),
+                    task.getMeetingId(),
+                    requireNonNull(meetingTimes.get(task.getMeetingId()))))
+        .toList();
   }
 
   /** The tasks created in the meeting, oldest first. */

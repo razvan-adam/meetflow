@@ -8,11 +8,13 @@ import com.meetflow.meetings.exception.SeriesNotFoundException;
 import com.meetflow.meetings.repository.MeetingSeriesRepository;
 import com.meetflow.teams.TeamMembers;
 import java.text.Collator;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -79,6 +81,12 @@ public class MeetingSeriesService {
         .findById(seriesId)
         .filter(found -> teamMembers.isMember(userId, found.getTeamId()))
         .orElseThrow(SeriesNotFoundException::new);
+  }
+
+  /** The names of the series, by ID. */
+  public Map<UUID, String> namesOf(Collection<UUID> seriesIds) {
+    return series.findAllById(seriesIds).stream()
+        .collect(Collectors.toMap(MeetingSeries::getId, MeetingSeries::getName));
   }
 
   /**

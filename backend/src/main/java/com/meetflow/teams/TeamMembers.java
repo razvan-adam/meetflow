@@ -1,8 +1,12 @@
 package com.meetflow.teams;
 
+import com.meetflow.teams.dto.TeamResponse;
 import com.meetflow.teams.service.TeamAccess;
+import com.meetflow.teams.service.TeamService;
 import java.util.Collection;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,9 +18,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class TeamMembers {
 
   private final TeamAccess access;
+  private final TeamService teams;
 
-  TeamMembers(TeamAccess access) {
+  TeamMembers(TeamAccess access, TeamService teams) {
     this.access = access;
+    this.teams = teams;
+  }
+
+  /** The names of the teams the user belongs to, by ID. */
+  @Transactional(readOnly = true)
+  public Map<UUID, String> teamNamesOf(UUID userId) {
+    return teams.listFor(userId).stream()
+        .collect(Collectors.toMap(TeamResponse::id, TeamResponse::name));
   }
 
   @Transactional(readOnly = true)

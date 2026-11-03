@@ -244,6 +244,11 @@
   font-weight: 600;
 }
 
+.task[data-done] .taskDescription {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
 .task[data-deleted] {
   background: var(--fill);
 }

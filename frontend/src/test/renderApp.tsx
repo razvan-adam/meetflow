@@ -23,7 +23,12 @@ export const ANA = {
 }
 
 // Answers fetch by "METHOD /api/path"; any other request fails the test.
-export function mockApi(responses: Record<string, () => Response>) {
+export function mockApi(overrides: Record<string, () => Response>) {
+  // The landing page loads the user's tasks, which most tests have no interest in.
+  const responses: Record<string, () => Response> = {
+    'GET /api/users/me/tasks': () => Response.json([]),
+    ...overrides,
+  }
   const fetchMock = vi.fn((url: string, init?: RequestInit) => {
     const request = `${init?.method ?? 'GET'} ${url}`
     const respond = responses[request]

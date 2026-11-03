@@ -17,7 +17,7 @@ describe('pages that need a logged-in user', () => {
 
     renderApp('/')
 
-    expect(await screen.findByRole('heading', { name: 'Your tasks' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'My tasks' })).toBeInTheDocument()
     expect(screen.getByText('Ana Costa')).toBeInTheDocument()
   })
 
@@ -54,7 +54,7 @@ describe('sign-up and login pages', () => {
 
     const router = renderApp('/log-in')
 
-    expect(await screen.findByRole('heading', { name: 'Your tasks' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'My tasks' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/')
   })
 })

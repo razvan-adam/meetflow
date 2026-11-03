@@ -177,3 +177,8 @@ Resolved while building MF-22:
 22. **The record and today** – the minutes keep each task's wording, owner, deadline and status as they were at closing. They also say how a task stands today ("Now done", "Removed since"), so nobody acts on stale information. A closed meeting's page shows a task as it read at closing too, and says if it has been reworded since.
 23. **The meeting's date in the minutes** – the date it actually started, in the time zone of the organizer who closed it, so everyone reads the same date and the same overdue days wherever they are. Overdue days count to that date: a task due before a meeting held late was overdue when it was reviewed, whatever the plan said. If the meeting was held on another day than planned, the minutes also show the planned date.
 24. **Saying the minutes were emailed** – the minutes page says "emailed" only once every participant's email has gone out, and shows how many have been sent until then.
+
+Resolved while building MF-20:
+
+25. **What the task email holds** – only tasks created in that meeting, still open or in progress, and no carried-over ones, because those were already emailed after their own meeting. It goes to whoever owns the task when it is sent, even if they weren't at the meeting, and reads the tasks as they stand then, so a retried email doesn't report a task that has since been done, removed or reassigned.
+26. **Saying the task emails were sent** – the closed meeting's banner says how many owners have been sent theirs so far, and nothing if none has. It is a count of what has gone out, not a claim that all have: because the list is read when sending, how many are still due can't be told in advance.

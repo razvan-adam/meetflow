@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router'
 import { ApiError } from '../api/client.ts'
 import { useMeeting, type Meeting } from '../api/meetings.ts'
 import { useSeries } from '../api/series.ts'
+import { useTaskEmails } from '../api/tasks.ts'
 import { useCurrentUser } from '../api/users.ts'
 import { Agenda } from './Agenda.tsx'
 import { Breadcrumb } from './Breadcrumb.tsx'
@@ -25,6 +26,7 @@ export function MeetingPage() {
   const meeting = useMeeting(meetingId)
   const series = useSeries(meeting.data?.seriesId)
   const { data: user } = useCurrentUser()
+  const taskEmailsSent = useTaskEmails(meetingId, meeting.data?.closedAt).data?.sent ?? 0
 
   if (meeting.isPending) {
     return null
@@ -60,7 +62,8 @@ export function MeetingPage() {
           <span>
             <strong>This meeting was closed</strong> on {formatMeetingTime(meeting.data.closedAt)}.
             Its agenda, notes and decisions can no longer be changed; its tasks can still be
-            updated. <Link to={`/meetings/${meeting.data.id}/minutes`}>View the minutes</Link>
+            updated. {taskEmailsSent > 0 && `${taskEmailsText(taskEmailsSent)} `}
+            <Link to={`/meetings/${meeting.data.id}/minutes`}>View the minutes</Link>
           </span>
         </p>
       )}
@@ -101,6 +104,10 @@ export function MeetingPage() {
       )}
     </main>
   )
+}
+
+function taskEmailsText(sent: number): string {
+  return `Task emails sent to ${sent} ${sent === 1 ? 'owner' : 'owners'}.`
 }
 
 export function MeetingError({ error }: { error: Error }) {

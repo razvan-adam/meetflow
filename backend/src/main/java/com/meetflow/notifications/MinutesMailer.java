@@ -4,7 +4,7 @@ import com.meetflow.notifications.config.EmailProperties;
 import com.meetflow.notifications.domain.EmailDelivery;
 import com.meetflow.notifications.repository.EmailDeliveryRepository;
 import com.meetflow.notifications.service.EmailMessage;
-import com.meetflow.notifications.service.EmailSender;
+import com.meetflow.notifications.service.MeetingEmails;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -14,23 +14,20 @@ import java.util.Locale;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
-/**
- * Sends the minutes email (E2) to a meeting's participants. Not transactional: each delivery is
- * recorded as soon as its email is sent, so a retry only reaches those who didn't get it.
- */
+/** Sends the minutes email (E2) to a meeting's participants. */
 @Service
 public class MinutesMailer {
 
   private static final DateTimeFormatter DATE =
       DateTimeFormatter.ofPattern("EEE d MMM uuuu", Locale.ENGLISH);
 
-  private final EmailSender sender;
+  private final MeetingEmails emails;
   private final EmailDeliveryRepository deliveries;
   private final EmailProperties properties;
 
   MinutesMailer(
-      EmailSender sender, EmailDeliveryRepository deliveries, EmailProperties properties) {
-    this.sender = sender;
+      MeetingEmails emails, EmailDeliveryRepository deliveries, EmailProperties properties) {
+    this.emails = emails;
     this.deliveries = deliveries;
     this.properties = properties;
   }
@@ -38,29 +35,19 @@ public class MinutesMailer {
   /**
    * Tries every recipient who hasn't had it yet.
    *
-   * @throws IllegalStateException if it couldn't be sent to at least one of them. It doesn't carry
-   *     the provider's error, whose message can hold the recipient's address: this exception gets
-   *     logged, and personal data must stay out of the logs.
+   * @throws IllegalStateException if it couldn't be sent to at least one of them; see {@link
+   *     MeetingEmails#sendOnce}
    */
   public void send(MinutesEmail minutes) {
     var subject =
         "Minutes: %s, %s".formatted(minutes.seriesName(), DATE.format(minutes.meetingDate()));
     var text = text(minutes);
-    var failed = 0;
-    String errorType = "";
-    for (var recipient : minutes.recipients()) {
-      try {
-        sendOnce(minutes.meetingId(), recipient, subject, text);
-      } catch (EmailNotSentException e) {
-        failed++;
-        errorType = e.getCause() == null ? "unknown" : e.getCause().getClass().getSimpleName();
-      }
-    }
-    if (failed > 0) {
-      throw new IllegalStateException(
-          "The minutes of meeting %s couldn't be sent to %d recipient(s): %s. It will be retried."
-              .formatted(minutes.meetingId(), failed, errorType));
-    }
+    emails.sendOnce(
+        EmailDelivery.Kind.MINUTES,
+        minutes.meetingId(),
+        minutes.recipients().stream()
+            .map(recipient -> new EmailMessage(recipient, subject, text))
+            .toList());
   }
 
   /** How many of these recipients have been sent the meeting's minutes so far. */
@@ -69,14 +56,6 @@ public class MinutesMailer {
         ? 0
         : deliveries.countByKindAndReferenceIdAndRecipientEmailIn(
             EmailDelivery.Kind.MINUTES, meetingId, recipients);
-  }
-
-  private void sendOnce(UUID meetingId, String recipient, String subject, String text) {
-    var kind = EmailDelivery.Kind.MINUTES;
-    if (!deliveries.existsByKindAndReferenceIdAndRecipientEmail(kind, meetingId, recipient)) {
-      var messageId = sender.send(new EmailMessage(recipient, subject, text));
-      deliveries.save(new EmailDelivery(kind, meetingId, recipient, messageId));
-    }
   }
 
   private String text(MinutesEmail minutes) {

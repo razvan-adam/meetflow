@@ -206,7 +206,7 @@ describe('who can change what', () => {
     expect(await screen.findByText(/because this is your task/)).toBeVisible()
     expect(screen.queryByRole('button', { name: 'Change owner' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Change deadline' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Delete this task' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Remove this task' })).not.toBeInTheDocument()
   })
 
   it('shows other members the task read-only', async () => {
@@ -215,7 +215,7 @@ describe('who can change what', () => {
 
     expect(await screen.findByText('Status: Open')).toBeVisible()
     expect(await screen.findByText(/Only the task’s owner and the series organizer/)).toBeVisible()
-    expect(screen.queryByRole('button', { name: /Change|Done|Delete/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Change|Done|Remove/ })).not.toBeInTheDocument()
   })
 })
 
@@ -356,17 +356,18 @@ describe('correcting a task while its meeting runs', () => {
       [`DELETE ${TASK}`]: () => new Response(null, { status: 204 }),
       [`GET /api/meetings/${RUNNING.id}/agenda-items`]: () => Response.json([]),
       [`GET /api/meetings/${RUNNING.id}/tasks`]: () => Response.json([]),
+      [`GET /api/meetings/${RUNNING.id}/carried-over-tasks`]: () => Response.json([]),
     })
     const router = renderApp(`/tasks/${CONTRACT.id}`)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Delete this task' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove this task' }))
     const keep = screen.getByRole('button', { name: 'Keep task' })
     expect(keep).toHaveFocus()
     fireEvent.click(keep)
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Delete this task' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove this task' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove task' }))
 
     await waitFor(() => expect(router.state.location.pathname).toBe(`/meetings/${RUNNING.id}`))
   })
@@ -379,7 +380,7 @@ describe('correcting a task while its meeting runs', () => {
     renderApp(`/tasks/${CONTRACT.id}`)
 
     expect(await screen.findByRole('button', { name: 'Change description' })).toBeVisible()
-    expect(screen.getByRole('button', { name: 'Delete this task' })).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Remove this task' })).toBeVisible()
   })
 
   it('shows a task deleted during a later meeting read-only, with its history', async () => {
@@ -398,11 +399,11 @@ describe('correcting a task while its meeting runs', () => {
     })
     renderApp(`/tasks/${CONTRACT.id}`)
 
-    expect(await screen.findByText('This task was deleted.')).toBeVisible()
-    expect(screen.getByText(/Deleted by Ana Costa during the meeting of/)).toBeVisible()
-    expect(await screen.findByText(/Ana Costa deleted the task/)).toBeVisible()
+    expect(await screen.findByText('This task was removed.')).toBeVisible()
+    expect(screen.getByText(/Removed by Ana Costa during the meeting of/)).toBeVisible()
+    expect(await screen.findByText(/Ana Costa removed the task/)).toBeVisible()
     expect(await screen.findByRole('link', { name: /Weekly ops sync,/ })).toBeVisible()
-    expect(screen.queryByRole('button', { name: /Change|Delete|Done/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Change|Remove|Done/ })).not.toBeInTheDocument()
   })
 
   it('isn’t offered between meetings, though the status still is', async () => {
@@ -416,7 +417,7 @@ describe('correcting a task while its meeting runs', () => {
     expect(await screen.findByRole('link', { name: /Weekly ops sync,/ })).toBeVisible()
     await screen.findByRole('button', { name: 'Change deadline' })
     expect(screen.queryByRole('button', { name: 'Change description' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Delete this task' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Remove this task' })).not.toBeInTheDocument()
   })
 
   it('says why when deleting is rejected because the meeting closed', async () => {
@@ -430,12 +431,12 @@ describe('correcting a task while its meeting runs', () => {
     })
     renderApp(`/tasks/${CONTRACT.id}`)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Delete this task' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove this task' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Remove task' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('was closed meanwhile')
     await waitFor(() =>
-      expect(screen.queryByRole('button', { name: 'Delete this task' })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('button', { name: 'Remove this task' })).not.toBeInTheDocument(),
     )
     expect(await heading()).toBeVisible()
   })

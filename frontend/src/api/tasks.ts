@@ -90,6 +90,16 @@ export function useTasks(meetingId: string) {
   })
 }
 
+// The tasks carried over to a meeting, soonest deadline first. Their key sits under the meeting's
+// tasks, so whatever reloads those reloads these too.
+export function useCarriedOverTasks(meetingId: string) {
+  return useQuery({
+    queryKey: [...tasksKey(meetingId), 'carried-over'],
+    queryFn: () =>
+      apiFetch<Task[]>(`/meetings/${encodeURIComponent(meetingId)}/carried-over-tasks`),
+  })
+}
+
 export function useTask(taskId: string | undefined) {
   return useQuery({
     queryKey: taskKey(taskId ?? ''),

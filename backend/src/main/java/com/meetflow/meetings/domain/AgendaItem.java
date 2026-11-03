@@ -13,8 +13,8 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.Persistable;
 
 /**
- * A topic on a meeting's agenda, with the notes taken on it and whether it was covered. Items
- * carried over from the previous meeting are created by MF-19.
+ * A topic on a meeting's agenda, with the notes taken on it and whether it was covered. An item
+ * that wasn't covered is copied to the next meeting of the series.
  */
 @Entity
 public class AgendaItem implements Persistable<UUID> {
@@ -101,6 +101,13 @@ public class AgendaItem implements Persistable<UUID> {
     if (status == AgendaItemStatus.PENDING) {
       status = AgendaItemStatus.NOT_COVERED;
     }
+  }
+
+  /** A new item for the next meeting. The notes stay here, on the meeting they were taken in. */
+  public AgendaItem carriedOverTo(UUID nextMeetingId, int position) {
+    var copy = new AgendaItem(teamId, nextMeetingId, position, title);
+    copy.carriedOverFromId = id;
+    return copy;
   }
 
   public void rename(String title) {

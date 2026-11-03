@@ -62,6 +62,17 @@ public class TaskService {
     return toResponses(tasks.findRecordedInMeeting(meetingId));
   }
 
+  /**
+   * The tasks carried over to the meeting, soonest deadline first. Deleted ones are included if
+   * they were deleted during this meeting or the meeting is closed, as part of its record; the page
+   * lists them apart. Other meetings that aren't closed leave them out.
+   */
+  @Transactional(readOnly = true)
+  public List<TaskResponse> listCarriedOver(UUID userId, UUID meetingId) {
+    var closed = meetings.isClosed(userId, meetingId);
+    return toResponses(tasks.findCarriedOverTo(meetingId, closed));
+  }
+
   @Transactional(readOnly = true)
   public TaskResponse get(UUID userId, UUID taskId) {
     return toResponse(findRecorded(userId, taskId));
@@ -109,10 +120,33 @@ public class TaskService {
     }
     var old = task.getStatus();
     if (old != status) {
+      if (old == TaskStatus.DONE || status == TaskStatus.DONE) {
+        updateNextAgenda(task, status);
+      }
       task.changeStatus(status);
       changes.save(TaskChange.ofStatus(task, userId, runningMeeting(task), old, status));
     }
     return toResponse(task);
+  }
+
+  /**
+   * A task marked done leaves the agenda of a meeting that hasn't started; during a meeting it
+   * stays on the list, as reviewed. A reopened task joins the series' open meeting, unless that is
+   * its own meeting. The lock waits for a meeting being scheduled, which reads the open tasks, so
+   * the task can't miss it.
+   */
+  private void updateNextAgenda(Task task, TaskStatus status) {
+    meetings.lockSeries(task.getSeriesId());
+    if (status == TaskStatus.DONE) {
+      meetings
+          .scheduledMeetingOf(task.getSeriesId())
+          .ifPresent(meetingId -> tasks.removeFromReview(meetingId, task.getId()));
+    } else {
+      meetings
+          .openMeetingOf(task.getSeriesId())
+          .filter(meetingId -> !meetingId.equals(task.getMeetingId()))
+          .ifPresent(meetingId -> tasks.reviewTask(meetingId, task.getId(), task.getSeriesId()));
+    }
   }
 
   /** The organizer only. Unlike a new task's owner, the new one needn't be at the meeting. */

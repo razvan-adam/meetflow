@@ -103,7 +103,7 @@ function DeletedTask({ task, deletion }: { task: Task; deletion: TaskDeletion })
       </div>
       <p className={`${meetingStyles.banner} ${meetingStyles.bannerClosed}`}>
         <span>
-          <strong>This task was deleted.</strong> {deletionText(deletion)}.
+          <strong>This task was removed.</strong> {deletionText(deletion)}.
         </span>
       </p>
       <dl className={styles.details}>
@@ -274,10 +274,10 @@ function TaskDetails({ task }: { task: Task }) {
           <div
             className={styles.confirmation}
             role="group"
-            aria-label={`Confirm deleting task: ${task.description}`}
+            aria-label={`Confirm removing task: ${task.description}`}
           >
             <p className={styles.confirmationText}>
-              Delete this task? It comes off its owner’s list and can’t be restored.
+              Remove this task? It comes off its owner’s list and can’t be restored.
             </p>
             <button
               className={pageStyles.danger}
@@ -285,7 +285,7 @@ function TaskDetails({ task }: { task: Task }) {
               disabled={remove.isPending}
               onClick={handleDelete}
             >
-              Delete task
+              Remove task
             </button>
             {/* Focus starts on the safe choice, so Enter doesn't delete it by accident. */}
             <button
@@ -304,10 +304,10 @@ function TaskDetails({ task }: { task: Task }) {
               type="button"
               onClick={() => setConfirming(true)}
             >
-              Delete this task
+              Remove this task
             </button>
             <p className={`${pageStyles.meta} ${styles.hint}`}>
-              A task can be deleted while a meeting of its series is running.
+              A task can be removed while a meeting of its series is running.
             </p>
           </div>
         ))}

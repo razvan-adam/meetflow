@@ -51,7 +51,7 @@ export function deletionText(deletion: TaskDeletion): string {
   const when = deletion.meetingScheduledAt
     ? `during the meeting of ${formatMeetingTime(deletion.meetingScheduledAt)}`
     : `on ${formatMeetingTime(deletion.at)}`
-  return `Deleted by ${deletion.byName} ${when}`
+  return `Removed by ${deletion.byName} ${when}`
 }
 
 // For rewording and deleting, which need a meeting running: a 409 means it closed.
@@ -69,7 +69,7 @@ export function taskChangeFailure(failure: Error): string {
     return 'You can no longer change this task, so your last change wasn’t saved.'
   }
   if (failure instanceof ApiError && failure.status === 404) {
-    return 'This task was deleted meanwhile.'
+    return 'This task was removed meanwhile.'
   }
   if (failure instanceof ApiError && failure.status === 409) {
     return 'This task changed meanwhile. Check it and try again.'

@@ -7,7 +7,7 @@ import styles from './TaskPage.module.css'
 function describe(entry: TaskHistoryEntry): string {
   const who = entry.changedByName
   if (entry.deleted) {
-    return `${who} deleted the task`
+    return `${who} removed the task`
   }
   if (!entry.oldStatus && entry.newStatus && entry.newOwnerName && entry.newDeadline) {
     return `${who} created the task. Owner ${entry.newOwnerName}, deadline ${formatDeadline(entry.newDeadline)}.`

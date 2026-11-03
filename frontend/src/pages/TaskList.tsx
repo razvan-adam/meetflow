@@ -114,10 +114,10 @@ function TaskRow({
         <div
           className={agendaStyles.confirmation}
           role="group"
-          aria-label={`Confirm deleting task: ${task.description}`}
+          aria-label={`Confirm removing task: ${task.description}`}
         >
           <p className={agendaStyles.confirmationText}>
-            Delete this task? It comes off its owner’s list and can’t be restored.
+            Remove this task? It comes off its owner’s list and can’t be restored.
           </p>
           <button
             className={pageStyles.danger}
@@ -125,7 +125,7 @@ function TaskRow({
             disabled={pending}
             onClick={() => onDelete(task, showView)}
           >
-            Delete task
+            Remove task
           </button>
           {/* Focus starts on the safe choice, so Enter doesn't delete it by accident. */}
           <button className={pageStyles.secondary} type="button" onClick={showView} autoFocus>
@@ -178,7 +178,7 @@ function TaskRow({
               <button
                 className={agendaStyles.action}
                 type="button"
-                aria-label={`Delete task: ${task.description}`}
+                aria-label={`Remove task: ${task.description}`}
                 onClick={() => setMode('delete')}
               >
                 ×

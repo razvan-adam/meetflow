@@ -2,7 +2,9 @@ package com.meetflow.meetings.service;
 
 import com.meetflow.identity.UserDirectory;
 import com.meetflow.meetings.MeetingClosedEvent;
+import com.meetflow.meetings.MeetingScheduledEvent;
 import com.meetflow.meetings.domain.AgendaItem;
+import com.meetflow.meetings.domain.AgendaItemStatus;
 import com.meetflow.meetings.domain.Meeting;
 import com.meetflow.meetings.domain.MeetingSeries;
 import com.meetflow.meetings.domain.MeetingStatus;
@@ -66,12 +68,17 @@ public class MeetingService {
     this.events = events;
   }
 
-  /** Schedules the series' next meeting. Organizer only, and only once the last one is closed. */
+  /**
+   * Schedules the series' next meeting. Organizer only, and only once the last one is closed. Its
+   * agenda starts with the items the last one didn't cover, and the tasks module adds the open
+   * tasks when it hears of the published event, in this same transaction.
+   */
   @Transactional
   public MeetingResponse schedule(
       UUID userId, UUID seriesId, Instant scheduledAt, Collection<UUID> participantIds) {
     var found = series.findVisible(userId, seriesId);
     requireOrganizer(userId, found);
+    series.lock(seriesId);
     if (meetings.existsBySeriesIdAndStatusNot(seriesId, MeetingStatus.CLOSED)) {
       throw new OpenMeetingExistsException();
     }
@@ -83,6 +90,8 @@ public class MeetingService {
       // The organizer scheduled another meeting of the series at the same moment.
       throw new OpenMeetingExistsException();
     }
+    carryOverUncoveredItems(meeting);
+    events.publishEvent(new MeetingScheduledEvent(meeting.getId(), seriesId));
     return toResponse(meeting, names(List.of(meeting)));
   }
 
@@ -164,6 +173,16 @@ public class MeetingService {
     return meetings.findIdBySeriesIdAndStatus(seriesId, MeetingStatus.IN_PROGRESS);
   }
 
+  /** The series' meeting that hasn't started yet, if any. */
+  public Optional<UUID> scheduledMeetingOf(UUID seriesId) {
+    return meetings.findIdBySeriesIdAndStatus(seriesId, MeetingStatus.SCHEDULED);
+  }
+
+  /** The series' meeting that isn't closed, if any. */
+  public Optional<UUID> openMeetingOf(UUID seriesId) {
+    return meetings.findIdBySeriesIdAndStatusNot(seriesId, MeetingStatus.CLOSED);
+  }
+
   /**
    * The meeting, locked until the transaction ends, for a change by its organizer. The lock keeps
    * agenda positions consistent, and the status read here is current because it comes with the
@@ -209,6 +228,22 @@ public class MeetingService {
       throw new MeetingAlreadyStartedException();
     }
     return meeting;
+  }
+
+  /** Copies the last meeting's uncovered items to the new one's agenda, in the same order. */
+  private void carryOverUncoveredItems(Meeting meeting) {
+    meetings
+        .findFirstBySeriesIdAndStatusOrderByClosedAtDesc(
+            meeting.getSeriesId(), MeetingStatus.CLOSED)
+        .ifPresent(
+            previous -> {
+              int position = 1;
+              for (var item : agendaItems.findByMeetingIdOrderByPosition(previous.getId())) {
+                if (item.getStatus() == AgendaItemStatus.NOT_COVERED) {
+                  agendaItems.save(item.carriedOverTo(meeting.getId(), position++));
+                }
+              }
+            });
   }
 
   private static void requireOrganizer(UUID userId, MeetingSeries found) {

@@ -43,6 +43,7 @@ const teamApi = {
   [`GET /api/teams/${OPS.id}/members`]: () => Response.json(MEMBERS),
   // The meeting page loads the agenda; Agenda.test.tsx covers it.
   [`GET /api/meetings/${MONDAY.id}/agenda-items`]: () => Response.json([]),
+  [`GET /api/meetings/${MONDAY.id}/carried-over-tasks`]: () => Response.json([]),
 }
 
 describe('scheduling a meeting', () => {

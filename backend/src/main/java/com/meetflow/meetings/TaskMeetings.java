@@ -1,5 +1,6 @@
 package com.meetflow.meetings;
 
+import com.meetflow.meetings.domain.MeetingStatus;
 import com.meetflow.meetings.service.AgendaService;
 import com.meetflow.meetings.service.DecisionService;
 import com.meetflow.meetings.service.MeetingSeriesService;
@@ -60,10 +61,22 @@ public class TaskMeetings {
     return meetings.lockRunningMeetingOf(userId, seriesId);
   }
 
+  /** Locks the series, so no meeting of it can be scheduled until the transaction ends. */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void lockSeries(UUID seriesId) {
+    series.lock(seriesId);
+  }
+
   /** Throws a 404 error response if the user isn't a member of the meeting's team. */
   @Transactional(readOnly = true)
   public void requireVisibleMeeting(UUID userId, UUID meetingId) {
     meetings.findVisible(userId, meetingId);
+  }
+
+  /** Whether the meeting is closed; a 404 error response if the user isn't in its team. */
+  @Transactional(readOnly = true)
+  public boolean isClosed(UUID userId, UUID meetingId) {
+    return meetings.findVisible(userId, meetingId).getStatus() == MeetingStatus.CLOSED;
   }
 
   /** Whether the user organizes the series right now, which can change after the task's meeting. */
@@ -76,6 +89,18 @@ public class TaskMeetings {
   @Transactional(readOnly = true)
   public Optional<UUID> runningMeetingOf(UUID seriesId) {
     return meetings.runningMeetingOf(seriesId);
+  }
+
+  /** The series' meeting that hasn't started yet, if any. */
+  @Transactional(readOnly = true)
+  public Optional<UUID> scheduledMeetingOf(UUID seriesId) {
+    return meetings.scheduledMeetingOf(seriesId);
+  }
+
+  /** The series' meeting that isn't closed, if any: at most one, scheduled or running. */
+  @Transactional(readOnly = true)
+  public Optional<UUID> openMeetingOf(UUID seriesId) {
+    return meetings.openMeetingOf(seriesId);
   }
 
   /** When the meetings are scheduled, by ID. */

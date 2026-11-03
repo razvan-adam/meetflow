@@ -30,7 +30,7 @@ function failureMessage(failure: Error): string {
 
 // The agenda of a meeting that hasn't started (S6): read-only for everyone but the organizer. If a
 // change fails because the meeting has been closed, the page replaces this with LiveAgenda and says
-// the meeting is closed. MF-19 adds the open commitments above the items; they can't be removed.
+// the meeting is closed. The open commitments above the items are CarriedOverTasks.
 export function Agenda({ meetingId, seriesId, canEdit }: Props) {
   const items = useAgendaItems(meetingId)
   const add = useAddAgendaItem({ meetingId, seriesId })

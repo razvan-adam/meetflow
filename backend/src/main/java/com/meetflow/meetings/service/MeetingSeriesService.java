@@ -81,6 +81,16 @@ public class MeetingSeriesService {
         .orElseThrow(SeriesNotFoundException::new);
   }
 
+  /**
+   * Holds the series until the transaction ends. Scheduling a meeting takes this before reading the
+   * open tasks, and so does a task entering or leaving "done", so neither misses the other.
+   */
+  public void lock(UUID seriesId) {
+    if (series.findForUpdateById(seriesId).isEmpty()) {
+      throw new SeriesNotFoundException();
+    }
+  }
+
   private Map<UUID, String> names(List<MeetingSeries> list) {
     return users.namesOf(list.stream().map(MeetingSeries::getOrganizerId).toList());
   }

@@ -11,6 +11,7 @@ The data model for the MVP (MF-30). It implements the rules in `docs/core-flow.m
 - **Team scoping**: every table holding team content has a `team_id`, or reaches one through a required parent (see *Team scoping*).
 - **Module ownership**: each table belongs to one module. Foreign keys may cross modules to protect integrity, but code reads and writes another module's tables only through that module's API.
 - **Text limits** (enforced in the API and the database): names 100 characters, titles 200, task descriptions 500, decisions 2,000, notes 10,000, email addresses 254.
+- **Wording**: people read that a task was "removed". The schema and code keep the word "deleted" (`deleted_at`, `task_change.deleted`, the API's `deletion` field), because applied migrations are never edited. Account deletion is a separate concept and keeps its wording.
 
 ## Diagram
 
@@ -246,9 +247,14 @@ Unique (`kind`, `reference_id`, `recipient_email`): each owner gets one task ema
 ### Carry-over within a series
 
 1. A series can have at most one meeting that isn't closed, so the previous meeting is always the latest `CLOSED` one.
-2. **Agenda items**: when a meeting is created, each agenda item of the previous meeting with status `NOT_COVERED` is copied into the new meeting with `carried_over_from_id` set. The organizer can remove these copies. When a meeting closes, its `PENDING` items become `NOT_COVERED`.
-3. **Tasks**: when a meeting is created, a `meeting_task_review` row is added for every task of the series that isn't done or deleted. These rows have no delete endpoint, so open tasks can't be removed from the agenda. If a task is reopened while the next meeting is already scheduled, it is added to that meeting's list.
-4. Tasks are not copied. One `task` row lives until it is done, so a commitment keeps its identity and full history across meetings.
+2. **Agenda items**: when a meeting is created, each agenda item of the previous meeting with status `NOT_COVERED` is copied into the new meeting with `carried_over_from_id` set: its title only, with the notes staying on the original. The organizer can remove these copies until the meeting starts. When a meeting closes, its `PENDING` items become `NOT_COVERED`.
+3. **Tasks**: when a meeting is created, a `meeting_task_review` row is added for every task of the series that isn't done or deleted. The `meetings` module publishes `MeetingScheduledEvent` and the `tasks` module adds the rows in the same transaction. These rows have no delete endpoint, so open tasks can't be removed from the agenda. They change only with the task's status:
+   - Marked done while the next meeting is `SCHEDULED`: the row is removed. Marked done while it is `IN_PROGRESS`: the row stays, as part of that meeting's review.
+   - Reopened while a meeting isn't closed: a row is added to that meeting, unless it is the task's own meeting or the row exists.
+   - Scheduling a meeting and a task entering or leaving done both lock the `meeting_series` row first, so a change made at the same moment as the scheduling can't miss the new meeting.
+4. A deleted task's rows stay. The meeting it was deleted in and closed meetings keep returning it, and the page lists it in a separate section; other meetings leave it out.
+5. When a meeting closes, `status_at_close` is filled on its rows in the same transaction (`MeetingClosedEvent`), for the minutes.
+6. Tasks are not copied. One `task` row lives until it is done, so a commitment keeps its identity and full history across meetings.
 
 ### One owner per task
 

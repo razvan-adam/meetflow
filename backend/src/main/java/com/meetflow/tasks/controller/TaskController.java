@@ -37,6 +37,12 @@ class TaskController {
     return taskService.listForMeeting(user.id(), meetingId);
   }
 
+  @GetMapping("/api/meetings/{meetingId}/carried-over-tasks")
+  List<TaskResponse> listCarriedOver(
+      @AuthenticationPrincipal CurrentUser user, @PathVariable UUID meetingId) {
+    return taskService.listCarriedOver(user.id(), meetingId);
+  }
+
   @GetMapping("/api/tasks/{taskId}")
   TaskResponse get(@AuthenticationPrincipal CurrentUser user, @PathVariable UUID taskId) {
     return taskService.get(user.id(), taskId);

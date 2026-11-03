@@ -5,6 +5,7 @@ import { useSeries } from '../api/series.ts'
 import { useCurrentUser } from '../api/users.ts'
 import { Agenda } from './Agenda.tsx'
 import { Breadcrumb } from './Breadcrumb.tsx'
+import { CarriedOverTasks } from './CarriedOverTasks.tsx'
 import { LiveAgenda } from './LiveAgenda.tsx'
 import { MeetingActions } from './MeetingActions.tsx'
 import { formatMeetingTime } from './meetingTime.ts'
@@ -80,6 +81,12 @@ export function MeetingPage() {
           ))}
         </ul>
       </section>
+      <CarriedOverTasks
+        meetingId={meeting.data.id}
+        seriesId={meeting.data.seriesId}
+        status={meeting.data.status}
+        organizes={Boolean(user && series.data?.organizerId === user.id)}
+      />
       {meeting.data.status === 'SCHEDULED' ? (
         <Agenda meetingId={meeting.data.id} seriesId={meeting.data.seriesId} canEdit={canEdit} />
       ) : (

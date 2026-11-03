@@ -23,6 +23,14 @@ public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
   @Query("SELECT m.id FROM Meeting m WHERE m.seriesId = :seriesId AND m.status = :status")
   Optional<UUID> findIdBySeriesIdAndStatus(UUID seriesId, MeetingStatus status);
 
+  /** A series has at most one meeting that isn't closed. */
+  @Query("SELECT m.id FROM Meeting m WHERE m.seriesId = :seriesId AND m.status <> :status")
+  Optional<UUID> findIdBySeriesIdAndStatusNot(UUID seriesId, MeetingStatus status);
+
+  /** The latest closed meeting is the one that carries over to the next. */
+  Optional<Meeting> findFirstBySeriesIdAndStatusOrderByClosedAtDesc(
+      UUID seriesId, MeetingStatus status);
+
   /** Holds the meeting's row until the transaction ends, so its agenda has one writer at a time. */
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   Optional<Meeting> findForUpdateById(UUID id);

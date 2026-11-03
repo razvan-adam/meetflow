@@ -202,19 +202,13 @@ class AgendaTests {
 
   @Test
   void carriedOverItemsAreMarkedAndCanBeRemoved() {
-    // Carrying items over comes with MF-19; until then the test copies one in the database.
-    String uncovered = itemId(add(ana, "Returns backlog"));
+    itemId(add(ana, "Returns backlog"));
     close(meetingId);
     String next = schedule("2026-11-09T08:30:00Z");
-    String carried = UUID.randomUUID().toString();
-    jdbc.update(
-        "INSERT INTO agenda_item"
-            + " (id, team_id, meeting_id, position, title, status, carried_over_from_id, version)"
-            + " VALUES (?::uuid, ?::uuid, ?::uuid, 1, 'Returns backlog', 'PENDING', ?::uuid, 0)",
-        carried,
-        teamId,
-        next,
-        uncovered);
+    String carried =
+        JsonPath.read(
+            body(mvc.get().uri("/api/meetings/{id}/agenda-items", next).cookie(ana).exchange()),
+            "$[0].id");
 
     assertThat(mvc.get().uri("/api/meetings/{id}/agenda-items", next).cookie(bo))
         .bodyJson()

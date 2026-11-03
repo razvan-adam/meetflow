@@ -2,7 +2,7 @@
 
 The agreed build order for the MVP user stories and bugs, plus every other issue registered in Jira so the whole project can be followed from here. **This document is the source of truth for priority**; the order of issues in the Jira backlog is not maintained.
 
-Stories and their acceptance criteria live in Jira (project MF). The flow they implement is described in `docs/core-flow.md`. Statuses below mirror Jira as of 2026-11-02.
+Stories and their acceptance criteria live in Jira (project MF). The flow they implement is described in `docs/core-flow.md`. Statuses below mirror Jira as of 2026-11-03.
 
 ## MVP stories and bugs
 
@@ -20,7 +20,7 @@ Stories and their acceptance criteria live in Jira (project MF). The flow they i
 | 10 | MF-40 | Bug: frontend tests fail intermittently on the first test of a file | MF-32 Development foundations | Done |
 | 11 | MF-16 | Record decisions during a meeting | MF-5 Core | Done |
 | 12 | MF-17 | Create tasks with owner and deadline | MF-6 Commitment tracking | Done |
-| 13 | MF-18 | Update a task's status, owner and deadline | MF-6 Commitment tracking | To Do |
+| 13 | MF-18 | Update a task's status, owner and deadline | MF-6 Commitment tracking | Done |
 | 14 | MF-19 | Carry over open tasks and uncovered items to the next meeting | MF-6 Commitment tracking | To Do |
 | 15 | MF-21 | Pending-tasks dashboard | MF-6 Commitment tracking | To Do |
 | 16 | MF-22 | Generate and email minutes when a meeting is closed | MF-7 Minutes and history | To Do |

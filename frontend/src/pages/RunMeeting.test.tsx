@@ -63,6 +63,7 @@ function api(overrides: Record<string, () => Response>) {
     [`GET ${AGENDA}`]: () => Response.json([BUDGET, STAFFING]),
     [`GET ${DECISIONS}`]: () => Response.json([]),
     [`GET ${TASKS}`]: () => Response.json([]),
+    [`GET ${MEETING}/carried-over-tasks`]: () => Response.json([]),
     ...overrides,
   })
 }
@@ -816,7 +817,7 @@ describe('creating tasks', () => {
       renderApp(`/meetings/${SCHEDULED.id}`)
 
       const deleteButton = () =>
-        screen.findByRole('button', { name: 'Delete task: Sign the contract' })
+        screen.findByRole('button', { name: 'Remove task: Sign the contract' })
       fireEvent.click(await deleteButton())
       const keep = screen.getByRole('button', { name: 'Keep task' })
       expect(keep).toHaveFocus()
@@ -824,7 +825,7 @@ describe('creating tasks', () => {
       expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
 
       fireEvent.click(await deleteButton())
-      fireEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Remove task' }))
 
       await waitFor(() => expect(screen.queryByText('Sign the contract')).not.toBeInTheDocument())
       expect(
@@ -839,7 +840,7 @@ describe('creating tasks', () => {
 
       expect(await screen.findByRole('combobox', { name: STATUS })).toBeVisible()
       expect(
-        screen.queryByRole('button', { name: /Edit task|Delete task/ }),
+        screen.queryByRole('button', { name: /Edit task|Remove task/ }),
       ).not.toBeInTheDocument()
     })
 
@@ -867,15 +868,15 @@ describe('creating tasks', () => {
       renderApp(`/meetings/${SCHEDULED.id}`)
 
       expect(await screen.findByRole('button', { name: 'Edit task: Send the draft' })).toBeVisible()
-      fireEvent.click(screen.getByRole('button', { name: 'Delete task: Send the draft' }))
-      fireEvent.click(screen.getByRole('button', { name: 'Delete task' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Remove task: Send the draft' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Remove task' }))
 
       // It stays on the closed meeting's record, marked, with no way left to change it.
-      expect(await screen.findByText(/Deleted by Ana Costa during the meeting of/)).toBeVisible()
+      expect(await screen.findByText(/Removed by Ana Costa during the meeting of/)).toBeVisible()
       expect(screen.getByRole('link', { name: 'Send the draft' }).closest('s')).not.toBeNull()
       expect(screen.queryByRole('combobox', { name: STATUS })).not.toBeInTheDocument()
       expect(
-        screen.queryByRole('button', { name: /Edit task|Delete task/ }),
+        screen.queryByRole('button', { name: /Edit task|Remove task/ }),
       ).not.toBeInTheDocument()
     })
 
@@ -890,7 +891,7 @@ describe('creating tasks', () => {
       expect(await screen.findByRole('combobox', { name: STATUS })).toBeVisible()
       await waitFor(() =>
         expect(
-          screen.queryByRole('button', { name: /Edit task|Delete task/ }),
+          screen.queryByRole('button', { name: /Edit task|Remove task/ }),
         ).not.toBeInTheDocument(),
       )
     })

@@ -68,7 +68,7 @@ Screens are referred to by the IDs in *Key screens* below. Example data used thr
 **Actor:** team admin. **Stories:** MF-11, MF-12.
 
 1. Opens the team's members (S11) and chooses to remove a member.
-2. Before the removal can be confirmed, reassigns each of the member's open tasks to another team member or deletes it, and reassigns the organizer of any series they run.
+2. Before the removal can be confirmed, reassigns each of the member's open tasks to another team member or removes it, and reassigns the organizer of any series they run.
 3. Confirms the removal; the member immediately loses access to the team.
 4. Separately, can make members admins or remove admin rights, keeping at least one admin.
 

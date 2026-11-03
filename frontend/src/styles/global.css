@@ -1,4 +1,7 @@
-/* Color tokens and typography from docs/visual-style.md. The app follows the system theme. */
+/*
+ * Color tokens and typography from docs/visual-style.md. The app follows the system theme until the
+ * user picks one, which sets data-theme on the root element (see src/app/useTheme.ts).
+ */
 
 :root {
   --paper: #f8fbfa;
@@ -19,8 +22,13 @@
   color-scheme: light dark;
 }
 
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+/* The dark colors appear twice, because a media query and a selector can't share one rule. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='light']) {
     --paper: #18201e;
     --frame: #212b28;
     --ink: #eef4f2;
@@ -33,6 +41,22 @@
     --overdue-soft: #3a1c1e;
     --done: #5fdcbc;
   }
+}
+
+:root[data-theme='dark'] {
+  --paper: #18201e;
+  --frame: #212b28;
+  --ink: #eef4f2;
+  --muted: #a3b1ac;
+  --line: #35433f;
+  --fill: #27322f;
+  --wire: #5fdcbc;
+  --wire-soft: #1d4a40;
+  --overdue: #ff6b6b;
+  --overdue-soft: #3a1c1e;
+  --done: #5fdcbc;
+
+  color-scheme: dark;
 }
 
 *,

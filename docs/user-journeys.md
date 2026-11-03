@@ -92,6 +92,7 @@ Screens are referred to by the IDs in *Key screens* below. Example data used thr
 | MF-21 Pending-tasks dashboard | J5 |
 | MF-22 Generate and email minutes | J5, J6 |
 | MF-23 Browse and search meeting history | J6 |
+| MF-41 Switch between light and dark mode | All |
 
 ## Key screens
 

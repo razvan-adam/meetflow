@@ -25,15 +25,18 @@ Stories and their acceptance criteria live in Jira (project MF). The flow they i
 | 15 | MF-21 | Pending-tasks dashboard | MF-6 Commitment tracking | Done |
 | 16 | MF-22 | Generate and email minutes when a meeting is closed | MF-7 Minutes and history | Done |
 | 17 | MF-20 | Email task owners their tasks after the meeting | MF-6 Commitment tracking | Done |
-| 18 | MF-41 | Switch between light and dark mode | MF-5 Core | To Do |
-| 19 | MF-23 | Browse and search meeting history | MF-7 Minutes and history | To Do |
-| 20 | MF-11 | Manage team members and admins | MF-5 Core | To Do |
+| 18 | MF-41 | Switch between light and dark mode | MF-5 Core | Done |
+| 19 | MF-42 | Bug: agenda item notes appear centered on a closed meeting's page | MF-5 Core | Done |
+| 20 | MF-43 | Bug: some text in light mode has too little contrast to read easily | MF-5 Core | Done |
+| 21 | MF-44 | Bug: some text in dark mode has too little contrast to read easily | MF-5 Core | To Do |
+| 22 | MF-23 | Browse and search meeting history | MF-7 Minutes and history | To Do |
+| 23 | MF-11 | Manage team members and admins | MF-5 Core | To Do |
 
 ## Rationale
 
 - **Ranks 1–11** provide the minimum needed to hold a meeting. MF-38 comes before MF-15 because it can be fixed now; MF-39 comes right after because it needs the closing that MF-15 builds. MF-40 comes before more features because every story adds tests, and tests that fail at random make real failures harder to trust.
 - **Ranks 12–15** deliver commitment tracking, MeetFlow's differentiator, as early as possible. Completing rank 15 is the milestone for a first internal demo: a team can run a meeting, assign tasks and see them carry over.
-- **Ranks 16–20** complete the MVP. They are valuable, but the core loop can be tried without them. MF-41 comes before the last two by request: the app looked too dark for someone whose system is in dark mode, with no way to change it from the app.
+- **Ranks 16–23** complete the MVP. They are valuable, but the core loop can be tried without them. MF-41 comes before MF-23 and MF-11 by request: the app looked too dark for someone whose system is in dark mode, with no way to change it from the app. Checking it end to end found MF-42 and MF-43, and checking MF-43 found MF-44; these small fixes come next by request, so the two modes are readable before more screens are added.
 
 ## Epics
 

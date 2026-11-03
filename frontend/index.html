@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <title>MeetFlow</title>
+    <script>
+      // Applies the chosen theme before the first paint, so the page doesn't flash the other one.
+      // Uses the same storage key as src/app/useTheme.ts.
+      try {
+        const theme = localStorage.getItem('meetflow-theme')
+        if (theme === 'light' || theme === 'dark') {
+          document.documentElement.dataset.theme = theme
+        }
+      } catch {
+        // Storage can be blocked; the app then follows the system theme.
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

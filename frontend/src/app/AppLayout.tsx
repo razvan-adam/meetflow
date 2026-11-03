@@ -3,6 +3,7 @@ import { useLogOut } from '../api/session.ts'
 import { useCurrentUser } from '../api/users.ts'
 import styles from './AppLayout.module.css'
 import { TeamSwitcher } from './TeamSwitcher.tsx'
+import { ThemeSwitch } from './ThemeSwitch.tsx'
 
 // The frame around every page for a logged-in user.
 export function AppLayout() {
@@ -20,9 +21,10 @@ export function AppLayout() {
           <TeamSwitcher />
         </nav>
         <span className={styles.user}>{user?.name}</span>
+        <ThemeSwitch />
         <button
           type="button"
-          className={styles.logOut}
+          className={styles.barButton}
           disabled={logOut.isPending}
           onClick={() => logOut.mutate()}
         >

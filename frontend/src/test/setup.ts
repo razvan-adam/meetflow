@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup, configure, screen } from '@testing-library/react'
-import { afterEach, beforeAll, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, vi } from 'vitest'
 
 // The default of 1 second is too tight for the first test of a file. Its first render and first
 // role query are slow until the code warms up, and more so while all the test files start at once:
@@ -16,7 +16,19 @@ beforeAll(() => {
   document.body.innerHTML = ''
 })
 
+// jsdom has no matchMedia, which every logged-in page needs for its theme switch. A light system
+// unless a test says otherwise.
+beforeEach(() => {
+  vi.stubGlobal('matchMedia', () => ({
+    matches: false,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }))
+})
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  localStorage.clear()
+  delete document.documentElement.dataset.theme
 })

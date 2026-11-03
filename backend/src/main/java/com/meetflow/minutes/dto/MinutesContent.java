@@ -28,6 +28,8 @@ public record MinutesContent(
     List<Task> newTasks) {
 
   /**
+   * A task as it stood when the meeting closed.
+   *
    * @param daysOverdue counted to the meeting's date, 0 if it wasn't overdue
    * @param removed whether it was removed during the meeting
    */

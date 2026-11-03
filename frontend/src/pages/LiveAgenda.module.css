@@ -140,6 +140,7 @@
 }
 
 .notes {
+  width: 100%;
   margin: 0;
   font-size: 14px;
   white-space: pre-wrap;

@@ -126,6 +126,24 @@ export function useCarriedOverTasks(meetingId: string) {
   })
 }
 
+const WHILE_EMAILING_MS = 3000
+const EMAILS_GO_OUT_WITHIN_MS = 60_000
+
+// How many owners have been emailed their tasks from a closed meeting. The emails go out just after
+// it closes, so it keeps asking for a minute; a retry later on shows up the next time this loads.
+export function useTaskEmails(meetingId: string, closedAt: string | null | undefined) {
+  return useQuery({
+    queryKey: [...tasksKey(meetingId), 'emails'],
+    queryFn: () =>
+      apiFetch<{ sent: number }>(`/meetings/${encodeURIComponent(meetingId)}/task-emails`),
+    enabled: Boolean(closedAt),
+    refetchInterval: () =>
+      closedAt && Date.now() - Date.parse(closedAt) < EMAILS_GO_OUT_WITHIN_MS
+        ? WHILE_EMAILING_MS
+        : false,
+  })
+}
+
 export function useTask(taskId: string | undefined) {
   return useQuery({
     queryKey: taskKey(taskId ?? ''),

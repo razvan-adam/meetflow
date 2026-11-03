@@ -979,7 +979,7 @@ describe('closing a meeting', () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/close'))).toBe(false)
   })
 
-  it('says the minutes will be emailed to the participants', async () => {
+  it('says who will be emailed the minutes and the tasks', async () => {
     api({})
     renderApp(`/meetings/${SCHEDULED.id}`)
 
@@ -989,7 +989,9 @@ describe('closing a meeting', () => {
     expect(confirmation).toHaveTextContent(
       `The minutes will be emailed to all ${SCHEDULED.participants.length} participants.`,
     )
-    expect(confirmation).not.toHaveTextContent(/task email/i)
+    expect(confirmation).toHaveTextContent(
+      'Each task owner gets one email with their tasks from this meeting.',
+    )
   })
 
   it('closes the meeting and shows its record, read-only', async () => {
@@ -1025,6 +1027,66 @@ describe('closing a meeting', () => {
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Close meeting' })).not.toBeInTheDocument()
     expect(screen.queryByRole('link', { name: /Edit date/ })).not.toBeInTheDocument()
+  })
+
+  it('says how many owners were sent their tasks', async () => {
+    api({
+      [`GET ${MEETING}`]: () => Response.json(CLOSED),
+      [`GET ${MEETING}/task-emails`]: () => Response.json({ sent: 3 }),
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    expect(await screen.findByText(/Task emails sent to 3 owners\./)).toBeVisible()
+  })
+
+  it('says it in the singular for one owner', async () => {
+    api({
+      [`GET ${MEETING}`]: () => Response.json(CLOSED),
+      [`GET ${MEETING}/task-emails`]: () => Response.json({ sent: 1 }),
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    expect(await screen.findByText(/Task emails sent to 1 owner\./)).toBeVisible()
+  })
+
+  it('says nothing about task emails when none were sent', async () => {
+    const fetchMock = api({
+      [`GET ${MEETING}`]: () => Response.json(CLOSED),
+      [`GET ${MEETING}/task-emails`]: () => Response.json({ sent: 0 }),
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    expect(await screen.findByText('This meeting was closed')).toBeVisible()
+    await waitFor(() =>
+      expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/task-emails'))).toBe(true),
+    )
+    expect(screen.queryByText(/Task emails sent/)).not.toBeInTheDocument()
+  })
+
+  it('updates the count while the emails go out after closing', async () => {
+    let sent = 0
+    api({
+      [`GET ${MEETING}`]: () => Response.json({ ...CLOSED, closedAt: new Date().toISOString() }),
+      [`GET ${MEETING}/task-emails`]: () => {
+        const answer = Response.json({ sent })
+        sent = 2
+        return answer
+      },
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    expect(
+      await screen.findByText(/Task emails sent to 2 owners\./, {}, { timeout: 5000 }),
+    ).toBeVisible()
+  })
+
+  it('doesn’t ask about task emails before the meeting closes', async () => {
+    const fetchMock = api({})
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    await screen.findByRole('button', { name: 'Close meeting' })
+
+    expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/task-emails'))).toBe(false)
   })
 
   it('waits for notes still being saved before it can close', async () => {

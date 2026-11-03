@@ -43,6 +43,14 @@ public class RecordingEmailSender implements EmailSender {
     return sent.stream().filter(message -> message.to().equals(address)).count();
   }
 
+  /** The emails sent to this address whose subject starts like this, oldest first. */
+  public List<EmailMessage> to(String address, String subjectStart) {
+    return sent.stream()
+        .filter(message -> message.to().equals(address))
+        .filter(message -> message.subject().startsWith(subjectStart))
+        .toList();
+  }
+
   /** Fails for this one address only, or for none if null. */
   public void setFailingFor(@Nullable String address) {
     this.failingFor = address;

@@ -109,6 +109,7 @@ function CloseConfirmation({
             ? 'The minutes will be emailed to the 1 participant.'
             : `The minutes will be emailed to all ${participants} participants.`}
         </li>
+        <li>Each task owner gets one email with their tasks from this meeting.</li>
       </ul>
       <div className={styles.bannerActions}>
         <button

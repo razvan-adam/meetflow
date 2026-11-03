@@ -5,6 +5,7 @@ import com.meetflow.tasks.dto.PendingTaskResponse;
 import com.meetflow.tasks.dto.TaskChangeResponse;
 import com.meetflow.tasks.dto.TaskDeadlineRequest;
 import com.meetflow.tasks.dto.TaskDescriptionRequest;
+import com.meetflow.tasks.dto.TaskEmailsResponse;
 import com.meetflow.tasks.dto.TaskOwnerRequest;
 import com.meetflow.tasks.dto.TaskRequest;
 import com.meetflow.tasks.dto.TaskResponse;
@@ -47,6 +48,12 @@ class TaskController {
   List<TaskResponse> listCarriedOver(
       @AuthenticationPrincipal CurrentUser user, @PathVariable UUID meetingId) {
     return taskService.listCarriedOver(user.id(), meetingId);
+  }
+
+  @GetMapping("/api/meetings/{meetingId}/task-emails")
+  TaskEmailsResponse taskEmails(
+      @AuthenticationPrincipal CurrentUser user, @PathVariable UUID meetingId) {
+    return taskService.taskEmails(user.id(), meetingId);
   }
 
   @GetMapping("/api/tasks/{taskId}")

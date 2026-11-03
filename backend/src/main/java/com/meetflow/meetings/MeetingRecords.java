@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/** What the minutes module reads about a closed meeting. Callers check who may see it. */
+/** What the minutes and task emails read about a closed meeting. Callers check who may see it. */
 @Service
 public class MeetingRecords {
 

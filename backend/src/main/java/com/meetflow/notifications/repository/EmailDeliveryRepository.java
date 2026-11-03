@@ -10,6 +10,8 @@ public interface EmailDeliveryRepository extends JpaRepository<EmailDelivery, UU
   boolean existsByKindAndReferenceIdAndRecipientEmail(
       EmailDelivery.Kind kind, UUID referenceId, String recipientEmail);
 
+  long countByKindAndReferenceId(EmailDelivery.Kind kind, UUID referenceId);
+
   long countByKindAndReferenceIdAndRecipientEmailIn(
       EmailDelivery.Kind kind, UUID referenceId, Collection<String> recipientEmails);
 }

@@ -381,7 +381,7 @@ class MinutesTests {
     assertThat(
             await().until(() -> latestMinutesTo(anaEmail, "2026-11-02"), found -> !found.isEmpty()))
         .isEqualTo(email);
-    assertThat(emails.lastTo(boEmail).subject())
+    assertThat(emails.to(boEmail, "Minutes: ").getLast().subject())
         .isEqualTo("Minutes: Weekly ops sync, Mon 2 Nov 2026");
   }
 
@@ -495,11 +495,12 @@ class MinutesTests {
 
   /** The text of the latest email to this address, once it is about that meeting's date. */
   private String latestMinutesTo(String address, String isoDate) {
-    if (emails.countTo(address) == 0) {
+    var sent = emails.to(address, "Minutes: ");
+    if (sent.isEmpty()) {
       return "";
     }
     var day = Integer.parseInt(isoDate.substring(8));
-    var email = emails.lastTo(address);
+    var email = sent.getLast();
     return email.subject().contains(" " + day + " Nov 2026") ? email.text() : "";
   }
 

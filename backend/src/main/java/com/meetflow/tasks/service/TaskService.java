@@ -5,11 +5,13 @@ import static java.util.Objects.requireNonNull;
 import com.meetflow.identity.UserDirectory;
 import com.meetflow.meetings.TaskMeetings;
 import com.meetflow.meetings.TaskOrigin;
+import com.meetflow.notifications.TaskSummaryMailer;
 import com.meetflow.tasks.domain.Task;
 import com.meetflow.tasks.domain.TaskChange;
 import com.meetflow.tasks.domain.TaskStatus;
 import com.meetflow.tasks.dto.PendingTaskResponse;
 import com.meetflow.tasks.dto.TaskChangeResponse;
+import com.meetflow.tasks.dto.TaskEmailsResponse;
 import com.meetflow.tasks.dto.TaskResponse;
 import com.meetflow.tasks.exception.NotAllowedToChangeTaskException;
 import com.meetflow.tasks.exception.OwnerNotMemberException;
@@ -45,18 +47,28 @@ public class TaskService {
   private final TaskMeetings meetings;
   private final TeamMembers teamMembers;
   private final UserDirectory users;
+  private final TaskSummaryMailer mailer;
 
   TaskService(
       TaskRepository tasks,
       TaskChangeRepository changes,
       TaskMeetings meetings,
       TeamMembers teamMembers,
-      UserDirectory users) {
+      UserDirectory users,
+      TaskSummaryMailer mailer) {
     this.tasks = tasks;
     this.changes = changes;
     this.meetings = meetings;
     this.teamMembers = teamMembers;
     this.users = users;
+    this.mailer = mailer;
+  }
+
+  /** How many owners have been emailed their tasks from the meeting so far (MF-20). */
+  @Transactional(readOnly = true)
+  public TaskEmailsResponse taskEmails(UUID userId, UUID meetingId) {
+    meetings.requireVisibleMeeting(userId, meetingId);
+    return new TaskEmailsResponse(mailer.sentFor(meetingId));
   }
 
   /**

@@ -38,12 +38,10 @@ public class Meeting implements Persistable<UUID> {
   @Enumerated(EnumType.STRING)
   private MeetingStatus status;
 
-  @SuppressWarnings("UnusedVariable") // The table requires it once a meeting has started.
   private @Nullable Instant startedAt;
 
   private @Nullable Instant closedAt;
 
-  @SuppressWarnings("UnusedVariable") // The table requires it once a meeting is closed.
   private @Nullable UUID closedBy;
 
   /** Team members, checked when they are added. */
@@ -92,8 +90,16 @@ public class Meeting implements Persistable<UUID> {
     return status;
   }
 
+  public @Nullable Instant getStartedAt() {
+    return startedAt;
+  }
+
   public @Nullable Instant getClosedAt() {
     return closedAt;
+  }
+
+  public @Nullable UUID getClosedBy() {
+    return closedBy;
   }
 
   public Set<UUID> getParticipantIds() {

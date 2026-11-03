@@ -22,7 +22,7 @@ Stories and their acceptance criteria live in Jira (project MF). The flow they i
 | 12 | MF-17 | Create tasks with owner and deadline | MF-6 Commitment tracking | Done |
 | 13 | MF-18 | Update a task's status, owner and deadline | MF-6 Commitment tracking | Done |
 | 14 | MF-19 | Carry over open tasks and uncovered items to the next meeting | MF-6 Commitment tracking | Done |
-| 15 | MF-21 | Pending-tasks dashboard | MF-6 Commitment tracking | To Do |
+| 15 | MF-21 | Pending-tasks dashboard | MF-6 Commitment tracking | Done |
 | 16 | MF-22 | Generate and email minutes when a meeting is closed | MF-7 Minutes and history | To Do |
 | 17 | MF-20 | Email task owners their tasks after the meeting | MF-6 Commitment tracking | To Do |
 | 18 | MF-23 | Browse and search meeting history | MF-7 Minutes and history | To Do |

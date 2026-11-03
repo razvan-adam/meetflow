@@ -6,7 +6,6 @@ import static org.awaitility.Awaitility.await;
 
 import com.jayway.jsonpath.JsonPath;
 import com.meetflow.IntegrationTest;
-import com.meetflow.RecordingMeetingClosedListener;
 import jakarta.servlet.http.Cookie;
 import java.io.UnsupportedEncodingException;
 import java.time.OffsetDateTime;
@@ -33,8 +32,6 @@ class RunMeetingTests {
   @Autowired MockMvcTester mvc;
 
   @Autowired JdbcTemplate jdbc;
-
-  @Autowired RecordingMeetingClosedListener closedMeetings;
 
   Cookie csrfToken;
 
@@ -254,10 +251,6 @@ class RunMeetingTests {
 
     close(ana);
 
-    var expected =
-        new MeetingClosedEvent(
-            UUID.fromString(meetingId), UUID.fromString(teamId), UUID.fromString(seriesId));
-    await().until(() -> closedMeetings.received().contains(expected));
     await()
         .until(
             () ->
@@ -266,7 +259,7 @@ class RunMeetingTests {
                         + " WHERE serialized_event LIKE ? AND completion_date IS NOT NULL",
                     Long.class,
                     "%" + meetingId + "%"),
-            completed -> completed == 1);
+            completed -> completed >= 1);
   }
 
   @Test

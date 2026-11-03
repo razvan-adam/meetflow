@@ -179,7 +179,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 
 - When a task is created, its owner must be a participant of `meeting_id` (service check).
 - A task created from a decision stores both `decision_id` and the decision's `agenda_item_id`; one created from an agenda item leaves `decision_id` null. A decision with tasks can't be removed; deleting a task during its own meeting clears its `decision_id`, so a decision whose tasks were all deleted can be. Deleting it during a later meeting keeps the link, so the closed meeting still shows it under its decision.
-- **Overdue** is not stored. A task is overdue when it isn't `DONE` and `deadline` is before the current date: today for the viewer on every screen, which also says how many days overdue it is, and the meeting date in the minutes, which are a record of that meeting.
+- **Overdue** is not stored. A task is overdue when it isn't `DONE` and `deadline` is before the current date: today for the viewer on every screen, which also says how many days overdue it is, and the date the meeting was held in the minutes, which are a record of that meeting.
 - Index on (`owner_id`, `status`, `deadline`) for the pending-tasks dashboard, and on (`series_id`, `status`) for carry-over.
 
 **`task_change`** – the status history. One row per change, including the creation.
@@ -225,7 +225,7 @@ History search uses `decision.search_vector` and a matching generated `tsvector`
 
 ### `notifications` module
 
-Minutes and task emails are triggered by events (meeting closed). Spring Modulith's event publication table makes them reliable: an event is retried until its listener succeeds.
+Minutes and task emails are triggered by events (meeting closed). Spring Modulith's event publication table makes them reliable: every 5 minutes, events older than that whose listener failed or never finished are tried again, until it succeeds. Each delivery is recorded as soon as its email is sent, so a retry only reaches those who missed it. A crash between sending and recording can still send one email twice.
 
 Invitation emails are the exception: they are sent directly, inside the transaction that creates the invitation, because the event table would store the link's token, which must never be stored. If the email can't be sent, the invitation isn't saved and the admin is asked to try again (503).
 
@@ -266,7 +266,7 @@ Once `meeting.status` is `CLOSED`, the `meetings` and `tasks` services reject an
 
 ### Read-only minutes
 
-`minutes.content` is written once, when the meeting closes. It holds the participants, agenda, notes, decisions, new tasks and the status of reviewed tasks as they were at that moment. People are stored by user ID, and names are resolved when the minutes are shown, so a deleted account appears anonymized. The application has no update path for minutes, and a database trigger rejects `UPDATE` on the table.
+`minutes.content` is written once, when the meeting closes. It holds the participants, agenda, notes, decisions, new tasks and the status of reviewed tasks as they were at that moment. People are stored by user ID, and names are resolved when the minutes are shown, so a deleted account appears anonymized. The application has no update path for minutes, and a database trigger rejects `UPDATE` on the table. They are written in the transaction that closes the meeting, so a closed meeting always has them. Each task's status before the meeting comes from the first status change recorded during it, and its status at closing from `status_at_close`. The date the meeting was held (`started_at`) is fixed from the organizer's time zone, and overdue days are counted to it. The page says the minutes were emailed only once `email_delivery` has a row for every participant. When the minutes are shown, each task also says how it stands today; the record itself doesn't change. A closed meeting's task lists read how a task reworded since then read at closing from `task_change`.
 
 ### Status history
 

@@ -42,6 +42,7 @@ const CONTRACT: Task = {
   agendaItemId: 'budget',
   decisionId: PICKERS.id,
   description: 'Sign the contract',
+  descriptionAtClose: null,
   ownerId: BO.id,
   ownerName: BO.name,
   // Far enough ahead that the tests don't depend on today's date.

@@ -107,4 +107,20 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
           WHERE r.task_id = t.id AND r.meeting_id = :meetingId
           """)
   void recordStatusAtClose(UUID meetingId);
+
+  /** A carried-over task's status when its meeting closed. */
+  interface StatusAtClose {
+    UUID getTaskId();
+
+    String getStatus();
+  }
+
+  @Query(
+      nativeQuery = true,
+      value =
+          """
+          SELECT task_id AS taskId, status_at_close AS status FROM meeting_task_review
+          WHERE meeting_id = :meetingId AND status_at_close IS NOT NULL
+          """)
+  List<StatusAtClose> findStatusesAtClose(UUID meetingId);
 }

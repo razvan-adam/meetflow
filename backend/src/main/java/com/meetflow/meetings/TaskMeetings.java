@@ -1,6 +1,5 @@
 package com.meetflow.meetings;
 
-import com.meetflow.meetings.domain.MeetingStatus;
 import com.meetflow.meetings.service.AgendaService;
 import com.meetflow.meetings.service.DecisionService;
 import com.meetflow.meetings.service.MeetingSeriesService;
@@ -9,6 +8,7 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
@@ -73,10 +73,18 @@ public class TaskMeetings {
     meetings.findVisible(userId, meetingId);
   }
 
-  /** Whether the meeting is closed; a 404 error response if the user isn't in its team. */
+  /**
+   * When the meeting closed, null if it hasn't; a 404 error response if the user isn't in its team.
+   */
   @Transactional(readOnly = true)
-  public boolean isClosed(UUID userId, UUID meetingId) {
-    return meetings.findVisible(userId, meetingId).getStatus() == MeetingStatus.CLOSED;
+  public @Nullable Instant closedAt(UUID userId, UUID meetingId) {
+    return meetings.findVisible(userId, meetingId).getClosedAt();
+  }
+
+  /** Those of the meetings that are closed. */
+  @Transactional(readOnly = true)
+  public Set<UUID> closedAmong(Collection<UUID> meetingIds) {
+    return meetings.closedAmong(meetingIds);
   }
 
   /** Whether the user organizes the series right now, which can change after the task's meeting. */

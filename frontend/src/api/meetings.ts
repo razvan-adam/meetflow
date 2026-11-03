@@ -114,12 +114,15 @@ export function useStartMeeting(meetingId: string, seriesId: string) {
   )
 }
 
-// The series organizer only. Items nobody marked become not covered, so the agenda reloads too.
+// The series organizer only. Items nobody marked become not covered, so the agenda reloads too. The
+// organizer's time zone fixes the meeting's calendar date in its minutes.
 export function useCloseMeeting(meetingId: string, seriesId: string) {
   const queryClient = useQueryClient()
   return useMeetingChange(meetingId, seriesId, async () => {
     const closed = await apiFetch<Meeting>(`/meetings/${encodeURIComponent(meetingId)}/close`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }),
     })
     await queryClient.invalidateQueries({ queryKey: [...meetingKey(meetingId), 'agenda-items'] })
     return closed

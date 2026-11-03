@@ -74,7 +74,13 @@ function TaskPlace({ task }: { task: Task }) {
     <>
       <dt>Created in</dt>
       <dd>
-        <Link to={`/meetings/${task.meetingId}`}>
+        <Link
+          to={
+            meeting.data?.status === 'CLOSED'
+              ? `/meetings/${task.meetingId}/minutes`
+              : `/meetings/${task.meetingId}`
+          }
+        >
           {series.data?.name ?? 'Meeting'}
           {meeting.data && `, ${formatMeetingTime(meeting.data.scheduledAt)}`}
         </Link>

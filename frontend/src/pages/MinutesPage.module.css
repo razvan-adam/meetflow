@@ -1,0 +1,102 @@
+/* The minutes of a closed meeting (S9). Shared layout comes from TeamPage.module.css. */
+
+.doc {
+  display: grid;
+  /* Without minmax, a wide table would stretch the column instead of scrolling in its box. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  width: 100%;
+  box-sizing: border-box;
+  max-width: 760px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.heading {
+  margin: 0 0 6px;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.text {
+  margin: 0;
+  font-size: 14px;
+}
+
+.notes {
+  margin: 0 0 6px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.note {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.items {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.tag {
+  padding: 1px 6px;
+  background: var(--wire-soft);
+  color: var(--wire);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* A wide table scrolls inside its box, so the page itself never scrolls sideways on a phone. */
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table th {
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.table tr[data-overdue] td {
+  background: var(--overdue-soft);
+}
+
+.date {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.overdue {
+  color: var(--overdue);
+}
+
+.today {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}

@@ -104,7 +104,7 @@ class CarryOverConcurrencyTests {
   @Test
   void aTaskReopenedWhileAMeetingIsBeingScheduledJoinsIt() throws Exception {
     setStatus(TaskStatus.DONE);
-    meetings.close(ana, firstMeeting);
+    meetings.close(ana, firstMeeting, null);
     var next = new AtomicReference<UUID>();
 
     secondWaitsForFirst(() -> next.set(schedule()), () -> setStatus(TaskStatus.OPEN));
@@ -115,7 +115,7 @@ class CarryOverConcurrencyTests {
   @Test
   void aMeetingScheduledWhileATaskIsBeingReopenedIncludesIt() throws Exception {
     setStatus(TaskStatus.DONE);
-    meetings.close(ana, firstMeeting);
+    meetings.close(ana, firstMeeting, null);
 
     UUID next = secondWaitsForFirst(() -> setStatus(TaskStatus.OPEN), this::schedule);
 
@@ -124,7 +124,7 @@ class CarryOverConcurrencyTests {
 
   @Test
   void aTaskDoneWhileAMeetingIsBeingScheduledLeavesIt() throws Exception {
-    meetings.close(ana, firstMeeting);
+    meetings.close(ana, firstMeeting, null);
     var next = new AtomicReference<UUID>();
 
     secondWaitsForFirst(() -> next.set(schedule()), () -> setStatus(TaskStatus.DONE));
@@ -134,7 +134,7 @@ class CarryOverConcurrencyTests {
 
   @Test
   void aMeetingScheduledWhileATaskIsBeingMarkedDoneLeavesItOut() throws Exception {
-    meetings.close(ana, firstMeeting);
+    meetings.close(ana, firstMeeting, null);
 
     UUID next = secondWaitsForFirst(() -> setStatus(TaskStatus.DONE), this::schedule);
 
@@ -146,7 +146,7 @@ class CarryOverConcurrencyTests {
     UUID running = firstMeeting;
     for (int round = 0; round < 20; round++) {
       setStatus(TaskStatus.DONE);
-      meetings.close(ana, running);
+      meetings.close(ana, running, null);
       var barrier = new CyclicBarrier(2);
       var scheduling = together(barrier, this::schedule);
       var reopening = together(barrier, () -> setStatus(TaskStatus.OPEN));
@@ -162,7 +162,7 @@ class CarryOverConcurrencyTests {
 
   @Test
   void twoMeetingsScheduledAtOnceGiveOneMeetingWithOneCopyOfEverything() throws Exception {
-    meetings.close(ana, firstMeeting);
+    meetings.close(ana, firstMeeting, null);
     var barrier = new CyclicBarrier(2);
     var first = together(barrier, this::scheduleOrEmpty);
     var second = together(barrier, this::scheduleOrEmpty);
@@ -199,7 +199,7 @@ class CarryOverConcurrencyTests {
   @Test
   void reopeningDoesNotDeadlockWithATaskBeingCreatedInTheRunningMeeting() throws Exception {
     setStatus(TaskStatus.DONE);
-    meetings.close(ana, firstMeeting);
+    meetings.close(ana, firstMeeting, null);
     UUID next = schedule();
     meetings.start(ana, next);
     UUID nextItem = agenda.list(ana, next).getFirst().id();

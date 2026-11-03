@@ -472,6 +472,7 @@ describe('creating tasks', () => {
     agendaItemId: BUDGET.id,
     decisionId: PICKERS.id,
     description: 'Sign the contract',
+    descriptionAtClose: null,
     ownerId: BO.id,
     ownerName: BO.name,
     deadline: '2999-11-20',
@@ -662,6 +663,20 @@ describe('creating tasks', () => {
 
     expect(await screen.findByText('Send the draft')).toBeVisible()
     expect(screen.queryByRole('button', { name: /Add task/ })).not.toBeInTheDocument()
+  })
+
+  it('shows a task as it read at closing, and says if it was reworded since', async () => {
+    api({
+      [`GET ${MEETING}`]: () => Response.json(CLOSED),
+      [`GET ${TASKS}`]: () =>
+        Response.json([
+          { ...DRAFT, description: 'Send the final draft', descriptionAtClose: 'Send the draft' },
+        ]),
+    })
+    renderApp(`/meetings/${SCHEDULED.id}`)
+
+    expect(await screen.findByRole('link', { name: 'Send the draft' })).toBeVisible()
+    expect(screen.getByText('Reworded since: Send the final draft')).toBeVisible()
   })
 
   it('says so when the tasks can’t be loaded, rather than showing none', async () => {
@@ -964,20 +979,23 @@ describe('closing a meeting', () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith('/close'))).toBe(false)
   })
 
-  it('doesn’t promise emails, which come with later stories', async () => {
+  it('says the minutes will be emailed to the participants', async () => {
     api({})
     renderApp(`/meetings/${SCHEDULED.id}`)
 
     fireEvent.click(await screen.findByRole('button', { name: 'Close meeting' }))
 
     const confirmation = await screen.findByRole('group', { name: 'Confirm closing the meeting' })
-    expect(confirmation).not.toHaveTextContent(/email|minutes/i)
+    expect(confirmation).toHaveTextContent(
+      `The minutes will be emailed to all ${SCHEDULED.participants.length} participants.`,
+    )
+    expect(confirmation).not.toHaveTextContent(/task email/i)
   })
 
   it('closes the meeting and shows its record, read-only', async () => {
     let meeting = RUNNING
     let agenda = [BUDGET, STAFFING]
-    api({
+    const fetchMock = api({
       [`GET ${MEETING}`]: () => Response.json(meeting),
       [`GET ${AGENDA}`]: () => Response.json(agenda),
       [`POST ${MEETING}/close`]: () => {
@@ -995,6 +1013,13 @@ describe('closing a meeting', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Close the meeting' }))
 
     expect(await screen.findByText('This meeting was closed')).toBeVisible()
+    expect(requestBody(fetchMock, `POST ${MEETING}/close`)).toEqual({
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    })
+    expect(screen.getByRole('link', { name: 'View the minutes' })).toHaveAttribute(
+      'href',
+      `/meetings/${SCHEDULED.id}/minutes`,
+    )
     expect(await screen.findByText('Agency quotes received')).toBeVisible()
     expect(await screen.findAllByText('Not covered')).toHaveLength(2)
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument()

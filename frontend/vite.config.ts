@@ -14,6 +14,8 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // Vitest empties CSS files by default; src/styles/contrast.test.ts reads the colors in this one.
+    css: { include: [/src\/styles\/global\.css/] },
     // Above asyncUtilTimeout in src/test/setup.ts, so a query that fails reports what it looked for.
     testTimeout: 15000,
     // Meeting times are entered and shown in local time; fixing it keeps the tests repeatable.

@@ -7,14 +7,14 @@
   --paper: #f8fbfa;
   --frame: #ffffff;
   --ink: #1f2a27;
-  --muted: #6b7773;
+  --muted: #67726e;
   --line: #e6ecea;
   --fill: #f5f9f7;
-  --wire: #0f8a72;
+  --wire: #0e7e68;
   --wire-soft: #eaf8f3;
-  --overdue: #e0484d;
+  --overdue: #c64044;
   --overdue-soft: #fff4f4;
-  --done: #0f8a72;
+  --done: #0e7e68;
 
   --font-sans: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;

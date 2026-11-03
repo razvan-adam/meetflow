@@ -16,14 +16,16 @@ The starting visual style for MeetFlow (roadmap step 3, MF-26), as used in the w
 | `paper` | Page background | `#f8fbfa` | `#18201e` |
 | `frame` | Surfaces (cards, panels) | `#ffffff` | `#212b28` |
 | `ink` | Main text | `#1f2a27` | `#eef4f2` |
-| `muted` | Secondary text, metadata | `#6b7773` | `#a3b1ac` |
+| `muted` | Secondary text, metadata | `#67726e` | `#a3b1ac` |
 | `line` | Borders, dividers | `#e6ecea` | `#35433f` |
 | `fill` | Subtle blocks, read-only inputs | `#f5f9f7` | `#27322f` |
-| `wire` | Accent: buttons, links, selection | `#0f8a72` | `#5fdcbc` |
+| `wire` | Accent: buttons, links, selection | `#0e7e68` | `#5fdcbc` |
 | `wire-soft` | Accent tint: selected chips, callouts | `#eaf8f3` | `#1d4a40` |
-| `overdue` | Overdue tasks, destructive actions | `#e0484d` | `#ff6b6b` |
+| `overdue` | Overdue tasks, destructive actions | `#c64044` | `#ff6b6b` |
 | `overdue-soft` | Overdue row background | `#fff4f4` | `#3a1c1e` |
-| `done` | Done confirmation | `#0f8a72` | `#5fdcbc` |
+| `done` | Done confirmation | `#0e7e68` | `#5fdcbc` |
+
+In the light theme, `ink`, `muted`, `wire`, `overdue` and `done` reach a contrast of at least 4.5:1 on every background (`paper`, `frame`, `fill`, `wire-soft`, `overdue-soft`), and white text reaches it on `wire`. `src/styles/contrast.test.ts` checks this, so a new light color can't quietly fall below it (MF-43).
 
 The lilac `note` colors in the wireframes are only for design notes and are not part of the app.
 

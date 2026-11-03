@@ -24,6 +24,20 @@ export interface Task {
   deletion: TaskDeletion | null
 }
 
+// A task on its owner's dashboard, with the names of where it belongs.
+export interface PendingTask {
+  id: string
+  description: string
+  deadline: string
+  status: TaskStatus
+  teamId: string
+  teamName: string
+  seriesId: string
+  seriesName: string
+  meetingId: string
+  meetingScheduledAt: string
+}
+
 export interface TaskDeletion {
   byName: string
   at: string
@@ -63,6 +77,7 @@ export type TaskFieldChange =
 
 const tasksKey = (meetingId: string) => [...meetingKey(meetingId), 'tasks']
 const taskKey = (taskId: string) => ['tasks', taskId]
+const PENDING_TASKS = ['pending-tasks']
 const taskPath = (taskId: string) => `/tasks/${encodeURIComponent(taskId)}`
 const JSON_HEADERS = { 'Content-Type': 'application/json' }
 
@@ -80,6 +95,14 @@ function originPath(origin: TaskOrigin): string {
   return 'decisionId' in origin
     ? `/decisions/${encodeURIComponent(origin.decisionId)}/tasks`
     : `/agenda-items/${encodeURIComponent(origin.agendaItemId)}/tasks`
+}
+
+// What the current user still has to do across their teams, soonest deadline first.
+export function usePendingTasks() {
+  return useQuery({
+    queryKey: PENDING_TASKS,
+    queryFn: () => apiFetch<PendingTask[]>('/users/me/tasks'),
+  })
 }
 
 // The tasks created in a meeting, oldest first. Every member of the team can read them.
@@ -132,6 +155,7 @@ export function useChangeTask(context: AgendaContext) {
       }),
     onSettled: async (_data, error, { taskId }) => {
       await queryClient.invalidateQueries({ queryKey: taskKey(taskId) })
+      await queryClient.invalidateQueries({ queryKey: PENDING_TASKS })
       if (error instanceof ApiError && error.status === 409) {
         await queryClient.invalidateQueries({ queryKey: seriesMeetingsKey(context.seriesId) })
       }

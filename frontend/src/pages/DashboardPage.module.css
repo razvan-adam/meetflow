@@ -18,6 +18,75 @@
   font-size: 22px;
 }
 
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sub {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  padding: 4px 12px;
+  background: var(--frame);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--wire-soft);
+  border-color: var(--wire);
+}
+
+.summary {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.summary b {
+  color: var(--ink);
+}
+
+.summary .overdue,
+.summary .overdue b {
+  color: var(--overdue);
+}
+
+.doneNote {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.error,
+.rowError {
+  margin: 0;
+  color: var(--overdue);
+  font-size: 14px;
+}
+
+.rowError {
+  flex-basis: 100%;
+}
+
 .empty {
   margin: 0;
   padding: 14px;

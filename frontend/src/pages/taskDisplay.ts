@@ -2,6 +2,8 @@ import { ApiError } from '../api/client.ts'
 import type { Task, TaskDeletion, TaskStatus } from '../api/tasks.ts'
 import { formatMeetingTime, toDateAndTime } from './meetingTime.ts'
 
+type Deadlined = Pick<Task, 'status' | 'deadline'>
+
 export const TASK_STATUS_LABELS: Record<TaskStatus, string> = {
   OPEN: 'Open',
   IN_PROGRESS: 'In progress',
@@ -28,7 +30,7 @@ export function todayDate(): string {
 
 // Overdue isn't a status: the task isn't done and its deadline is before today (YYYY-MM-DD). These
 // compare as text.
-export function isOverdue(task: Task, today: string): boolean {
+export function isOverdue(task: Deadlined, today: string): boolean {
   return task.status !== 'DONE' && task.deadline < today
 }
 
@@ -38,7 +40,7 @@ function daysBetween(from: string, to: string): number {
 }
 
 // "Due Fri 20 Nov 2026", saying how late it is in words when overdue, not only with a color.
-export function dueText(task: Task, today: string): string {
+export function dueText(task: Deadlined, today: string): string {
   const due = `Due ${formatDeadline(task.deadline)}`
   if (!isOverdue(task, today)) {
     return due

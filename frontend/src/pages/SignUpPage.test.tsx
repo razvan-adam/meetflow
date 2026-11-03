@@ -23,7 +23,7 @@ describe('SignUpPage', () => {
 
     await fillInAndSubmit()
 
-    expect(await screen.findByRole('heading', { name: 'Your tasks' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'My tasks' })).toBeInTheDocument()
     expect(screen.getByText('Ana Costa')).toBeInTheDocument()
     expect(requestBody(fetchMock, 'POST /api/users')).toEqual({
       name: 'Ana Costa',

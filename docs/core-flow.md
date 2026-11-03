@@ -89,7 +89,7 @@ When the organizer creates the next meeting of the series, the cycle starts agai
 - **open** – created, not started.
 - **in progress** – the owner has started working on it.
 - **done** – completed. A done task can be reopened if needed.
-- **Overdue** is not a separate status: it is any task that is not done and whose deadline has passed. It is highlighted in the dashboard, the agenda and the minutes. The screens say how many days overdue it is, counted to today in the viewer's time zone; the minutes are a record, so they use the meeting's date.
+- **Overdue** is not a separate status: it is any task that is not done and whose deadline has passed. It is highlighted in the dashboard, the agenda and the minutes. The screens say how many days overdue it is, counted to today in the viewer's time zone; the minutes are a record, so they use the date the meeting was held.
 - Only the task owner and the organizer of the task's meeting series can update a task. The owner can change its status; the organizer can change its status, owner and deadline.
 - A task can never be left without an owner. Before a member is removed from the team, a team admin must reassign each of their open tasks to another team member or remove it, and reassign the organizer of any series the member runs. The removal cannot be completed until this is done.
 - Every change to a task's status, owner, deadline or description is stored with who made it and when (status history), so the minutes and the meeting history can show how a commitment evolved. The one exception is rewording during the task's own meeting, which is a correction: nobody has been sent the task yet.
@@ -170,3 +170,10 @@ Resolved while building MF-19:
 18. **Done and reopened tasks on the agenda** – a task marked done before the next meeting starts leaves that meeting's agenda. One marked done during the meeting stays on its list, showing as done, because that is the review the meeting records. A reopened task joins the series' next meeting if it is scheduled or running, unless that is the task's own meeting.
 19. **Removed tasks on the agenda** – a removed task never carries over again. The meeting it is removed in, and every closed meeting that reviewed it, show it in a separate "Removed commitments" section, struck through, with who removed it and when.
 20. **What carries over with an agenda item** – only its title. Its notes stay on the meeting they were taken in.
+
+Resolved while building MF-22:
+
+21. **What the minutes email holds** – a short summary with a link to the full minutes: decisions, new tasks, open commitments, tasks removed during the meeting and what wasn't covered. Notes and commitments marked done stay in the app.
+22. **The record and today** – the minutes keep each task's wording, owner, deadline and status as they were at closing. They also say how a task stands today ("Now done", "Removed since"), so nobody acts on stale information. A closed meeting's page shows a task as it read at closing too, and says if it has been reworded since.
+23. **The meeting's date in the minutes** – the date it actually started, in the time zone of the organizer who closed it, so everyone reads the same date and the same overdue days wherever they are. Overdue days count to that date: a task due before a meeting held late was overdue when it was reviewed, whatever the plan said. If the meeting was held on another day than planned, the minutes also show the planned date.
+24. **Saying the minutes were emailed** – the minutes page says "emailed" only once every participant's email has gone out, and shows how many have been sent until then.

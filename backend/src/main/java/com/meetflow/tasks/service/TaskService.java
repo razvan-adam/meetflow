@@ -20,6 +20,7 @@ import com.meetflow.tasks.repository.TaskRepository;
 import com.meetflow.teams.TeamMembers;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -72,8 +73,9 @@ public class TaskService {
             .toList();
     var seriesNames =
         meetings.seriesNamesOf(found.stream().map(Task::getSeriesId).distinct().toList());
-    var meetingTimes =
-        meetings.scheduledTimesOf(found.stream().map(Task::getMeetingId).distinct().toList());
+    var meetingIds = found.stream().map(Task::getMeetingId).distinct().toList();
+    var meetingTimes = meetings.scheduledTimesOf(meetingIds);
+    var closedMeetings = meetings.closedAmong(meetingIds);
     return found.stream()
         .map(
             task ->
@@ -87,15 +89,16 @@ public class TaskService {
                     task.getSeriesId(),
                     requireNonNull(seriesNames.get(task.getSeriesId())),
                     task.getMeetingId(),
-                    requireNonNull(meetingTimes.get(task.getMeetingId()))))
+                    requireNonNull(meetingTimes.get(task.getMeetingId())),
+                    closedMeetings.contains(task.getMeetingId())))
         .toList();
   }
 
   /** The tasks created in the meeting, oldest first. */
   @Transactional(readOnly = true)
   public List<TaskResponse> listForMeeting(UUID userId, UUID meetingId) {
-    meetings.requireVisibleMeeting(userId, meetingId);
-    return toResponses(tasks.findRecordedInMeeting(meetingId));
+    var closedAt = meetings.closedAt(userId, meetingId);
+    return asRecorded(tasks.findRecordedInMeeting(meetingId), closedAt);
   }
 
   /**
@@ -105,8 +108,24 @@ public class TaskService {
    */
   @Transactional(readOnly = true)
   public List<TaskResponse> listCarriedOver(UUID userId, UUID meetingId) {
-    var closed = meetings.isClosed(userId, meetingId);
-    return toResponses(tasks.findCarriedOverTo(meetingId, closed));
+    var closedAt = meetings.closedAt(userId, meetingId);
+    return asRecorded(tasks.findCarriedOverTo(meetingId, closedAt != null), closedAt);
+  }
+
+  /**
+   * A closed meeting is a record, so its lists also say how a task reworded since then read when it
+   * closed: that is the old wording of its first rewording after that moment.
+   */
+  private List<TaskResponse> asRecorded(List<Task> found, @Nullable Instant closedAt) {
+    if (closedAt == null || found.isEmpty()) {
+      return toResponses(found, Map.of());
+    }
+    var wordings = new HashMap<UUID, String>();
+    for (var change :
+        changes.findRewordingsSince(found.stream().map(Task::getId).toList(), closedAt)) {
+      wordings.putIfAbsent(change.getTaskId(), requireNonNull(change.getOldDescription()));
+    }
+    return toResponses(found, wordings);
   }
 
   @Transactional(readOnly = true)
@@ -298,10 +317,10 @@ public class TaskService {
   }
 
   private TaskResponse toResponse(Task task) {
-    return toResponses(List.of(task)).getFirst();
+    return toResponses(List.of(task), Map.of()).getFirst();
   }
 
-  private List<TaskResponse> toResponses(List<Task> found) {
+  private List<TaskResponse> toResponses(List<Task> found, Map<UUID, String> wordingsAtClose) {
     var names =
         users.namesOf(
             found.stream()
@@ -316,11 +335,16 @@ public class TaskService {
                 .filter(Objects::nonNull)
                 .distinct()
                 .toList());
-    return found.stream().map(task -> toResponse(task, names, meetingTimes)).toList();
+    return found.stream()
+        .map(task -> toResponse(task, wordingsAtClose.get(task.getId()), names, meetingTimes))
+        .toList();
   }
 
   private static TaskResponse toResponse(
-      Task task, Map<UUID, String> names, Map<UUID, Instant> meetingTimes) {
+      Task task,
+      @Nullable String descriptionAtClose,
+      Map<UUID, String> names,
+      Map<UUID, Instant> meetingTimes) {
     return new TaskResponse(
         task.getId(),
         task.getTeamId(),
@@ -329,6 +353,7 @@ public class TaskService {
         task.getAgendaItemId(),
         task.getDecisionId(),
         task.getDescription(),
+        descriptionAtClose,
         task.getOwnerId(),
         names.getOrDefault(task.getOwnerId(), ""),
         task.getDeadline(),

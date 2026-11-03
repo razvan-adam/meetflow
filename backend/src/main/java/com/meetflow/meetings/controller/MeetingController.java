@@ -1,12 +1,14 @@
 package com.meetflow.meetings.controller;
 
 import com.meetflow.identity.CurrentUser;
+import com.meetflow.meetings.dto.CloseMeetingRequest;
 import com.meetflow.meetings.dto.MeetingRequest;
 import com.meetflow.meetings.dto.MeetingResponse;
 import com.meetflow.meetings.service.MeetingService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -60,7 +62,10 @@ class MeetingController {
   }
 
   @PostMapping("/api/meetings/{meetingId}/close")
-  MeetingResponse close(@AuthenticationPrincipal CurrentUser user, @PathVariable UUID meetingId) {
-    return meetingService.close(user.id(), meetingId);
+  MeetingResponse close(
+      @AuthenticationPrincipal CurrentUser user,
+      @PathVariable UUID meetingId,
+      @RequestBody(required = false) @Nullable CloseMeetingRequest request) {
+    return meetingService.close(user.id(), meetingId, request == null ? null : request.timeZone());
   }
 }

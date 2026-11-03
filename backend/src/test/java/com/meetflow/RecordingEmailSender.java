@@ -6,6 +6,7 @@ import com.meetflow.notifications.service.EmailSender;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.annotation.Primary;
 
 /**
@@ -19,9 +20,11 @@ public class RecordingEmailSender implements EmailSender {
 
   private volatile boolean failing;
 
+  private volatile @Nullable String failingFor;
+
   @Override
   public String send(EmailMessage message) {
-    if (failing) {
+    if (failing || message.to().equals(failingFor)) {
       throw new EmailNotSentException(new IllegalStateException("Provider down (test)"));
     }
     sent.add(message);
@@ -38,6 +41,11 @@ public class RecordingEmailSender implements EmailSender {
 
   public long countTo(String address) {
     return sent.stream().filter(message -> message.to().equals(address)).count();
+  }
+
+  /** Fails for this one address only, or for none if null. */
+  public void setFailingFor(@Nullable String address) {
+    this.failingFor = address;
   }
 
   public void setFailing(boolean failing) {

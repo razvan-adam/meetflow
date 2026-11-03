@@ -35,6 +35,7 @@ const CONTRACT: Task = {
   agendaItemId: '11111111-1111-4111-8111-111111111111',
   decisionId: null,
   description: 'Sign the contract',
+  descriptionAtClose: null,
   ownerId: BO.id,
   ownerName: BO.name,
   deadline: '2999-11-20',

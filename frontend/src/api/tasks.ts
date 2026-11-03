@@ -15,6 +15,8 @@ export interface Task {
   // Null for a task that came straight from the agenda item.
   decisionId: string | null
   description: string
+  // On a closed meeting's list, how it read at closing if it has been reworded since; otherwise null.
+  descriptionAtClose: string | null
   ownerId: string
   ownerName: string
   // A calendar date: YYYY-MM-DD.
@@ -36,6 +38,7 @@ export interface PendingTask {
   seriesName: string
   meetingId: string
   meetingScheduledAt: string
+  meetingClosed: boolean
 }
 
 export interface TaskDeletion {

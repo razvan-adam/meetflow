@@ -23,7 +23,6 @@ public class TaskChange implements Persistable<UUID> {
 
   @Id private UUID id;
 
-  @SuppressWarnings("UnusedVariable") // Changes are looked up by this column.
   private UUID taskId;
 
   @SuppressWarnings("UnusedVariable") // The table requires it.
@@ -120,6 +119,10 @@ public class TaskChange implements Persistable<UUID> {
   @Override
   public UUID getId() {
     return id;
+  }
+
+  public UUID getTaskId() {
+    return taskId;
   }
 
   public UUID getChangedBy() {

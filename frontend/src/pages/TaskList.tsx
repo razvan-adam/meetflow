@@ -45,6 +45,13 @@ export function TaskList({ tasks, label, ...row }: Props) {
 
 type RowProps = Omit<Props, 'tasks' | 'label'> & { task: Task; today: string }
 
+// A closed meeting shows a task as it read at closing, and says if it has been reworded since.
+function RewordedNote({ task }: { task: Task }) {
+  return task.descriptionAtClose ? (
+    <p className={styles.taskMeta}>Reworded since: {task.description}</p>
+  ) : null
+}
+
 function TaskRow({
   task,
   today,
@@ -65,12 +72,13 @@ function TaskRow({
         <div className={styles.taskMain}>
           <p className={styles.taskDescription}>
             <s>
-              <Link to={`/tasks/${task.id}`}>{task.description}</Link>
+              <Link to={`/tasks/${task.id}`}>{task.descriptionAtClose ?? task.description}</Link>
             </s>
           </p>
           <p className={styles.taskMeta}>
             {task.ownerName} · {deletionText(task.deletion)}
           </p>
+          <RewordedNote task={task} />
         </div>
         <span className={styles.taskDue}>Due {formatDeadline(task.deadline)}</span>
       </li>
@@ -139,13 +147,14 @@ function TaskRow({
     <li className={styles.task} data-overdue={isOverdue(task, today) || undefined}>
       <div className={styles.taskMain}>
         <p className={styles.taskDescription}>
-          <Link to={`/tasks/${task.id}`}>{task.description}</Link>
+          <Link to={`/tasks/${task.id}`}>{task.descriptionAtClose ?? task.description}</Link>
         </p>
         <p className={styles.taskMeta}>
           {canChangeStatus(task)
             ? task.ownerName
             : `${task.ownerName} · ${TASK_STATUS_LABELS[task.status]}`}
         </p>
+        <RewordedNote task={task} />
       </div>
       <span className={styles.taskDue}>{dueText(task, today)}</span>
       {(canChangeStatus(task) || canCorrect) && (

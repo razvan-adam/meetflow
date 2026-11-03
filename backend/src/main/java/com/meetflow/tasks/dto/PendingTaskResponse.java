@@ -16,4 +16,5 @@ public record PendingTaskResponse(
     UUID seriesId,
     String seriesName,
     UUID meetingId,
-    Instant meetingScheduledAt) {}
+    Instant meetingScheduledAt,
+    boolean meetingClosed) {}

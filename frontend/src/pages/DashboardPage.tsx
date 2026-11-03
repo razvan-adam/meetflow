@@ -148,7 +148,13 @@ function PendingTaskRow({ task, today, onChange }: RowProps) {
         </p>
         <p className={liveStyles.taskMeta}>
           {task.teamName} · {task.seriesName} ·{' '}
-          <Link to={`/meetings/${task.meetingId}`}>
+          <Link
+            to={
+              task.meetingClosed
+                ? `/meetings/${task.meetingId}/minutes`
+                : `/meetings/${task.meetingId}`
+            }
+          >
             from the meeting of {formatDeadline(toDateAndTime(task.meetingScheduledAt).date)}
           </Link>
         </p>

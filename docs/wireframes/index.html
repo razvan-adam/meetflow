@@ -176,6 +176,8 @@ tr.is-overdue td { background: var(--overdue-soft); }
 .item-block .note { color: var(--muted); font-size: 14px; }
 .item-block ul { margin: 0; padding-left: 18px; font-size: 14px; }
 
+.note-today { display: block; color: var(--muted); font-size: 13px; }
+
 /* History */
 .series-group { display: grid; gap: 6px; }
 .meeting-row { display: grid; grid-template-columns: 130px minmax(0, 1fr) auto; gap: 4px 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; align-items: start; text-decoration: none; color: var(--ink); }
@@ -640,7 +642,7 @@ a.list-row:hover { background: var(--fill); }
             <div class="table-wrap"><table>
               <thead><tr><th>Task</th><th>Owner</th><th>Deadline</th><th>Status</th></tr></thead>
               <tbody>
-                <tr class="is-overdue"><td>Renegotiate pallet rates with Translog</td><td>Marta Ruiz</td><td class="num">23 Oct · overdue</td><td>Open → In progress</td></tr>
+                <tr class="is-overdue"><td>Renegotiate pallet rates with Translog</td><td>Marta Ruiz</td><td class="num">23 Oct · overdue</td><td>Open → In progress<span class="note-today">Now done</span></td></tr>
                 <tr><td>Fix scanner sync errors at dock 3</td><td>Jonas Berg</td><td class="num">28 Oct</td><td>Open</td></tr>
                 <tr><td>Update the carrier contact list</td><td>Ana Costa</td><td class="num">23 Oct</td><td>Done</td></tr>
               </tbody>
@@ -673,7 +675,9 @@ a.list-row:hover { background: var(--fill); }
         <li>Generated when the meeting is closed. Nobody can edit them.</li>
         <li>Order: participants, open commitments, agenda with notes and decisions, new tasks.</li>
         <li>Status changes made in the meeting are shown as before → after.</li>
-        <li>The same content is the minutes email (E2).</li>
+        <li>Each task also says how it stands today when that differs from the record ("Now done", "Removed since").</li>
+        <li>Says "emailed" only once every participant's email has gone out.</li>
+        <li>The email (E2) is a short summary of this page, with a link to it.</li>
       </ul></div>
       <div class="sticky"><h3>Ask testers</h3><ul>
         <li>Would you forward this to someone who wasn't there?</li>

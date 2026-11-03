@@ -22,7 +22,9 @@ import com.meetflow.meetings.repository.AgendaItemRepository;
 import com.meetflow.meetings.repository.MeetingRepository;
 import com.meetflow.teams.TeamMembers;
 import java.text.Collator;
+import java.time.DateTimeException;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -33,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -142,16 +145,30 @@ public class MeetingService {
 
   /**
    * Closes a running meeting, which locks it. Organizer only. Items nobody marked count as not
-   * covered, and other modules react to the published event once this transaction commits.
+   * covered. Other modules react to the published event: some in this transaction, because the
+   * meeting must not close without them, and others, such as emails, once it commits.
    */
   @Transactional
-  public MeetingResponse close(UUID userId, UUID meetingId) {
+  public MeetingResponse close(UUID userId, UUID meetingId, @Nullable String timeZone) {
     var meeting = lockRunningMeeting(userId, meetingId);
     agendaItems.findByMeetingIdOrderByPosition(meetingId).forEach(AgendaItem::settleOnClosing);
     meeting.close(userId);
     events.publishEvent(
-        new MeetingClosedEvent(meeting.getId(), meeting.getTeamId(), meeting.getSeriesId()));
+        new MeetingClosedEvent(
+            meeting.getId(), meeting.getTeamId(), meeting.getSeriesId(), validZone(timeZone)));
     return toResponse(meeting, names(List.of(meeting)));
+  }
+
+  /** A wrong time zone must not stop a meeting from closing, nor reach the event table. */
+  private static String validZone(@Nullable String timeZone) {
+    if (timeZone == null) {
+      return "UTC";
+    }
+    try {
+      return ZoneId.of(timeZone).getId();
+    } catch (DateTimeException e) {
+      return "UTC";
+    }
   }
 
   /** The meeting, if the user is a member of its team; otherwise 404, as if it didn't exist. */
@@ -166,6 +183,14 @@ public class MeetingService {
   public Map<UUID, Instant> scheduledTimesOf(Collection<UUID> meetingIds) {
     return meetings.findAllById(meetingIds).stream()
         .collect(Collectors.toMap(Meeting::getId, Meeting::getScheduledAt));
+  }
+
+  /** Those of the meetings that are closed. */
+  public Set<UUID> closedAmong(Collection<UUID> meetingIds) {
+    return meetings.findAllById(meetingIds).stream()
+        .filter(meeting -> meeting.getStatus() == MeetingStatus.CLOSED)
+        .map(Meeting::getId)
+        .collect(Collectors.toSet());
   }
 
   /** The series' meeting that is running right now, if any. */

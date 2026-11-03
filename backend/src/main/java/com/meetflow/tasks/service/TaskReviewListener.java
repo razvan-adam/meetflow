@@ -4,6 +4,8 @@ import com.meetflow.meetings.MeetingClosedEvent;
 import com.meetflow.meetings.MeetingScheduledEvent;
 import com.meetflow.tasks.repository.TaskRepository;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,7 +27,9 @@ class TaskReviewListener {
     tasks.reviewOpenTasks(event.meetingId(), event.seriesId());
   }
 
+  // First, so the minutes generated in this same transaction can read it.
   @EventListener
+  @Order(Ordered.HIGHEST_PRECEDENCE)
   void on(MeetingClosedEvent event) {
     tasks.recordStatusAtClose(event.meetingId());
   }

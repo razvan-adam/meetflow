@@ -8,7 +8,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * {@code decisionId} is null for a task that came straight from the agenda item, and {@code
- * deletion} for a task that hasn't been deleted.
+ * deletion} for a task that hasn't been deleted. {@code descriptionAtClose} is only set on a closed
+ * meeting's list, for a task reworded since it closed: the meeting's record keeps the old wording.
  */
 public record TaskResponse(
     UUID id,
@@ -18,6 +19,7 @@ public record TaskResponse(
     UUID agendaItemId,
     @Nullable UUID decisionId,
     String description,
+    @Nullable String descriptionAtClose,
     UUID ownerId,
     String ownerName,
     LocalDate deadline,

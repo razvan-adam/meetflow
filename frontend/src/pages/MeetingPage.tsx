@@ -60,7 +60,7 @@ export function MeetingPage() {
           <span>
             <strong>This meeting was closed</strong> on {formatMeetingTime(meeting.data.closedAt)}.
             Its agenda, notes and decisions can no longer be changed; its tasks can still be
-            updated.
+            updated. <Link to={`/meetings/${meeting.data.id}/minutes`}>View the minutes</Link>
           </span>
         </p>
       )}

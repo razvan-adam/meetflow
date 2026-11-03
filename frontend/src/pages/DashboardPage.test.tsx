@@ -21,6 +21,7 @@ const CONTRACT: PendingTask = {
   seriesName: 'Weekly ops sync',
   meetingId: '7e6d5c4b-3a29-4180-9f8e-7d6c5b4a3928',
   meetingScheduledAt: '2026-11-02T12:00:00.000Z',
+  meetingClosed: false,
 }
 const BUDGET: PendingTask = {
   ...CONTRACT,
@@ -67,6 +68,16 @@ describe('the pending-tasks dashboard', () => {
     )
     expect(within(row).getByText(/^Due /)).toBeVisible()
     expect(within(row).getByRole('combobox')).toHaveValue('OPEN')
+  })
+
+  it('links a task from a closed meeting to its minutes', async () => {
+    api({ [PENDING]: () => Response.json([{ ...CONTRACT, meetingClosed: true }]) })
+    renderApp('/')
+
+    expect(await screen.findByRole('link', { name: /from the meeting of/ })).toHaveAttribute(
+      'href',
+      `/meetings/${CONTRACT.meetingId}/minutes`,
+    )
   })
 
   it('keeps the soonest deadline first and highlights overdue tasks', async () => {

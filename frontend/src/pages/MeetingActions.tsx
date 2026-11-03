@@ -56,6 +56,7 @@ export function MeetingActions({ meeting, canRun }: Props) {
       {canRun && meeting.status === 'IN_PROGRESS' && confirming && (
         <CloseConfirmation
           meetingId={meeting.id}
+          participants={meeting.participants.length}
           pending={close.isPending}
           onConfirm={() => close.mutate(undefined, { onSettled: () => setConfirming(false) })}
           onCancel={() => setConfirming(false)}
@@ -72,6 +73,7 @@ export function MeetingActions({ meeting, canRun }: Props) {
 
 interface CloseConfirmationProps {
   meetingId: string
+  participants: number
   pending: boolean
   onConfirm: () => void
   onCancel: () => void
@@ -79,7 +81,13 @@ interface CloseConfirmationProps {
 
 // Focus starts on the safe choice, so pressing Enter by accident doesn't close the meeting. Closing
 // waits for notes still being saved, since they would be rejected once the meeting is closed.
-function CloseConfirmation({ meetingId, pending, onConfirm, onCancel }: CloseConfirmationProps) {
+function CloseConfirmation({
+  meetingId,
+  participants,
+  pending,
+  onConfirm,
+  onCancel,
+}: CloseConfirmationProps) {
   const { data: items = [] } = useAgendaItems(meetingId)
   const saving = useSavingNotesCount(meetingId) > 0
   const unmarked = items.filter((item) => item.status === 'PENDING').length
@@ -96,6 +104,11 @@ function CloseConfirmation({ meetingId, pending, onConfirm, onCancel }: CloseCon
               : `${unmarked} items aren’t marked, so they will count as not covered.`}
           </li>
         )}
+        <li>
+          {participants === 1
+            ? 'The minutes will be emailed to the 1 participant.'
+            : `The minutes will be emailed to all ${participants} participants.`}
+        </li>
       </ul>
       <div className={styles.bannerActions}>
         <button

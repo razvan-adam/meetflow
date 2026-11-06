@@ -1,6 +1,7 @@
 package com.meetflow.tasks.controller;
 
 import com.meetflow.identity.CurrentUser;
+import com.meetflow.tasks.dto.OpenTaskResponse;
 import com.meetflow.tasks.dto.PendingTaskResponse;
 import com.meetflow.tasks.dto.TaskChangeResponse;
 import com.meetflow.tasks.dto.TaskDeadlineRequest;
@@ -37,6 +38,12 @@ class TaskController {
   @GetMapping("/api/users/me/tasks")
   List<PendingTaskResponse> listPending(@AuthenticationPrincipal CurrentUser user) {
     return taskService.listPending(user.id());
+  }
+
+  @GetMapping("/api/teams/{teamId}/open-tasks")
+  List<OpenTaskResponse> listOpenInTeam(
+      @AuthenticationPrincipal CurrentUser user, @PathVariable UUID teamId) {
+    return taskService.listOpenInTeam(user.id(), teamId);
   }
 
   @GetMapping("/api/meetings/{meetingId}/tasks")

@@ -51,3 +51,47 @@ export function useCreateTeam() {
     },
   })
 }
+
+// Team admins make a member an admin or take their admin rights (MF-11). A team always keeps at
+// least one admin, so taking the last one's rights fails with 409.
+export function useChangeRole(teamId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ memberId, role }: { memberId: string; role: Member['role'] }) =>
+      apiFetch<Member>(
+        `/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(memberId)}/role`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role }),
+        },
+      ),
+    // The members list, and the current user's own role if they changed it.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: TEAMS }),
+  })
+}
+
+// Each open task goes to another member, or is removed when newOwnerId is null.
+export interface Handover {
+  tasks: { taskId: string; newOwnerId: string | null }[]
+  series: { seriesId: string; organizerId: string }[]
+}
+
+// Team admins remove a member once each of their open tasks and series is handed over (MF-11).
+// It fails with 409 if their work changed meanwhile, and nothing is changed then.
+export function useRemoveMember(teamId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ memberId, handover }: { memberId: string; handover: Handover }) =>
+      apiFetch<void>(
+        `/teams/${encodeURIComponent(teamId)}/members/${encodeURIComponent(memberId)}/removal`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(handover),
+        },
+      ),
+    // Tasks, series, meetings and the team itself can all change, so everything is read again.
+    onSettled: () => queryClient.invalidateQueries(),
+  })
+}

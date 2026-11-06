@@ -9,6 +9,7 @@ import com.meetflow.notifications.TaskSummaryMailer;
 import com.meetflow.tasks.domain.Task;
 import com.meetflow.tasks.domain.TaskChange;
 import com.meetflow.tasks.domain.TaskStatus;
+import com.meetflow.tasks.dto.OpenTaskResponse;
 import com.meetflow.tasks.dto.PendingTaskResponse;
 import com.meetflow.tasks.dto.TaskChangeResponse;
 import com.meetflow.tasks.dto.TaskEmailsResponse;
@@ -103,6 +104,25 @@ public class TaskService {
                     task.getMeetingId(),
                     requireNonNull(meetingTimes.get(task.getMeetingId())),
                     closedMeetings.contains(task.getMeetingId())))
+        .toList();
+  }
+
+  /**
+   * The team's tasks that aren't done or removed, soonest deadline first, for the members page
+   * (MF-11). Any member of the team can see them, as they can each task.
+   */
+  @Transactional(readOnly = true)
+  public List<OpenTaskResponse> listOpenInTeam(UUID userId, UUID teamId) {
+    teamMembers.requireMember(userId, teamId);
+    return tasks.findOpenInTeam(teamId).stream()
+        .map(
+            task ->
+                new OpenTaskResponse(
+                    task.getId(),
+                    task.getDescription(),
+                    task.getOwnerId(),
+                    task.getDeadline(),
+                    task.getStatus()))
         .toList();
   }
 

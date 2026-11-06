@@ -13,6 +13,9 @@ import org.jspecify.annotations.Nullable;
  * @param meetingDate the date it was actually held, in the organizer's time zone, fixed here so
  *     everyone reads the same date and the same overdue days
  * @param scheduledDate the date it was planned for, in the same time zone
+ * @param participantIds who was there, including anyone removed from the team during the meeting
+ * @param recipientIds the participants still in the team when it closed, who are emailed the
+ *     minutes; null in minutes written before it was recorded, where it is every participant
  * @param commitments the tasks carried over to the meeting, with those removed during it
  */
 public record MinutesContent(
@@ -23,6 +26,7 @@ public record MinutesContent(
     Instant closedAt,
     UUID closedBy,
     List<UUID> participantIds,
+    @Nullable List<UUID> recipientIds,
     List<Task> commitments,
     List<Item> agenda,
     List<Task> newTasks) {

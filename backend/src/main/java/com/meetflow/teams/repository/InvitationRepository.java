@@ -28,6 +28,13 @@ public interface InvitationRepository extends JpaRepository<Invitation, UUID> {
       ORDER BY i.createdAt DESC""")
   List<Invitation> findPending(UUID teamId, Instant now);
 
+  /** Cancels the invitations to the team that the user sent and that weren't accepted. */
+  @Modifying
+  @Query(
+      "DELETE FROM Invitation i"
+          + " WHERE i.teamId = :teamId AND i.invitedBy = :userId AND i.acceptedAt IS NULL")
+  void deleteUnacceptedSentBy(UUID teamId, UUID userId);
+
   /** Removes the email's earlier invitations to the team that weren't accepted. */
   @Modifying
   @Query(

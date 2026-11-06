@@ -69,7 +69,7 @@ Screens are referred to by the IDs in *Key screens* below. Example data used thr
 
 1. Opens the team's members (S11) from the team page and chooses to remove a member. Each member shows the series they organize and how many open tasks they have.
 2. Before the removal can be confirmed, reassigns each of the member's open tasks to another team member or removes it, and reassigns the organizer of any series they run.
-3. Confirms the removal; the member immediately loses access to the team and is taken off its meetings still to come.
+3. Confirms the removal; the member immediately loses access to the team, is taken off its meetings still to come, and the invitations they sent are cancelled.
 4. Separately, can make members admins or remove admin rights, keeping at least one admin.
 
 ## Story coverage

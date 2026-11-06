@@ -74,6 +74,7 @@ public class MinutesService {
             meeting.closedAt(),
             meeting.closedBy(),
             List.copyOf(meeting.participantIds()),
+            teamMembers.membersAmong(meeting.participantIds(), meeting.teamId()),
             toContent(tasks.carriedOverToClosing(meeting.id()), meetingDate),
             meeting.agenda().stream().map(MinutesService::toContent).toList(),
             toContent(tasks.createdInClosing(meeting.id()), meetingDate));
@@ -95,7 +96,7 @@ public class MinutesService {
             Stream.concat(content.commitments().stream(), content.newTasks().stream())
                 .map(MinutesContent.Task::id)
                 .toList());
-    var recipients = users.emailsOf(content.participantIds()).values();
+    var recipients = users.emailsOf(recipientIdsOf(content)).values();
     var byName = Collator.getInstance(Locale.ENGLISH);
     var participants =
         content.participantIds().stream()
@@ -146,7 +147,12 @@ public class MinutesService {
             .filter(item -> !item.covered())
             .map(MinutesContent.Item::title)
             .toList(),
-        List.copyOf(users.emailsOf(content.participantIds()).values()));
+        List.copyOf(users.emailsOf(recipientIdsOf(content)).values()));
+  }
+
+  private static List<UUID> recipientIdsOf(MinutesContent content) {
+    var recipientIds = content.recipientIds();
+    return recipientIds == null ? content.participantIds() : recipientIds;
   }
 
   private MinutesContent read(Minutes stored) {

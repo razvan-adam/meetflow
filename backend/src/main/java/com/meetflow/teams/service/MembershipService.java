@@ -9,6 +9,7 @@ import com.meetflow.teams.dto.RemovalRequest;
 import com.meetflow.teams.exception.InvalidHandoverException;
 import com.meetflow.teams.exception.LastAdminException;
 import com.meetflow.teams.exception.TeamNotFoundException;
+import com.meetflow.teams.repository.InvitationRepository;
 import com.meetflow.teams.repository.TeamMembershipRepository;
 import com.meetflow.teams.repository.TeamRepository;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ public class MembershipService {
 
   private final TeamRepository teams;
   private final TeamMembershipRepository memberships;
+  private final InvitationRepository invitations;
   private final TeamAccess access;
   private final UserDirectory users;
   private final ApplicationEventPublisher events;
@@ -37,11 +39,13 @@ public class MembershipService {
   MembershipService(
       TeamRepository teams,
       TeamMembershipRepository memberships,
+      InvitationRepository invitations,
       TeamAccess access,
       UserDirectory users,
       ApplicationEventPublisher events) {
     this.teams = teams;
     this.memberships = memberships;
+    this.invitations = invitations;
     this.access = access;
     this.users = users;
     this.events = events;
@@ -69,7 +73,8 @@ public class MembershipService {
    * and each series they organize has a new organizer. Everything happens in one transaction: if
    * the handover doesn't match what the member has now (409) or names someone who can't take it
    * (400), nothing changes. The member loses access at once, because every request checks the
-   * membership.
+   * membership, and the invitations they sent that weren't accepted are cancelled, so none of them
+   * can bring them back.
    */
   @Transactional
   public void remove(UUID adminId, UUID teamId, UUID memberId, RemovalRequest handover) {
@@ -78,6 +83,7 @@ public class MembershipService {
       requireAnotherAdmin(teamId);
     }
     events.publishEvent(toEvent(teamId, memberId, adminId, handover));
+    invitations.deleteUnacceptedSentBy(teamId, memberId);
     memberships.delete(member);
   }
 

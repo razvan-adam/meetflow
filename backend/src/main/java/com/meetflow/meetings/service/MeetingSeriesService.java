@@ -5,6 +5,7 @@ import com.meetflow.meetings.domain.MeetingSeries;
 import com.meetflow.meetings.dto.SeriesResponse;
 import com.meetflow.meetings.exception.OrganizerNotMemberException;
 import com.meetflow.meetings.exception.SeriesNotFoundException;
+import com.meetflow.meetings.repository.MeetingRepository;
 import com.meetflow.meetings.repository.MeetingSeriesRepository;
 import com.meetflow.teams.TeamMembers;
 import java.text.Collator;
@@ -26,12 +27,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class MeetingSeriesService {
 
   private final MeetingSeriesRepository series;
+  private final MeetingRepository meetings;
   private final TeamMembers teamMembers;
   private final UserDirectory users;
 
   MeetingSeriesService(
-      MeetingSeriesRepository series, TeamMembers teamMembers, UserDirectory users) {
+      MeetingSeriesRepository series,
+      MeetingRepository meetings,
+      TeamMembers teamMembers,
+      UserDirectory users) {
     this.series = series;
+    this.meetings = meetings;
     this.teamMembers = teamMembers;
     this.users = users;
   }
@@ -71,8 +77,17 @@ public class MeetingSeriesService {
     if (!teamMembers.isMember(organizerId, found.getTeamId())) {
       throw new OrganizerNotMemberException();
     }
-    found.changeOrganizer(organizerId);
+    handOver(found, organizerId);
     return toResponse(found, names(List.of(found)));
+  }
+
+  /**
+   * Makes the member the series' organizer and a participant of its meeting that isn't closed, as
+   * the organizer always attends. The previous organizer stays a participant.
+   */
+  void handOver(MeetingSeries found, UUID organizerId) {
+    found.changeOrganizer(organizerId);
+    meetings.addParticipantToOpenMeeting(found.getId(), organizerId);
   }
 
   /** The series, if the user is a member of its team; otherwise 404, as if it didn't exist. */

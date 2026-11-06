@@ -75,7 +75,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 | `role` | text | `ADMIN` or `MEMBER` |
 | `joined_at` | timestamptz | |
 
-- Removing a member deletes the row, and takes them off the participants of meetings that haven't closed. Their participations in closed meetings, their decisions and their task history stay, because those reference `app_user`, not the membership.
+- Removing a member deletes the row, takes them off the participants of meetings that haven't started, and deletes the invitations to the team they sent that weren't accepted. Their participations in running and closed meetings, their decisions and their task history stay, because those reference `app_user`, not the membership.
 - "A team always has at least one admin" is checked in the service when a role changes or a member is removed.
 
 **`invitation`** – a single-use invitation sent by email.
@@ -266,7 +266,7 @@ Once `meeting.status` is `CLOSED`, the `meetings` and `tasks` services reject an
 
 ### Read-only minutes
 
-`minutes.content` is written once, when the meeting closes. It holds the participants, agenda, notes, decisions, new tasks and the status of reviewed tasks as they were at that moment. People are stored by user ID, and names are resolved when the minutes are shown, so a deleted account appears anonymized. The application has no update path for minutes, and a database trigger rejects `UPDATE` on the table. They are written in the transaction that closes the meeting, so a closed meeting always has them. Each task's status before the meeting comes from the first status change recorded during it, and its status at closing from `status_at_close`. The date the meeting was held (`started_at`) is fixed from the organizer's time zone, and overdue days are counted to it. The page says the minutes were emailed only once `email_delivery` has a row for every participant. When the minutes are shown, each task also says how it stands today; the record itself doesn't change. A closed meeting's task lists read how a task reworded since then read at closing from `task_change`.
+`minutes.content` is written once, when the meeting closes. It holds the participants, agenda, notes, decisions, new tasks and the status of reviewed tasks as they were at that moment. People are stored by user ID, and names are resolved when the minutes are shown, so a deleted account appears anonymized. The application has no update path for minutes, and a database trigger rejects `UPDATE` on the table. They are written in the transaction that closes the meeting, so a closed meeting always has them. Each task's status before the meeting comes from the first status change recorded during it, and its status at closing from `status_at_close`. The date the meeting was held (`started_at`) is fixed from the organizer's time zone, and overdue days are counted to it. They are emailed to the participants who were still team members at closing, kept in the content as the recipients (minutes written before that was recorded go to every participant). The page says the minutes were emailed only once `email_delivery` has a row for every recipient. When the minutes are shown, each task also says how it stands today; the record itself doesn't change. A closed meeting's task lists read how a task reworded since then read at closing from `task_change`.
 
 ### Status history
 

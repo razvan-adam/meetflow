@@ -2,13 +2,25 @@ package com.meetflow.teams;
 
 import static java.util.Objects.requireNonNull;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.jayway.jsonpath.JsonPath;
 import com.meetflow.IntegrationTest;
+import com.meetflow.RecordingEmailSender;
 import jakarta.servlet.http.Cookie;
 import java.io.UnsupportedEncodingException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +30,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MockMvcTester.MockMvcRequestBuilder;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * MF-11: managing a team's members, through the whole app. Ana is the admin of Ops team; Bo and Di
@@ -27,9 +40,20 @@ import org.springframework.test.web.servlet.assertj.MvcTestResult;
 @IntegrationTest
 class MemberManagementTests {
 
+  private static final Duration PATIENCE = Duration.ofSeconds(10);
+
   @Autowired MockMvcTester mvc;
 
   @Autowired JdbcTemplate jdbc;
+
+  @Autowired TransactionTemplate transaction;
+
+  @Autowired RecordingEmailSender emails;
+
+  final ExecutorService otherThreads = Executors.newCachedThreadPool();
+
+  /** Each user's email address, by name. */
+  final Map<String, String> emailByName = new HashMap<>();
 
   Cookie csrfToken;
 
@@ -90,6 +114,11 @@ class MemberManagementTests {
     assertThat(post(bo, "/api/meetings/" + closedMeeting + "/close", "{\"timeZone\": \"UTC\"}"))
         .hasStatusOk();
     nextMeeting = scheduleMeeting("2026-11-02T09:00:00Z");
+  }
+
+  @AfterEach
+  void tearDown() {
+    otherThreads.shutdownNow();
   }
 
   @Test
@@ -332,6 +361,155 @@ class MemberManagementTests {
     assertThat(get(ana, "/api/teams/" + teamId)).hasStatus(HttpStatus.NOT_FOUND);
   }
 
+  @Test
+  void aNewOrganizerJoinsTheSeriesNextMeeting() {
+    assertThat(
+            remove(
+                ana,
+                boId,
+                handover(
+                    List.of(removal(budgetTask), removal(hiringTask)),
+                    List.of(organizer(boSeries, diId)))))
+        .hasStatus(HttpStatus.NO_CONTENT);
+
+    assertThat(get(ana, "/api/meetings/" + nextMeeting))
+        .bodyJson()
+        .extractingPath("$.participants[*].name")
+        .isEqualTo(List.of("Ana Costa", "Di Moreau"));
+
+    // Handing the series over without removing anyone does the same, and keeps the old organizer.
+    assertThat(
+            send(
+                mvc.put().uri("/api/meeting-series/{s}/organizer", boSeries).cookie(ana),
+                "{\"organizerId\": \"%s\"}".formatted(anaId)))
+        .hasStatusOk();
+    assertThat(get(ana, "/api/meetings/" + nextMeeting))
+        .bodyJson()
+        .extractingPath("$.participants[*].name")
+        .isEqualTo(List.of("Ana Costa", "Di Moreau"));
+  }
+
+  @Test
+  void aMemberRemovedDuringAMeetingStaysOnItsRecordButIsNotEmailedItsMinutes() {
+    assertThat(post(bo, "/api/meetings/" + nextMeeting + "/start", "")).hasStatusOk();
+
+    assertThat(
+            remove(
+                ana,
+                boId,
+                handover(
+                    List.of(reassign(budgetTask, anaId), removal(hiringTask)),
+                    List.of(organizer(boSeries, diId)))))
+        .hasStatus(HttpStatus.NO_CONTENT);
+
+    // Di now runs the meeting, so Di attends it and can take on a task in it.
+    assertThat(get(ana, "/api/meetings/" + nextMeeting))
+        .bodyJson()
+        .extractingPath("$.participants[*].name")
+        .isEqualTo(List.of("Ana Costa", "Bo Lind", "Di Moreau"));
+    String item =
+        idOf(post(di, "/api/meetings/" + nextMeeting + "/agenda-items", "{\"title\": \"Next\"}"));
+    assertThat(
+            post(
+                di,
+                "/api/agenda-items/" + item + "/tasks",
+                "{\"description\": \"Book the venue\", \"ownerId\": \"%s\",".formatted(diId)
+                    + " \"deadline\": \"2026-11-30\"}"))
+        .hasStatus(HttpStatus.CREATED);
+    assertThat(post(di, "/api/meetings/" + nextMeeting + "/close", "{\"timeZone\": \"UTC\"}"))
+        .hasStatusOk();
+
+    var minutes = JsonPath.parse(body(get(ana, "/api/meetings/" + nextMeeting + "/minutes")));
+    assertThat(minutes.<List<String>>read("$.participants[*].name"))
+        .containsExactly("Ana Costa", "Bo Lind", "Di Moreau");
+    assertThat(minutes.<Integer>read("$.emailRecipients")).isEqualTo(2);
+    await().until(() -> !emails.to(emailOf("Di Moreau"), "Minutes: ").isEmpty());
+    await().until(() -> !emails.to(emailOf("Ana Costa"), "Minutes: ").isEmpty());
+    // Bo got the minutes of the meeting held while still in the team, but not of this one.
+    assertThat(emails.to(emailOf("Bo Lind"), "Minutes: ")).hasSize(1);
+  }
+
+  @Test
+  void removingAMemberCancelsTheInvitationsTheySent() {
+    assertThat(changeRole(ana, boId, "ADMIN")).hasStatusOk();
+    invite(ana, "fay@example.com");
+    invite(bo, "gus@example.com");
+
+    assertThat(
+            remove(
+                ana,
+                boId,
+                handover(
+                    List.of(removal(budgetTask), removal(hiringTask)),
+                    List.of(organizer(boSeries, anaId)))))
+        .hasStatus(HttpStatus.NO_CONTENT);
+
+    assertThat(get(ana, "/api/teams/" + teamId + "/invitations"))
+        .bodyJson()
+        .extractingPath("$[*].email")
+        .isEqualTo(List.of("fay@example.com"));
+  }
+
+  @Test
+  void aTaskRemovedAsTheMeetingClosesIsNotRemovedInThatMeeting() throws Exception {
+    assertThat(post(bo, "/api/meetings/" + nextMeeting + "/start", "")).hasStatusOk();
+    var removing = new AtomicReference<CompletableFuture<MvcTestResult>>();
+
+    // The meeting closes, as closing does, holding its row; the removal must wait for it to commit.
+    transaction.executeWithoutResult(
+        status -> {
+          jdbc.queryForList("SELECT id FROM meeting WHERE id = ?::uuid FOR UPDATE", nextMeeting);
+          jdbc.update(
+              "UPDATE meeting SET status = 'CLOSED', closed_at = now(), closed_by = ?::uuid"
+                  + " WHERE id = ?::uuid",
+              boId,
+              nextMeeting);
+          var other =
+              CompletableFuture.supplyAsync(
+                  () ->
+                      remove(
+                          ana,
+                          boId,
+                          handover(
+                              List.of(reassign(budgetTask, anaId), removal(hiringTask)),
+                              List.of(organizer(boSeries, anaId)))),
+                  otherThreads);
+          removing.set(other);
+          assertWaitsForALock(other);
+        });
+
+    assertThat(requireNonNull(removing.get()).get(PATIENCE.toSeconds(), TimeUnit.SECONDS))
+        .hasStatus(HttpStatus.NO_CONTENT);
+    var latest = JsonPath.parse(body(get(ana, "/api/tasks/" + hiringTask + "/changes")));
+    assertThat(latest.<Boolean>read("$[0].deleted")).isTrue();
+    assertThat(latest.<Boolean>read("$[0].duringMeeting")).isFalse();
+  }
+
+  /** pg_locks is live, unlike pg_stat_activity, which is frozen for the rest of a transaction. */
+  private void assertWaitsForALock(CompletableFuture<?> other) {
+    var deadline = Instant.now().plus(PATIENCE);
+    while (Instant.now().isBefore(deadline)) {
+      assertThat(other).as("it went ahead without waiting for the lock").isNotDone();
+      Long waiting =
+          jdbc.queryForObject("SELECT count(*) FROM pg_locks WHERE NOT granted", Long.class);
+      if (requireNonNull(waiting) > 0) {
+        return;
+      }
+    }
+    throw new AssertionError("it neither finished nor waited for a lock");
+  }
+
+  private void invite(Cookie session, String email) {
+    assertThat(
+            post(
+                session, "/api/teams/" + teamId + "/invitations", "{\"email\": \"" + email + "\"}"))
+        .hasStatus(HttpStatus.CREATED);
+  }
+
+  private String emailOf(String name) {
+    return requireNonNull(emailByName.get(name), name);
+  }
+
   private static String reassign(String taskId, String newOwnerId) {
     return "{\"taskId\": \"%s\", \"newOwnerId\": \"%s\"}".formatted(taskId, newOwnerId);
   }
@@ -417,10 +595,12 @@ class MemberManagementTests {
 
   /** Signs up a new user and returns their session cookie. */
   private Cookie signUp(String name) {
+    var email = "user." + UUID.randomUUID() + "@example.com";
+    emailByName.put(name, email);
     var json =
         """
         {"name": "%s", "email": "%s", "password": "correct horse battery"}"""
-            .formatted(name, "user." + UUID.randomUUID() + "@example.com");
+            .formatted(name, email);
     var response = send(mvc.post().uri("/api/users"), json).getResponse();
     return requireNonNull(response.getCookie("SESSION"), "sign-up failed");
   }

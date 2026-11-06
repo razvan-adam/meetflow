@@ -77,6 +77,19 @@ public class DecisionService {
   }
 
   /**
+   * Like {@link #findInRunningMeeting}, for giving someone work in the meeting: the team's
+   * membership is held first, before the meeting's lock, in the order a member's removal takes
+   * them.
+   */
+  public Decision findInRunningMeetingToAssign(UUID userId, UUID decisionId) {
+    decisions
+        .findPlaceById(decisionId)
+        .filter(found -> teamMembers.isMember(userId, found.teamId()))
+        .ifPresent(found -> teamMembers.holdMembership(found.teamId()));
+    return findInRunningMeeting(userId, decisionId);
+  }
+
+  /**
    * The decision, loaded only once its meeting is locked, so one removed meanwhile answers 404.
    * Outsiders get the same 404 as for an unknown decision.
    */

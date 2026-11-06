@@ -20,12 +20,13 @@ The starting visual style for MeetFlow (roadmap step 3, MF-26), as used in the w
 | `line` | Borders, dividers | `#e6ecea` | `#35433f` |
 | `fill` | Subtle blocks, read-only inputs | `#f5f9f7` | `#27322f` |
 | `wire` | Accent: buttons, links, selection | `#0e7e68` | `#5fdcbc` |
-| `wire-soft` | Accent tint: selected chips, callouts | `#eaf8f3` | `#1d4a40` |
-| `overdue` | Overdue tasks, destructive actions | `#c64044` | `#ff6b6b` |
+| `wire-soft` | Accent tint: selected chips, callouts | `#eaf8f3` | `#1a433a` |
+| `overdue` | Overdue tasks, destructive actions | `#c64044` | `#ff8080` |
 | `overdue-soft` | Overdue row background | `#fff4f4` | `#3a1c1e` |
 | `done` | Done confirmation | `#0e7e68` | `#5fdcbc` |
+| `placeholder` | Placeholder text in inputs | `#757575` | `#8f9c97` |
 
-In the light theme, `ink`, `muted`, `wire`, `overdue` and `done` reach a contrast of at least 4.5:1 on every background (`paper`, `frame`, `fill`, `wire-soft`, `overdue-soft`), and white text reaches it on `wire`. `src/styles/contrast.test.ts` checks this, so a new light color can't quietly fall below it (MF-43).
+In both themes, `ink`, `muted`, `wire`, `overdue` and `done` reach a contrast of at least 4.5:1 on every background (`paper`, `frame`, `fill`, `wire-soft`, `overdue-soft`), `placeholder` reaches it on `frame` (the input background), and `frame` reaches it on `wire` (the label of filled buttons). `src/styles/contrast.test.ts` checks this, and that the two copies of the dark colors in `global.css` match, so a new color can't quietly fall below it (MF-43, MF-44). Disabled controls are faded on purpose and are exempt.
 
 The lilac `note` colors in the wireframes are only for design notes and are not part of the app.
 

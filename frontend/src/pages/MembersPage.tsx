@@ -191,19 +191,32 @@ function RemovalPanel({
   const navigate = useNavigate()
   const [taskChoices, setTaskChoices] = useState<Record<string, string>>({})
   const [organizers, setOrganizers] = useState<Record<string, string>>({})
-  // Choices for tasks or series that are gone after a reload don't count.
+  // Only choices still on offer count: for a task or series that is gone after a reload, or a
+  // member who left the team meanwhile, the item is left to resolve again.
+  const otherIds = new Set(others.map((other) => other.id))
+  const taskChoice = (taskId: string) => {
+    const choice = taskChoices[taskId] ?? ''
+    return choice === REMOVE_TASK || otherIds.has(choice) ? choice : ''
+  }
+  const organizerChoice = (seriesId: string) => {
+    const choice = organizers[seriesId] ?? ''
+    return otherIds.has(choice) ? choice : ''
+  }
   const left =
-    tasks.filter((task) => !taskChoices[task.id]).length +
-    series.filter((found) => !organizers[found.id]).length
+    tasks.filter((task) => !taskChoice(task.id)).length +
+    series.filter((found) => !organizerChoice(found.id)).length
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const handover = {
       tasks: tasks.map((task) => ({
         taskId: task.id,
-        newOwnerId: taskChoices[task.id] === REMOVE_TASK ? null : taskChoices[task.id],
+        newOwnerId: taskChoice(task.id) === REMOVE_TASK ? null : taskChoice(task.id),
       })),
-      series: series.map((found) => ({ seriesId: found.id, organizerId: organizers[found.id] })),
+      series: series.map((found) => ({
+        seriesId: found.id,
+        organizerId: organizerChoice(found.id),
+      })),
     }
     remove.mutate(
       { memberId: member.id, handover },
@@ -240,7 +253,7 @@ function RemovalPanel({
               <select
                 className={pageStyles.input}
                 aria-label={`What to do with “${task.description}”`}
-                value={taskChoices[task.id] ?? ''}
+                value={taskChoice(task.id)}
                 onChange={(event) =>
                   setTaskChoices({ ...taskChoices, [task.id]: event.target.value })
                 }
@@ -263,7 +276,7 @@ function RemovalPanel({
               <select
                 className={pageStyles.input}
                 aria-label={`New organizer of ${found.name}`}
-                value={organizers[found.id] ?? ''}
+                value={organizerChoice(found.id)}
                 onChange={(event) =>
                   setOrganizers({ ...organizers, [found.id]: event.target.value })
                 }

@@ -65,7 +65,7 @@ The organizer runs the meeting in the app and works through the agenda:
 3. Each task owner receives **one email** after the meeting listing their tasks from it. There are no further reminders (no deadline or overdue emails), to avoid spamming users. This email cannot be turned off.
 4. Each user sees their tasks on the **pending-tasks dashboard**, across all their teams, sorted by deadline, with overdue tasks highlighted. The dashboard is the landing page after login and can be filtered by team.
 5. Task owners update status between meetings (open → in progress → done), including directly from the dashboard.
-6. Past meetings, their decisions and minutes are listed in the team's **meeting history**, grouped by series and searchable by keyword across series names and decision text.
+6. Past meetings, their decisions and minutes are listed in the team's **meeting history**, grouped by series, newest first and 20 at a time, and searchable by keyword across series names and decision text.
 
 **MVP features:** 5 – Pending-tasks dashboard, 6 – Meeting history, 7 – Minutes generation.
 
@@ -182,3 +182,9 @@ Resolved while building MF-20:
 
 25. **What the task email holds** – only tasks created in that meeting, still open or in progress, and no carried-over ones, because those were already emailed after their own meeting. It goes to whoever owns the task when it is sent, even if they weren't at the meeting, and reads the tasks as they stand then, so a retried email doesn't report a task that has since been done, removed or reassigned.
 26. **Saying the task emails were sent** – the closed meeting's banner says how many owners have been sent theirs so far, and nothing if none has. It is a count of what has gone out, not a claim that all have: because the list is read when sending, how many are still due can't be told in advance.
+
+Resolved while building MF-23:
+
+27. **Where the history lives** – each team has its own history, opened from the top bar next to the team, and its search covers that team only. Users with several teams search each one from its own page.
+28. **What the search matches** – letters and digits make words, and a meeting matches when every word appears in its series name or in one of its decisions, as a whole word or the start of one: "pall" finds "pallet", "allet" doesn't. Case doesn't matter, accents do, because customers write in many languages. The whole meeting is listed, with the words found highlighted.
+29. **Long histories** – the history shows the 20 newest meetings and loads 20 older ones at a time on request ("Show older meetings"), with or without a search.

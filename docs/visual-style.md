@@ -54,4 +54,6 @@ The lilac `note` colors in the wireframes are only for design notes and are not 
 - **Tags:** small mono labels, such as "not covered on 26 Oct" (accent tint) or "read-only" (grey).
 - **Lock badge:** dashed outline, "stays until done", on carried-over tasks that cannot be removed from the agenda.
 - **Callouts:** `wire-soft` for information (carry-over preview, permissions); `overdue-soft` for problems (expired invitation).
+- **Search highlight:** words found by a search are marked with a `wire-soft` background and keep their text color.
+- **Show more:** a long list shows its newest entries and ends with a secondary button that loads the next ones ("Show older meetings"); if they can't load, an error appears below and the list stays.
 - **Confirmation panels:** inline, never a browser dialog. They list what will happen (for example, closing a meeting) before the action button.

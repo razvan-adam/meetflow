@@ -15,6 +15,7 @@
   --overdue: #c64044;
   --overdue-soft: #fff4f4;
   --done: #0e7e68;
+  --placeholder: #757575;
 
   --font-sans: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
@@ -36,10 +37,11 @@
     --line: #35433f;
     --fill: #27322f;
     --wire: #5fdcbc;
-    --wire-soft: #1d4a40;
-    --overdue: #ff6b6b;
+    --wire-soft: #1a433a;
+    --overdue: #ff8080;
     --overdue-soft: #3a1c1e;
     --done: #5fdcbc;
+    --placeholder: #8f9c97;
   }
 }
 
@@ -51,10 +53,11 @@
   --line: #35433f;
   --fill: #27322f;
   --wire: #5fdcbc;
-  --wire-soft: #1d4a40;
-  --overdue: #ff6b6b;
+  --wire-soft: #1a433a;
+  --overdue: #ff8080;
   --overdue-soft: #3a1c1e;
   --done: #5fdcbc;
+  --placeholder: #8f9c97;
 
   color-scheme: dark;
 }
@@ -77,4 +80,9 @@ body {
 
 a {
   color: var(--wire);
+}
+
+::placeholder {
+  color: var(--placeholder);
+  opacity: 1;
 }

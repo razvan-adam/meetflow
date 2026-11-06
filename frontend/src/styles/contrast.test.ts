@@ -5,13 +5,21 @@ const MINIMUM = 4.5
 const TEXT = ['ink', 'muted', 'wire', 'overdue', 'done']
 const BACKGROUNDS = ['paper', 'frame', 'fill', 'wire-soft', 'overdue-soft']
 
-// The first :root rule holds the light theme.
-function lightTokens(): Record<string, string> {
-  const rule = /:root\s*{([^}]*)}/.exec(css)?.[1] ?? ''
+function tokensIn(rule: string): Record<string, string> {
   return Object.fromEntries(
     [...rule.matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})/g)].map(([, name, value]) => [name, value]),
   )
 }
+
+function ruleBody(selector: RegExp): string {
+  return new RegExp(selector.source + /\s*{([^}]*)}/.source).exec(css)?.[1] ?? ''
+}
+
+// The first :root rule holds the light theme. The dark theme appears twice: for the system setting
+// and for the user's choice.
+const light = tokensIn(ruleBody(/:root/))
+const darkFromSystem = tokensIn(ruleBody(/:root:not\(\[data-theme='light'\]\)/))
+const darkChosen = tokensIn(ruleBody(/:root\[data-theme='dark'\]/))
 
 function luminance(hex: string): number {
   const [red, green, blue] = [1, 3, 5].map((start) => {
@@ -26,9 +34,10 @@ function contrast(first: string, second: string): number {
   return (lighter + 0.05) / (darker + 0.05)
 }
 
-describe('the light theme', () => {
-  const tokens = lightTokens()
-
+describe.each([
+  ['light', light],
+  ['dark', darkChosen],
+])('the %s theme', (_theme, tokens) => {
   it.each(TEXT.flatMap((text) => BACKGROUNDS.map((background) => [text, background])))(
     'keeps %s readable on %s',
     (text, background) => {
@@ -36,7 +45,18 @@ describe('the light theme', () => {
     },
   )
 
-  it('keeps white text readable on the accent color', () => {
-    expect(contrast('#ffffff', tokens.wire)).toBeGreaterThanOrEqual(MINIMUM)
+  // Inputs have a frame background.
+  it('keeps placeholders readable in inputs', () => {
+    expect(contrast(tokens.placeholder, tokens.frame)).toBeGreaterThanOrEqual(MINIMUM)
   })
+
+  // Filled buttons use the frame color for their label.
+  it('keeps button labels readable on the accent color', () => {
+    expect(contrast(tokens.frame, tokens.wire)).toBeGreaterThanOrEqual(MINIMUM)
+  })
+})
+
+it('uses the same dark colors for the system setting and the theme switch', () => {
+  expect(Object.keys(darkChosen).length).toBeGreaterThan(0)
+  expect(darkFromSystem).toEqual(darkChosen)
 })

@@ -21,8 +21,9 @@ public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
   boolean existsBySeriesIdAndStatusNot(UUID seriesId, MeetingStatus status);
 
   /**
-   * Takes a member who leaves the team off its meetings that haven't closed. Pending changes are
-   * written first; meetings already loaded in this transaction keep the old participants.
+   * Takes a member who leaves the team off its meetings that haven't started. A running meeting
+   * keeps them, as the record that they were there. Pending changes are written first; meetings
+   * already loaded in this transaction keep the old participants.
    */
   @Modifying(flushAutomatically = true)
   @Query(
@@ -31,9 +32,25 @@ public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
           """
           DELETE FROM meeting_participant p
           USING meeting m
-          WHERE p.meeting_id = m.id AND m.team_id = :teamId AND m.status <> 'CLOSED'
+          WHERE p.meeting_id = m.id AND m.team_id = :teamId AND m.status = 'SCHEDULED'
             AND p.user_id = :userId""")
-  void removeParticipantFromOpenMeetings(UUID teamId, UUID userId);
+  void removeParticipantFromScheduledMeetings(UUID teamId, UUID userId);
+
+  /**
+   * Adds the user to the series' meeting that isn't closed, if there is one and they aren't on it
+   * yet. Pending changes are written first; meetings already loaded in this transaction keep the
+   * old participants.
+   */
+  @Modifying(flushAutomatically = true)
+  @Query(
+      nativeQuery = true,
+      value =
+          """
+          INSERT INTO meeting_participant (meeting_id, user_id)
+          SELECT m.id, :userId FROM meeting m
+          WHERE m.series_id = :seriesId AND m.status <> 'CLOSED'
+          ON CONFLICT DO NOTHING""")
+  void addParticipantToOpenMeeting(UUID seriesId, UUID userId);
 
   /**
    * The team's closed meetings whose series name, or one of whose decisions, matches the query.
@@ -57,6 +74,16 @@ public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
   /** A series has at most one meeting that isn't closed, so at most one matches. */
   @Query("SELECT m.id FROM Meeting m WHERE m.seriesId = :seriesId AND m.status = :status")
   Optional<UUID> findIdBySeriesIdAndStatus(UUID seriesId, MeetingStatus status);
+
+  /**
+   * The series' running meeting, its row locked until the transaction ends. A meeting being closed
+   * meanwhile is waited for, and then no longer matches, so the answer is current.
+   */
+  @Query(
+      nativeQuery = true,
+      value =
+          "SELECT id FROM meeting WHERE series_id = :seriesId AND status = 'IN_PROGRESS' FOR UPDATE")
+  Optional<UUID> lockRunningIdBySeriesId(UUID seriesId);
 
   /** A series has at most one meeting that isn't closed. */
   @Query("SELECT m.id FROM Meeting m WHERE m.seriesId = :seriesId AND m.status <> :status")

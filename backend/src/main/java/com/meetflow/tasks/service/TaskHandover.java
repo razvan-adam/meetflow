@@ -20,7 +20,8 @@ import org.springframework.stereotype.Component;
 /**
  * Hands over a removed member's open tasks (MF-11), inside the transaction that removes them, so no
  * task is left with an owner outside the team. Each change is recorded in the task's history as
- * made by the admin, in the series' running meeting if there is one.
+ * made by the admin, in the series' running meeting if there is one. That meeting is locked, as
+ * when its organizer changes a task, so the change can't land in it after it has closed.
  */
 @Component
 class TaskHandover {
@@ -61,7 +62,7 @@ class TaskHandover {
     for (var task : open) {
       // Waits for a meeting being scheduled or started, which reads the series' open tasks.
       meetings.lockSeries(task.getSeriesId());
-      var runningMeetingId = meetings.runningMeetingOf(task.getSeriesId()).orElse(null);
+      var runningMeetingId = meetings.lockRunningMeetingIfAny(task.getSeriesId()).orElse(null);
       UUID newOwner = event.taskOwners().get(task.getId());
       if (newOwner != null) {
         task.changeOwner(newOwner);

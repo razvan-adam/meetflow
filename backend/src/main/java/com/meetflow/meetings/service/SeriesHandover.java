@@ -15,19 +15,25 @@ import org.springframework.stereotype.Component;
 
 /**
  * Hands over the series a removed member organizes (MF-11), inside the transaction that removes
- * them, and takes them off the meetings that haven't closed, so they aren't sent those minutes.
- * Closed meetings keep them as participants: that is the record of who was there.
+ * them, and takes them off the meetings that haven't started. Running and closed meetings keep them
+ * as participants: that is the record of who was there. Minutes are only emailed to the
+ * participants who are still members when the meeting closes.
  */
 @Component
 class SeriesHandover {
 
   private final MeetingSeriesRepository series;
+  private final MeetingSeriesService seriesService;
   private final MeetingRepository meetings;
   private final TeamMembers teamMembers;
 
   SeriesHandover(
-      MeetingSeriesRepository series, MeetingRepository meetings, TeamMembers teamMembers) {
+      MeetingSeriesRepository series,
+      MeetingSeriesService seriesService,
+      MeetingRepository meetings,
+      TeamMembers teamMembers) {
     this.series = series;
+    this.seriesService = seriesService;
     this.meetings = meetings;
     this.teamMembers = teamMembers;
   }
@@ -48,8 +54,8 @@ class SeriesHandover {
     }
     for (var found : organized) {
       // Present: the keys were just checked to be exactly these series.
-      found.changeOrganizer(requireNonNull(event.seriesOrganizers().get(found.getId())));
+      seriesService.handOver(found, requireNonNull(event.seriesOrganizers().get(found.getId())));
     }
-    meetings.removeParticipantFromOpenMeetings(event.teamId(), event.memberId());
+    meetings.removeParticipantFromScheduledMeetings(event.teamId(), event.memberId());
   }
 }

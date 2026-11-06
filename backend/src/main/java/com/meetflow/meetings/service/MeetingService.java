@@ -198,6 +198,14 @@ public class MeetingService {
     return meetings.findIdBySeriesIdAndStatus(seriesId, MeetingStatus.IN_PROGRESS);
   }
 
+  /**
+   * The series' running meeting, if any, locked until the transaction ends. No access check: for
+   * changes made on the team's behalf, such as handing over a removed member's work.
+   */
+  public Optional<UUID> lockRunningMeetingIfAny(UUID seriesId) {
+    return meetings.lockRunningIdBySeriesId(seriesId);
+  }
+
   /** The series' meeting that hasn't started yet, if any. */
   public Optional<UUID> scheduledMeetingOf(UUID seriesId) {
     return meetings.findIdBySeriesIdAndStatus(seriesId, MeetingStatus.SCHEDULED);

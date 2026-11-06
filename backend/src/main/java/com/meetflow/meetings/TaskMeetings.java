@@ -61,6 +61,16 @@ public class TaskMeetings {
     return meetings.lockRunningMeetingOf(userId, seriesId);
   }
 
+  /**
+   * The series' running meeting, if any, locked like {@link #lockRunningMeetingOf} but without
+   * checking who asks: for changes made on the team's behalf. A meeting that closes meanwhile is
+   * waited for, and then isn't running.
+   */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public Optional<UUID> lockRunningMeetingIfAny(UUID seriesId) {
+    return meetings.lockRunningMeetingIfAny(seriesId);
+  }
+
   /** Locks the series, so no meeting of it can be scheduled until the transaction ends. */
   @Transactional(propagation = Propagation.MANDATORY)
   public void lockSeries(UUID seriesId) {

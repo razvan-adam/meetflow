@@ -4,6 +4,7 @@ import com.meetflow.teams.dto.TeamResponse;
 import com.meetflow.teams.service.TeamAccess;
 import com.meetflow.teams.service.TeamService;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -41,6 +42,13 @@ public class TeamMembers {
   @Transactional(readOnly = true)
   public boolean areMembers(Collection<UUID> userIds, UUID teamId) {
     return access.memberIds(teamId).containsAll(userIds);
+  }
+
+  /** Those of the users who are members of the team, in the same order. */
+  @Transactional(readOnly = true)
+  public List<UUID> membersAmong(Collection<UUID> userIds, UUID teamId) {
+    var members = access.memberIds(teamId);
+    return userIds.stream().filter(members::contains).toList();
   }
 
   /** Throws a 404 error response if the user isn't a member of the team. */

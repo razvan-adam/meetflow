@@ -19,6 +19,25 @@ public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
 
   boolean existsBySeriesIdAndStatusNot(UUID seriesId, MeetingStatus status);
 
+  /**
+   * The team's closed meetings whose series name, or one of whose decisions, matches the query.
+   * Both use the generated {@code search_vector} columns and their GIN indexes.
+   *
+   * @param query a {@code to_tsquery} expression in the {@code simple} configuration
+   */
+  @Query(
+      nativeQuery = true,
+      value =
+          """
+          SELECT m.id FROM meeting m
+          JOIN meeting_series s ON s.id = m.series_id
+          WHERE m.team_id = :teamId AND m.status = 'CLOSED'
+            AND (s.search_vector @@ to_tsquery('simple', :query)
+              OR EXISTS (SELECT 1 FROM decision d
+                         WHERE d.meeting_id = m.id
+                           AND d.search_vector @@ to_tsquery('simple', :query)))""")
+  List<UUID> findClosedIdsMatching(UUID teamId, String query);
+
   /** A series has at most one meeting that isn't closed, so at most one matches. */
   @Query("SELECT m.id FROM Meeting m WHERE m.seriesId = :seriesId AND m.status = :status")
   Optional<UUID> findIdBySeriesIdAndStatus(UUID seriesId, MeetingStatus status);

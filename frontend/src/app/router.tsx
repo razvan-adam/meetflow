@@ -2,6 +2,7 @@ import { createBrowserRouter, type RouteObject } from 'react-router'
 import { CreateTeamPage } from '../pages/CreateTeamPage.tsx'
 import { DashboardPage } from '../pages/DashboardPage.tsx'
 import { EditMeetingPage } from '../pages/EditMeetingPage.tsx'
+import { HistoryPage } from '../pages/HistoryPage.tsx'
 import { JoinPage } from '../pages/JoinPage.tsx'
 import { LogInPage } from '../pages/LogInPage.tsx'
 import { MeetingPage } from '../pages/MeetingPage.tsx'
@@ -34,6 +35,7 @@ export const routes: RouteObject[] = [
           { path: '/', element: <DashboardPage /> },
           { path: '/teams/new', element: <CreateTeamPage /> },
           { path: '/teams/:teamId', element: <TeamPage /> },
+          { path: '/teams/:teamId/history', element: <HistoryPage /> },
           { path: '/series/:seriesId', element: <SeriesPage /> },
           { path: '/series/:seriesId/schedule', element: <ScheduleMeetingPage /> },
           { path: '/meetings/:meetingId', element: <MeetingPage /> },

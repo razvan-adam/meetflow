@@ -193,6 +193,38 @@ describe('the members page', () => {
     )
   })
 
+  it('asks again when the chosen member left the team meanwhile', async () => {
+    let membersRead = 0
+    const fetchMock = api('ADMIN', {
+      // Di is removed by another admin while Ana is choosing; the 409 reloads the lists.
+      [`GET /api/teams/${TEAM_ID}/members`]: () =>
+        Response.json(membersRead++ === 0 ? MEMBERS : MEMBERS.filter((member) => member.id !== DI)),
+      [`POST /api/teams/${TEAM_ID}/members/${BO}/removal`]: () =>
+        new Response(null, { status: 409 }),
+    })
+    renderApp(PATH)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Remove Bo Lind' }))
+    const panel = within(screen.getByRole('form', { name: 'Remove Bo Lind from Ops team' }))
+    const confirm = panel.getByRole('button', { name: 'Remove Bo Lind' })
+    const taskChoice = panel.getByRole('combobox', { name: /^What to do with/ })
+    fireEvent.change(taskChoice, { target: { value: DI } })
+    fireEvent.change(panel.getByRole('combobox', { name: /^New organizer of/ }), {
+      target: { value: ANA.id },
+    })
+    fireEvent.click(confirm)
+
+    expect(await panel.findByText('1 item left to resolve.')).toBeVisible()
+    expect(taskChoice).toHaveValue('')
+    expect(within(taskChoice).queryByText('Reassign to Di Moreau')).toBeNull()
+    expect(confirm).toBeDisabled()
+    expect(
+      fetchMock.mock.calls.filter(
+        ([url, init]) => String(url).endsWith(`/members/${BO}/removal`) && init?.method === 'POST',
+      ),
+    ).toHaveLength(1)
+  })
+
   it('takes an admin who removes themselves back to their tasks', async () => {
     const twoAdmins = MEMBERS.map((member) =>
       member.id === DI ? { ...member, role: 'ADMIN' as const } : member,

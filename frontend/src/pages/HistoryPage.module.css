@@ -37,6 +37,10 @@
   white-space: nowrap;
 }
 
+.more {
+  align-self: flex-start;
+}
+
 .mark {
   background: var(--wire-soft);
   color: inherit;

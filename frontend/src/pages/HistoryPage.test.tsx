@@ -1,6 +1,6 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import type { HistorySeries } from '../api/history.ts'
+import type { HistoryPage, HistorySeries } from '../api/history.ts'
 import { ANA, mockApi, noSeries, renderApp } from '../test/renderApp.tsx'
 
 const TEAM_ID = '6d0c1a52-3c1e-4f0b-9a57-2d4b8e7f1c10'
@@ -46,6 +46,11 @@ const PALLETS: HistorySeries[] = [
   },
 ]
 
+const page = (series: HistorySeries[], next: string | null = null): HistoryPage => ({
+  series,
+  next,
+})
+
 function api(responses: Record<string, () => Response>) {
   return mockApi({
     'GET /api/users/me': () => Response.json(ANA),
@@ -61,7 +66,7 @@ const group = (name: string) => screen.getByRole('region', { name })
 
 describe('the meeting history', () => {
   it('lists past meetings by series, newest first, each opening its minutes', async () => {
-    api({ [REQUEST]: () => Response.json(HISTORY) })
+    api({ [REQUEST]: () => Response.json(page(HISTORY)) })
     renderApp(PATH)
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Meeting history' })).toBeVisible()
@@ -88,7 +93,7 @@ describe('the meeting history', () => {
   })
 
   it('is linked from the top bar for the current team', async () => {
-    api({ [REQUEST]: () => Response.json(HISTORY) })
+    api({ [REQUEST]: () => Response.json(page(HISTORY)) })
     renderApp(`/teams/${TEAM_ID}`)
 
     fireEvent.click(await screen.findByRole('link', { name: 'History' }))
@@ -99,8 +104,8 @@ describe('the meeting history', () => {
 
   it('searches series names and decisions, and highlights the words found', async () => {
     const fetchMock = api({
-      [REQUEST]: () => Response.json(HISTORY),
-      [`${REQUEST}?q=pallet%20cost`]: () => Response.json(PALLETS),
+      [REQUEST]: () => Response.json(page(HISTORY)),
+      [`${REQUEST}?q=pallet+cost`]: () => Response.json(page(PALLETS)),
     })
     const router = renderApp(PATH)
     await screen.findByRole('region', { name: 'Monthly carrier review' })
@@ -124,7 +129,7 @@ describe('the meeting history', () => {
   })
 
   it('opens with the search from the address', async () => {
-    api({ [`${REQUEST}?q=pallet`]: () => Response.json(PALLETS) })
+    api({ [`${REQUEST}?q=pallet`]: () => Response.json(page(PALLETS)) })
     renderApp(`${PATH}?q=pallet`)
 
     expect(await screen.findByText('Hire two drivers')).toBeVisible()
@@ -132,14 +137,14 @@ describe('the meeting history', () => {
   })
 
   it('says when nothing matches', async () => {
-    api({ [`${REQUEST}?q=bilbao`]: () => Response.json([]) })
+    api({ [`${REQUEST}?q=bilbao`]: () => Response.json(page([])) })
     renderApp(`${PATH}?q=bilbao`)
 
     expect(await screen.findByText(/^No meetings or decisions match/)).toBeVisible()
   })
 
   it('says when the team has no past meetings yet', async () => {
-    api({ [REQUEST]: () => Response.json([]) })
+    api({ [REQUEST]: () => Response.json(page([])) })
     renderApp(PATH)
 
     expect(await screen.findByText(/^No past meetings yet/)).toBeVisible()
@@ -151,6 +156,72 @@ describe('the meeting history', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'This team doesn’t exist or you’re not a member of it.',
+    )
+  })
+
+  it('shows older meetings on request, continuing a series from the page before', async () => {
+    const older: HistorySeries[] = [
+      {
+        id: 'monthly',
+        name: 'Monthly carrier review',
+        meetings: [
+          { id: 'sep-carriers', date: '2026-09-01', decisions: ['Keep Translog'], taskCount: 0 },
+        ],
+      },
+      {
+        id: 'quarterly',
+        name: 'Quarterly safety review',
+        meetings: [{ id: 'q3-safety', date: '2026-08-15', decisions: [], taskCount: 3 }],
+      },
+    ]
+    api({
+      [REQUEST]: () => Response.json(page(HISTORY, CARRIERS)),
+      [`${REQUEST}?after=${CARRIERS}`]: () => Response.json(page(older)),
+    })
+    renderApp(PATH)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Show older meetings' }))
+
+    expect(await screen.findByText('Keep Translog')).toBeVisible()
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'Weekly ops sync',
+      'Monthly carrier review',
+      'Quarterly safety review',
+    ])
+    expect(
+      within(group('Monthly carrier review'))
+        .getAllByRole('link')
+        .map((link) => link.getAttribute('href')),
+    ).toEqual([`/meetings/${CARRIERS}/minutes`, '/meetings/sep-carriers/minutes'])
+    expect(screen.queryByRole('button', { name: 'Show older meetings' })).toBeNull()
+  })
+
+  it('keeps the meetings shown when older ones can’t be loaded', async () => {
+    api({
+      [REQUEST]: () => Response.json(page(HISTORY, CARRIERS)),
+      [`${REQUEST}?after=${CARRIERS}`]: () => new Response(null, { status: 500 }),
+    })
+    renderApp(PATH)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Show older meetings' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Older meetings couldn’t be loaded.')
+    expect(screen.getByText('Drop Rapidex')).toBeVisible()
+  })
+
+  it('pages through search results with the search', async () => {
+    const fetchMock = api({
+      [`${REQUEST}?q=pallet`]: () => Response.json(page(PALLETS, WEEKLY_OLDEST)),
+      [`${REQUEST}?q=pallet&after=${WEEKLY_OLDEST}`]: () => Response.json(page([])),
+    })
+    renderApp(`${PATH}?q=pallet`)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Show older meetings' }))
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: /older meetings/ })).toBeNull())
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api${PATH}?q=pallet&after=${WEEKLY_OLDEST}`,
+      expect.anything(),
     )
   })
 })

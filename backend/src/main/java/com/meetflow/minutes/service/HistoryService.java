@@ -1,6 +1,7 @@
 package com.meetflow.minutes.service;
 
 import com.meetflow.meetings.MeetingRecords;
+import com.meetflow.minutes.dto.HistoryResponse;
 import com.meetflow.minutes.dto.HistorySeries;
 import com.meetflow.minutes.repository.MinutesRepository;
 import com.meetflow.teams.TeamMembers;
@@ -11,6 +12,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.json.JsonMapper;
@@ -21,6 +24,9 @@ import tools.jackson.databind.json.JsonMapper;
  */
 @Service
 public class HistoryService {
+
+  /** Meetings per page: enough to fill a screen, few enough to answer quickly however old. */
+  private static final int PAGE_SIZE = 20;
 
   /** Anything that isn't a letter or a digit separates words, as the frontend highlights them. */
   private static final Pattern NOT_A_WORD = Pattern.compile("[^\\p{L}\\p{N}]+");
@@ -45,20 +51,31 @@ public class HistoryService {
   }
 
   /**
-   * The team's closed meetings by series: the series with the newest meeting first, and its
-   * meetings newest first. With search words, only meetings whose series name or one of whose
-   * decisions contains them all. 404 if the user isn't a member of the team.
+   * One page of the team's closed meetings, newest first, by series: the series in the order of
+   * their newest meeting on the page. With search words, only meetings whose series name or one of
+   * whose decisions contains them all. 404 if the user isn't a member of the team.
+   *
+   * @param after the {@code next} of the previous page, or null for the first page
    */
   @Transactional(readOnly = true)
-  public List<HistorySeries> of(UUID userId, UUID teamId, String search) {
+  public HistoryResponse of(UUID userId, UUID teamId, String search, @Nullable UUID after) {
     teamMembers.requireMember(userId, teamId);
     var words = wordsIn(search);
-    var matching = words.isEmpty() ? null : meetings.closedMatching(teamId, words);
-    var bySeries = new LinkedHashMap<UUID, SeriesBuilder>();
-    for (var row : minutes.findHistoryByTeamId(teamId)) {
-      if (matching != null && !matching.contains(row.getMeetingId())) {
-        continue;
+    var onlyMeetingIds = "";
+    if (!words.isEmpty()) {
+      var matching = meetings.closedMatching(teamId, words);
+      if (matching.isEmpty()) {
+        return new HistoryResponse(List.of(), null);
       }
+      onlyMeetingIds = matching.stream().map(UUID::toString).collect(Collectors.joining(","));
+    }
+    // One more than a page, to know whether there is another.
+    var rows =
+        minutes.findHistoryPage(
+            teamId, after == null ? "" : after.toString(), onlyMeetingIds, PAGE_SIZE + 1);
+    var page = rows.subList(0, Math.min(rows.size(), PAGE_SIZE));
+    var bySeries = new LinkedHashMap<UUID, SeriesBuilder>();
+    for (var row : page) {
       bySeries
           .computeIfAbsent(row.getSeriesId(), id -> new SeriesBuilder(id, row.getSeriesName()))
           .meetings
@@ -69,9 +86,11 @@ public class HistoryService {
                   Arrays.asList(json.readValue(row.getDecisions(), String[].class)),
                   row.getTaskCount()));
     }
-    return bySeries.values().stream()
-        .map(series -> new HistorySeries(series.id, series.name, List.copyOf(series.meetings)))
-        .toList();
+    return new HistoryResponse(
+        bySeries.values().stream()
+            .map(series -> new HistorySeries(series.id, series.name, List.copyOf(series.meetings)))
+            .toList(),
+        rows.size() > PAGE_SIZE ? page.getLast().getMeetingId() : null);
   }
 
   private static List<String> wordsIn(String search) {

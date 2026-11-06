@@ -14,7 +14,8 @@ const SEARCH_DELAY_MS = 250
 const WORD = /[\p{L}\p{N}]+/gu
 
 // A team's meeting history (S10): past meetings by series, searchable by keyword across series
-// names and decision text (MF-23). The search is kept in the address, so going back keeps it.
+// names and decision text (MF-23), 20 meetings at a time. The search is kept in the address, so
+// going back keeps it.
 export function HistoryPage() {
   const { teamId = '' } = useParams()
   const [params, setParams] = useSearchParams()
@@ -33,7 +34,8 @@ export function HistoryPage() {
     return () => clearTimeout(timer)
   }, [typed, search, setParams])
 
-  if (history.isError) {
+  // A failure to load older meetings keeps the ones already shown (see below).
+  if (history.isError && !history.isFetchNextPageError) {
     return (
       <main className={pageStyles.page}>
         <p role="alert" className={pageStyles.empty}>
@@ -80,6 +82,21 @@ export function HistoryPage() {
             </section>
           ))
         ))}
+      {history.hasNextPage && (
+        <button
+          className={`${pageStyles.secondary} ${styles.more}`}
+          type="button"
+          disabled={history.isFetchingNextPage}
+          onClick={() => void history.fetchNextPage()}
+        >
+          {history.isFetchingNextPage ? 'Loading older meetings…' : 'Show older meetings'}
+        </button>
+      )}
+      {history.isFetchNextPageError && (
+        <p role="alert" className={pageStyles.error}>
+          Older meetings couldn’t be loaded. Try again in a few minutes.
+        </p>
+      )}
     </main>
   )
 }

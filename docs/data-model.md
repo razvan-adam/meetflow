@@ -216,12 +216,12 @@ Rows are only inserted, never updated or deleted.
 | Column | Type | Notes |
 |---|---|---|
 | `id` | uuid | PK |
-| `team_id` | uuid | FK (`meeting_id`, `team_id`) → `meeting`; indexed for the meeting history |
+| `team_id` | uuid | FK (`meeting_id`, `team_id`) → `meeting` |
 | `meeting_id` | uuid | unique: one set of minutes per meeting |
 | `generated_at` | timestamptz | |
 | `content` | jsonb | snapshot of the meeting at closing (see *Read-only minutes*) |
 
-The meeting history lists a team's minutes, reading only the series, date, decisions and task count from each `content`. History search uses `decision.search_vector` and a matching generated `tsvector` on `meeting_series.name`. Both use PostgreSQL's `simple` text configuration, because customers may write in any language.
+The meeting history pages through a team's minutes, newest meeting first, reading only the series, date, decisions and task count from each `content`. An index on (`team_id`, `content ->> 'meetingDate'`, `generated_at`, `id`) serves each page; the ISO date text sorts like the date. History search uses `decision.search_vector` and a matching generated `tsvector` on `meeting_series.name`. Both use PostgreSQL's `simple` text configuration, because customers may write in any language.
 
 ### `notifications` module
 

@@ -7,8 +7,10 @@ import com.jayway.jsonpath.JsonPath;
 import com.meetflow.IntegrationTest;
 import jakarta.servlet.http.Cookie;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,13 +77,14 @@ class HistoryTests {
         .bodyJson()
         .isStrictlyEqualTo(
             """
-            [{"id": "%s", "name": "Weekly ops sync", "meetings": [
+            {"series": [{"id": "%s", "name": "Weekly ops sync", "meetings": [
                {"id": "%s", "date": "2026-10-19",
                 "decisions": ["Move dock 3 scanners", "Require an RMA"], "taskCount": 1},
                {"id": "%s", "date": "2026-10-12",
                 "decisions": ["Raise pallet prices"], "taskCount": 1}]},
              {"id": "%s", "name": "Monthly carrier review", "meetings": [
-               {"id": "%s", "date": "2026-10-15", "decisions": [], "taskCount": 1}]}]"""
+               {"id": "%s", "date": "2026-10-15", "decisions": [], "taskCount": 1}]}],
+             "next": null}"""
                 .formatted(weekly, newest, oldest, monthly, carriers));
   }
 
@@ -89,7 +92,10 @@ class HistoryTests {
   void aTeamWithoutClosedMeetingsHasAnEmptyHistory() {
     startMeeting(weekly, "2026-10-26T09:00:00Z");
 
-    assertThat(history(ana, "")).hasStatusOk().bodyJson().isStrictlyEqualTo("[]");
+    assertThat(history(ana, ""))
+        .hasStatusOk()
+        .bodyJson()
+        .isStrictlyEqualTo("{\"series\": [], \"next\": null}");
   }
 
   @Test
@@ -107,7 +113,7 @@ class HistoryTests {
     assertThat(meetingIds(history(ana, "allet"))).isEmpty();
     assertThat(history(ana, "pallet"))
         .bodyJson()
-        .extractingPath("$[0].meetings[0].decisions")
+        .extractingPath("$.series[0].meetings[0].decisions")
         .isEqualTo(List.of("Raise pallet prices", "Hire two drivers"));
   }
 
@@ -119,7 +125,7 @@ class HistoryTests {
     assertThat(meetingIds(history(ana, "carrier"))).containsExactly(carriers);
     assertThat(history(ana, "carrier"))
         .bodyJson()
-        .extractingPath("$[*].name")
+        .extractingPath("$.series[*].name")
         .isEqualTo(List.of("Monthly carrier review"));
   }
 
@@ -169,6 +175,61 @@ class HistoryTests {
         .containsExactly(theirs);
   }
 
+  @Test
+  void pagesThroughOlderMeetingsTwentyAtATime() {
+    List<String> weeklyMeetings = new ArrayList<>();
+    for (int day = 1; day <= 21; day++) {
+      weeklyMeetings.add(emptyClosedMeeting(weekly, "2026-10-%02dT09:00:00Z".formatted(day)));
+    }
+    String carriers = emptyClosedMeeting(monthly, "2026-10-30T09:00:00Z");
+    List<String> newestFirst = weeklyMeetings.reversed();
+
+    var first = history(ana, "", null);
+    assertThat(first)
+        .bodyJson()
+        .extractingPath("$.series[*].name")
+        .isEqualTo(List.of("Monthly carrier review", "Weekly ops sync"));
+    assertThat(meetingIds(first))
+        .containsExactlyElementsOf(concat(List.of(carriers), newestFirst.subList(0, 19)));
+    assertThat(next(first)).isEqualTo(newestFirst.get(18));
+
+    // The weekly series goes on from where the first page left off.
+    var second = history(ana, "", next(first));
+    assertThat(second)
+        .bodyJson()
+        .extractingPath("$.series[*].name")
+        .isEqualTo(List.of("Weekly ops sync"));
+    assertThat(meetingIds(second)).containsExactlyElementsOf(newestFirst.subList(19, 21));
+    assertThat(next(second)).isNull();
+  }
+
+  @Test
+  void searchResultsArePagedToo() {
+    List<String> weeklyMeetings = new ArrayList<>();
+    for (int day = 1; day <= 21; day++) {
+      weeklyMeetings.add(emptyClosedMeeting(weekly, "2026-10-%02dT09:00:00Z".formatted(day)));
+    }
+    emptyClosedMeeting(monthly, "2026-10-30T09:00:00Z");
+    List<String> newestFirst = weeklyMeetings.reversed();
+
+    var first = history(ana, "weekly", null);
+    assertThat(meetingIds(first)).containsExactlyElementsOf(newestFirst.subList(0, 20));
+    var second = history(ana, "weekly", next(first));
+    assertThat(meetingIds(second)).containsExactly(newestFirst.get(20));
+    assertThat(next(second)).isNull();
+  }
+
+  @Test
+  void aPageAfterAnotherTeamsMeetingIsEmpty() {
+    emptyClosedMeeting(weekly, "2026-10-12T09:00:00Z");
+    String cysTeam = createTeam(cy, "Cy's team");
+    String theirs =
+        emptyClosedMeeting(cy, createSeries(cy, cysTeam, "Sync"), "2026-10-13T09:00:00Z");
+
+    assertThat(meetingIds(history(ana, "", theirs))).isEmpty();
+    assertThat(history(ana, "", "not-a-meeting")).hasStatus(HttpStatus.BAD_REQUEST);
+  }
+
   /** A meeting of Ana's team, held when planned, with one decision per text and one task. */
   private String closedMeeting(String seriesId, String heldAt, List<String> decisions) {
     return closedMeeting(ana, seriesId, heldAt, decisions);
@@ -196,6 +257,18 @@ class HistoryTests {
                 "{\"description\": \"Follow up\", \"ownerId\": \"%s\", \"deadline\": \"2026-12-01\"}"
                     .formatted(userId(organizer))))
         .hasStatus(HttpStatus.CREATED);
+    assertThat(post(organizer, "/api/meetings/" + meeting + "/close", "{\"timeZone\": \"UTC\"}"))
+        .hasStatusOk();
+    return meeting;
+  }
+
+  private String emptyClosedMeeting(String seriesId, String heldAt) {
+    return emptyClosedMeeting(ana, seriesId, heldAt);
+  }
+
+  /** A meeting with no agenda, decisions or tasks: quicker to set up when only the date matters. */
+  private String emptyClosedMeeting(Cookie organizer, String seriesId, String heldAt) {
+    String meeting = startMeeting(organizer, seriesId, heldAt);
     assertThat(post(organizer, "/api/meetings/" + meeting + "/close", "{\"timeZone\": \"UTC\"}"))
         .hasStatusOk();
     return meeting;
@@ -229,16 +302,30 @@ class HistoryTests {
   }
 
   private MvcTestResult history(Cookie session, String search) {
-    return mvc.get()
-        .uri("/api/teams/{id}/history", teamId)
-        .queryParam("q", search)
-        .cookie(session)
-        .exchange();
+    return history(session, search, null);
+  }
+
+  private MvcTestResult history(Cookie session, String search, @Nullable String after) {
+    var request = mvc.get().uri("/api/teams/{id}/history", teamId).queryParam("q", search);
+    if (after != null) {
+      request.queryParam("after", after);
+    }
+    return request.cookie(session).exchange();
+  }
+
+  private static @Nullable String next(MvcTestResult result) {
+    return JsonPath.read(body(result), "$.next");
+  }
+
+  private static List<String> concat(List<String> first, List<String> second) {
+    var all = new ArrayList<>(first);
+    all.addAll(second);
+    return all;
   }
 
   private static List<String> meetingIds(MvcTestResult result) {
     assertThat(result).hasStatusOk();
-    return JsonPath.read(body(result), "$[*].meetings[*].id");
+    return JsonPath.read(body(result), "$.series[*].meetings[*].id");
   }
 
   private MvcTestResult get(Cookie session, String path) {

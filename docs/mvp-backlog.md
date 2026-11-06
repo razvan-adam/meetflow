@@ -28,8 +28,8 @@ Stories and their acceptance criteria live in Jira (project MF). The flow they i
 | 18 | MF-41 | Switch between light and dark mode | MF-5 Core | Done |
 | 19 | MF-42 | Bug: agenda item notes appear centered on a closed meeting's page | MF-5 Core | Done |
 | 20 | MF-43 | Bug: some text in light mode has too little contrast to read easily | MF-5 Core | Done |
-| 21 | MF-44 | Bug: some text in dark mode has too little contrast to read easily | MF-5 Core | To Do |
-| 22 | MF-23 | Browse and search meeting history | MF-7 Minutes and history | To Do |
+| 21 | MF-44 | Bug: some text in dark mode has too little contrast to read easily | MF-5 Core | Done |
+| 22 | MF-23 | Browse and search meeting history | MF-7 Minutes and history | Done |
 | 23 | MF-11 | Manage team members and admins | MF-5 Core | To Do |
 
 ## Rationale

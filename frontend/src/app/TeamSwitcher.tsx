@@ -8,11 +8,12 @@ import styles from './AppLayout.module.css'
 const NEW_TEAM = 'new'
 
 // Users with several teams switch between them in the top bar (S3). Choosing a team opens its page.
+// Next to it, the current team's meeting history (S10).
 export function TeamSwitcher() {
   const { data: teams } = useTeams()
   const navigate = useNavigate()
   // On series, meeting and task pages, their team is the current one.
-  const teamId = useMatch('/teams/:teamId')?.params.teamId
+  const teamId = useMatch('/teams/:teamId/*')?.params.teamId
   const { data: series } = useSeries(useMatch('/series/:seriesId/*')?.params.seriesId)
   const { data: meeting } = useMeeting(useMatch('/meetings/:meetingId/*')?.params.meetingId)
   const { data: task } = useTask(useMatch('/tasks/:taskId')?.params.taskId)
@@ -30,23 +31,30 @@ export function TeamSwitcher() {
   }
   const selected = teams.some((team) => team.id === current) ? current : ''
   return (
-    <select
-      aria-label="Team"
-      className={styles.teamSelect}
-      value={selected}
-      onChange={(event) => navigate(`/teams/${event.target.value}`)}
-    >
-      {!selected && (
-        <option value="" disabled>
-          Teams
-        </option>
+    <>
+      <select
+        aria-label="Team"
+        className={styles.teamSelect}
+        value={selected}
+        onChange={(event) => navigate(`/teams/${event.target.value}`)}
+      >
+        {!selected && (
+          <option value="" disabled>
+            Teams
+          </option>
+        )}
+        {teams.map((team) => (
+          <option key={team.id} value={team.id}>
+            {team.name}
+          </option>
+        ))}
+        <option value={NEW_TEAM}>+ New team</option>
+      </select>
+      {selected && (
+        <NavLink to={`/teams/${selected}/history`} className={styles.navLink}>
+          History
+        </NavLink>
       )}
-      {teams.map((team) => (
-        <option key={team.id} value={team.id}>
-          {team.name}
-        </option>
-      ))}
-      <option value={NEW_TEAM}>+ New team</option>
-    </select>
+    </>
   )
 }

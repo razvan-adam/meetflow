@@ -1,0 +1,48 @@
+/* The meeting history (S10). Shared layout comes from TeamPage.module.css. */
+
+/* The shared input grows along a row; here the page is a column. */
+.search {
+  flex: none;
+}
+
+.meeting {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 4px;
+}
+
+@media (min-width: 640px) {
+  .meeting {
+    grid-template-columns: 130px minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+}
+
+.date {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.decisions {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.count {
+  white-space: nowrap;
+}
+
+.more {
+  align-self: flex-start;
+}
+
+.mark {
+  background: var(--wire-soft);
+  color: inherit;
+  border-radius: 2px;
+}

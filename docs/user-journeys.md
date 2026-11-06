@@ -59,8 +59,8 @@ Screens are referred to by the IDs in *Key screens* below. Example data used thr
 
 **Actor:** any team member. **Stories:** MF-23, MF-22.
 
-1. Opens the team's meeting history (S10): past meetings grouped by series, newest first.
-2. Searches by keyword across series names and decision text.
+1. Opens the team's meeting history (S10) from the top bar: past meetings grouped by series, newest first, 20 at a time, with older ones on request.
+2. Searches by keyword across series names and decision text; the words found are highlighted.
 3. Opens a past meeting's minutes (S9) and sees its decisions and tasks with their current status.
 
 ### J7. Remove a member

@@ -15,6 +15,7 @@ import com.meetflow.tasks.dto.TaskChangeResponse;
 import com.meetflow.tasks.dto.TaskEmailsResponse;
 import com.meetflow.tasks.dto.TaskResponse;
 import com.meetflow.tasks.exception.NotAllowedToChangeTaskException;
+import com.meetflow.tasks.exception.OwnerLeftTeamException;
 import com.meetflow.tasks.exception.OwnerNotMemberException;
 import com.meetflow.tasks.exception.OwnerNotParticipantException;
 import com.meetflow.tasks.exception.TaskNotFoundException;
@@ -206,6 +207,14 @@ public class TaskService {
       requireOrganizer(userId, task);
     }
     var old = task.getStatus();
+    if (old == TaskStatus.DONE && status != TaskStatus.DONE) {
+      // A removed member's done tasks stay theirs, as the record; reopened, one would be open work
+      // owned by someone outside the team. Held before the series lock below.
+      teamMembers.holdMembership(task.getTeamId());
+      if (!teamMembers.isMember(task.getOwnerId(), task.getTeamId())) {
+        throw new OwnerLeftTeamException();
+      }
+    }
     if (old != status) {
       if (old == TaskStatus.DONE || status == TaskStatus.DONE) {
         updateNextAgenda(task, status);
@@ -241,6 +250,7 @@ public class TaskService {
   public TaskResponse changeOwner(UUID userId, UUID taskId, UUID ownerId) {
     var task = findVisible(userId, taskId);
     requireOrganizer(userId, task);
+    teamMembers.holdMembership(task.getTeamId());
     if (!teamMembers.areMembers(List.of(ownerId), task.getTeamId())) {
       throw new OwnerNotMemberException();
     }
@@ -300,6 +310,11 @@ public class TaskService {
       UUID userId, TaskOrigin origin, String description, UUID ownerId, LocalDate deadline) {
     if (!origin.participantIds().contains(ownerId)) {
       throw new OwnerNotParticipantException();
+    }
+    // A member removed during the meeting stays a participant, as the record that they were there.
+    // The origin holds the team's membership, so this can't change before the task commits.
+    if (!teamMembers.isMember(ownerId, origin.teamId())) {
+      throw new OwnerNotMemberException();
     }
     var task = tasks.save(new Task(origin, description.strip(), ownerId, deadline, userId));
     changes.save(TaskChange.creationOf(task, userId));

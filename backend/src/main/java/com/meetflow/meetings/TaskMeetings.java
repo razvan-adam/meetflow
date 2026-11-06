@@ -43,15 +43,20 @@ public class TaskMeetings {
     this.series = series;
   }
 
+  /**
+   * Where a task created from the item goes. Holds the team's membership as well as the meeting, so
+   * the caller can check that the new owner is a member.
+   */
   @Transactional(propagation = Propagation.MANDATORY)
   public TaskOrigin ofAgendaItem(UUID userId, UUID itemId) {
-    var item = agenda.findInRunningMeeting(userId, itemId);
+    var item = agenda.findInRunningMeetingToAssign(userId, itemId);
     return origin(userId, item.getMeetingId(), item.getId(), null);
   }
 
+  /** Like {@link #ofAgendaItem}, for a task created from the decision. */
   @Transactional(propagation = Propagation.MANDATORY)
   public TaskOrigin ofDecision(UUID userId, UUID decisionId) {
-    var decision = decisions.findInRunningMeeting(userId, decisionId);
+    var decision = decisions.findInRunningMeetingToAssign(userId, decisionId);
     return origin(userId, decision.getMeetingId(), decision.getAgendaItemId(), decision.getId());
   }
 

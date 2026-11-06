@@ -45,6 +45,7 @@ public class MeetingSeriesService {
   /** Creates a series in one of the user's teams, with the user as its organizer. */
   @Transactional
   public SeriesResponse create(UUID userId, UUID teamId, String name) {
+    teamMembers.holdMembership(teamId);
     teamMembers.requireMember(userId, teamId);
     var created = series.save(new MeetingSeries(teamId, name.strip(), userId));
     return toResponse(created, names(List.of(created)));
@@ -74,6 +75,7 @@ public class MeetingSeriesService {
   public SeriesResponse changeOrganizer(UUID adminId, UUID seriesId, UUID organizerId) {
     var found = findVisible(adminId, seriesId);
     teamMembers.requireAdmin(adminId, found.getTeamId());
+    teamMembers.holdMembership(found.getTeamId());
     if (!teamMembers.isMember(organizerId, found.getTeamId())) {
       throw new OrganizerNotMemberException();
     }

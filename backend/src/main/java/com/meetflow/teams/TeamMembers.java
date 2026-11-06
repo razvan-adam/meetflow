@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -31,6 +32,18 @@ public class TeamMembers {
   public Map<UUID, String> teamNamesOf(UUID userId) {
     return teams.listFor(userId).stream()
         .collect(Collectors.toMap(TeamResponse::id, TeamResponse::name));
+  }
+
+  /**
+   * For a change that gives someone work in the team, as a task's owner, a series' organizer or a
+   * meeting's participant: holds the team's membership until the caller's transaction ends, so the
+   * membership checked after it can't change before the change commits. A member's removal waits
+   * for it, or it waits for the removal and then sees them gone. Take it before locking a series or
+   * a meeting, the order in which a removal takes them, or the two can deadlock.
+   */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void holdMembership(UUID teamId) {
+    access.holdMembership(teamId);
   }
 
   @Transactional(readOnly = true)

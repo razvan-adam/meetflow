@@ -110,6 +110,19 @@ public class AgendaService {
     return lockAndLoad(userId, itemId, meetings::lockRunningMeeting);
   }
 
+  /**
+   * Like {@link #findInRunningMeeting}, for giving someone work in the meeting: the team's
+   * membership is held first, before the meeting's lock, in the order a member's removal takes
+   * them.
+   */
+  public AgendaItem findInRunningMeetingToAssign(UUID userId, UUID itemId) {
+    items
+        .findPlaceById(itemId)
+        .filter(found -> teamMembers.isMember(userId, found.teamId()))
+        .ifPresent(found -> teamMembers.holdMembership(found.teamId()));
+    return findInRunningMeeting(userId, itemId);
+  }
+
   /** The item, for its series organizer. Outsiders get the same 404 as for an unknown item. */
   private AgendaItem findForOrganizerEdit(UUID userId, UUID itemId) {
     return lockAndLoad(userId, itemId, meetings::lockForOrganizerEdit);

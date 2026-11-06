@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -483,6 +484,127 @@ class MemberManagementTests {
     var latest = JsonPath.parse(body(get(ana, "/api/tasks/" + hiringTask + "/changes")));
     assertThat(latest.<Boolean>read("$[0].deleted")).isTrue();
     assertThat(latest.<Boolean>read("$[0].duringMeeting")).isFalse();
+  }
+
+  @Test
+  void aMemberRemovedDuringAMeetingCantBeGivenANewTaskInIt() {
+    assertThat(post(bo, "/api/meetings/" + nextMeeting + "/start", "")).hasStatusOk();
+    assertThat(
+            remove(
+                ana,
+                boId,
+                handover(
+                    List.of(reassign(budgetTask, anaId), removal(hiringTask)),
+                    List.of(organizer(boSeries, anaId)))))
+        .hasStatus(HttpStatus.NO_CONTENT);
+    String item =
+        idOf(post(ana, "/api/meetings/" + nextMeeting + "/agenda-items", "{\"title\": \"Next\"}"));
+
+    // Bo is still on the meeting's record, but is no longer in the team.
+    assertThat(post(ana, "/api/agenda-items/" + item + "/tasks", newTask(boId)))
+        .hasStatus(HttpStatus.BAD_REQUEST);
+    assertThat(post(ana, "/api/agenda-items/" + item + "/tasks", newTask(anaId)))
+        .hasStatus(HttpStatus.CREATED);
+  }
+
+  @Test
+  void aRemovedMembersDoneTaskIsReassignedBeforeItCanBeReopened() {
+    assertThat(
+            remove(
+                ana,
+                boId,
+                handover(
+                    List.of(removal(budgetTask), removal(hiringTask)),
+                    List.of(organizer(boSeries, anaId)))))
+        .hasStatus(HttpStatus.NO_CONTENT);
+
+    assertThat(setStatus(ana, doneTask, "OPEN"))
+        .hasStatus(HttpStatus.CONFLICT)
+        .bodyJson()
+        .extractingPath("$.detail")
+        .isEqualTo("This task's owner is no longer in the team. Reassign it first.");
+    assertThat(changeOwner(ana, doneTask, diId)).hasStatusOk();
+    assertThat(setStatus(ana, doneTask, "OPEN")).hasStatusOk();
+  }
+
+  @Test
+  void aTaskGivenToAMemberBeingRemovedWaitsAndIsRefused() throws Exception {
+    assertThat(whileDiIsBeingRemoved(() -> changeOwner(bo, budgetTask, diId)))
+        .hasStatus(HttpStatus.BAD_REQUEST);
+    assertThat(get(ana, "/api/tasks/" + budgetTask))
+        .bodyJson()
+        .extractingPath("$.ownerName")
+        .isEqualTo("Bo Lind");
+  }
+
+  @Test
+  void aSeriesGivenToAMemberBeingRemovedWaitsAndIsRefused() throws Exception {
+    assertThat(
+            whileDiIsBeingRemoved(
+                () ->
+                    send(
+                        mvc.put().uri("/api/meeting-series/{s}/organizer", boSeries).cookie(ana),
+                        "{\"organizerId\": \"%s\"}".formatted(diId))))
+        .hasStatus(HttpStatus.BAD_REQUEST);
+  }
+
+  @Test
+  void aMemberBeingRemovedCantBeAddedToAMeetingMeanwhile() throws Exception {
+    assertThat(
+            whileDiIsBeingRemoved(
+                () ->
+                    send(
+                        mvc.put().uri("/api/meetings/{m}", nextMeeting).cookie(bo),
+                        "{\"scheduledAt\": \"2026-11-02T09:00:00Z\","
+                            + " \"participantIds\": [\"%s\", \"%s\"]}".formatted(anaId, diId))))
+        .hasStatus(HttpStatus.BAD_REQUEST);
+    assertThat(get(ana, "/api/meetings/" + nextMeeting))
+        .bodyJson()
+        .extractingPath("$.participants[*].name")
+        .isEqualTo(List.of("Ana Costa", "Bo Lind"));
+  }
+
+  @Test
+  void aMemberBeingRemovedCantCreateASeriesMeanwhile() throws Exception {
+    assertThat(
+            whileDiIsBeingRemoved(
+                () -> post(di, "/api/teams/" + teamId + "/meeting-series", "{\"name\": \"Di's\"}")))
+        .hasStatus(HttpStatus.NOT_FOUND);
+    assertThat(get(ana, "/api/teams/" + teamId + "/meeting-series"))
+        .bodyJson()
+        .extractingPath("$[*].name")
+        .isEqualTo(List.of("Bo's sync"));
+  }
+
+  /**
+   * Runs {@code change} on another thread while Di's removal holds the team, as a removal does, and
+   * has taken Di's membership, but hasn't committed. The change must wait for it, then see Di gone.
+   */
+  private MvcTestResult whileDiIsBeingRemoved(Supplier<MvcTestResult> change) throws Exception {
+    var started = new AtomicReference<CompletableFuture<MvcTestResult>>();
+    transaction.executeWithoutResult(
+        status -> {
+          jdbc.queryForList("SELECT id FROM team WHERE id = ?::uuid FOR UPDATE", teamId);
+          jdbc.update(
+              "DELETE FROM team_membership WHERE team_id = ?::uuid AND user_id = ?::uuid",
+              teamId,
+              diId);
+          var other = CompletableFuture.supplyAsync(change, otherThreads);
+          started.set(other);
+          assertWaitsForALock(other);
+        });
+    return requireNonNull(started.get()).get(PATIENCE.toSeconds(), TimeUnit.SECONDS);
+  }
+
+  private static String newTask(String ownerId) {
+    return "{\"description\": \"Book the venue\", \"ownerId\": \"%s\", \"deadline\": \"2026-11-30\"}"
+        .formatted(ownerId);
+  }
+
+  private MvcTestResult changeOwner(Cookie session, String taskId, String ownerId) {
+    return send(
+        mvc.put().uri("/api/tasks/{id}/owner", taskId).cookie(session),
+        "{\"ownerId\": \"" + ownerId + "\"}");
   }
 
   /** pg_locks is live, unlike pg_stat_activity, which is frozen for the rest of a transaction. */

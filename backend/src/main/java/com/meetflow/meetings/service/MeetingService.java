@@ -81,6 +81,7 @@ public class MeetingService {
       UUID userId, UUID seriesId, Instant scheduledAt, Collection<UUID> participantIds) {
     var found = series.findVisible(userId, seriesId);
     requireOrganizer(userId, found);
+    teamMembers.holdMembership(found.getTeamId());
     series.lock(seriesId);
     if (meetings.existsBySeriesIdAndStatusNot(seriesId, MeetingStatus.CLOSED)) {
       throw new OpenMeetingExistsException();
@@ -126,6 +127,7 @@ public class MeetingService {
     if (meeting.getStatus() == MeetingStatus.CLOSED) {
       throw new MeetingClosedException();
     }
+    teamMembers.holdMembership(found.getTeamId());
     meeting.reschedule(scheduledAt, participants(found, participantIds));
     return toResponse(meeting, names(List.of(meeting)));
   }
@@ -285,7 +287,10 @@ public class MeetingService {
     }
   }
 
-  /** The chosen participants plus the organizer, who always attends; all must be members. */
+  /**
+   * The chosen participants plus the organizer, who always attends; all must be members. The caller
+   * holds the team's membership first.
+   */
   private Set<UUID> participants(MeetingSeries found, Collection<UUID> participantIds) {
     var participants = new HashSet<>(participantIds);
     participants.add(found.getOrganizerId());

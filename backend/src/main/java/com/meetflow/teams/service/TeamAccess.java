@@ -5,6 +5,7 @@ import com.meetflow.teams.domain.TeamMembership;
 import com.meetflow.teams.exception.NotTeamAdminException;
 import com.meetflow.teams.exception.TeamNotFoundException;
 import com.meetflow.teams.repository.TeamMembershipRepository;
+import com.meetflow.teams.repository.TeamRepository;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -16,9 +17,23 @@ import org.springframework.stereotype.Service;
 public class TeamAccess {
 
   private final TeamMembershipRepository memberships;
+  private final TeamRepository teams;
 
-  TeamAccess(TeamMembershipRepository memberships) {
+  TeamAccess(TeamMembershipRepository memberships, TeamRepository teams) {
     this.memberships = memberships;
+    this.teams = teams;
+  }
+
+  /**
+   * Holds the team's membership until the transaction ends: no member can be removed or change role
+   * meanwhile, while other holders don't wait for each other.
+   *
+   * @throws TeamNotFoundException if there is no such team
+   */
+  public void holdMembership(UUID teamId) {
+    if (teams.findForShareById(teamId).isEmpty()) {
+      throw new TeamNotFoundException();
+    }
   }
 
   public Optional<TeamMembership> membership(UUID userId, UUID teamId) {

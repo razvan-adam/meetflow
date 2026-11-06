@@ -98,7 +98,7 @@ public class TaskChange implements Persistable<UUID> {
     return change;
   }
 
-  public static TaskChange ofDeletion(Task task, UUID changedBy, UUID meetingId) {
+  public static TaskChange ofDeletion(Task task, UUID changedBy, @Nullable UUID meetingId) {
     var change = new TaskChange(task, changedBy, meetingId);
     change.deleted = true;
     return change;

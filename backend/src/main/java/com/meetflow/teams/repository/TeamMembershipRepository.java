@@ -1,5 +1,6 @@
 package com.meetflow.teams.repository;
 
+import com.meetflow.teams.domain.Role;
 import com.meetflow.teams.domain.TeamMembership;
 import java.util.List;
 import java.util.UUID;
@@ -10,4 +11,6 @@ public interface TeamMembershipRepository extends JpaRepository<TeamMembership, 
   List<TeamMembership> findByIdUserId(UUID userId);
 
   List<TeamMembership> findByIdTeamId(UUID teamId);
+
+  long countByIdTeamIdAndRole(UUID teamId, Role role);
 }

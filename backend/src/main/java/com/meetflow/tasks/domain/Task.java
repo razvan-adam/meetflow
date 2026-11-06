@@ -160,16 +160,17 @@ public class Task implements Persistable<UUID> {
   }
 
   /**
-   * Stops the task from being worked on but keeps it, with its history. During its own meeting it
+   * Stops the task from being worked on but keeps it, with its history. Outside a meeting, when a
+   * member is removed from the team, {@code duringMeetingId} is null. During its own meeting it
    * lets go of its decision, so a decision whose tasks were all deleted can be removed again. After
    * that the decision can't be removed anyway, and the closed meeting still shows the task under
    * it.
    */
-  public void delete(UUID deletedBy, UUID duringMeetingId) {
+  public void delete(UUID deletedBy, @Nullable UUID duringMeetingId) {
     this.deletedAt = Instant.now();
     this.deletedBy = deletedBy;
     this.deletedInMeetingId = duringMeetingId;
-    if (duringMeetingId.equals(meetingId)) {
+    if (meetingId.equals(duringMeetingId)) {
       this.decisionId = null;
     }
     this.updatedAt = this.deletedAt;

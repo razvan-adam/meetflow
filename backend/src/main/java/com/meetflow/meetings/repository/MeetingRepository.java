@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
@@ -18,6 +19,21 @@ public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
   List<Meeting> findBySeriesIdOrderByScheduledAtDesc(UUID seriesId);
 
   boolean existsBySeriesIdAndStatusNot(UUID seriesId, MeetingStatus status);
+
+  /**
+   * Takes a member who leaves the team off its meetings that haven't closed. Pending changes are
+   * written first; meetings already loaded in this transaction keep the old participants.
+   */
+  @Modifying(flushAutomatically = true)
+  @Query(
+      nativeQuery = true,
+      value =
+          """
+          DELETE FROM meeting_participant p
+          USING meeting m
+          WHERE p.meeting_id = m.id AND m.team_id = :teamId AND m.status <> 'CLOSED'
+            AND p.user_id = :userId""")
+  void removeParticipantFromOpenMeetings(UUID teamId, UUID userId);
 
   /**
    * The team's closed meetings whose series name, or one of whose decisions, matches the query.

@@ -188,3 +188,10 @@ Resolved while building MF-23:
 27. **Where the history lives** – each team has its own history, opened from the top bar next to the team, and its search covers that team only. Users with several teams search each one from its own page.
 28. **What the search matches** – letters and digits make words, and a meeting matches when every word appears in its series name or in one of its decisions, as a whole word or the start of one: "pall" finds "pallet", "allet" doesn't. Case doesn't matter, accents do, because customers write in many languages. The whole meeting is listed, with the words found highlighted.
 29. **Long histories** – the history shows the 20 newest meetings and loads 20 older ones at a time on request ("Show older meetings"), with or without a search.
+
+Resolved while building MF-11:
+
+30. **Who sees the members** – every member sees who is in the team and their role; only admins change roles and remove members.
+31. **Admins leaving** – an admin can take away their own rights or remove themselves, as long as another admin stays.
+32. **Handing over during a meeting** – a removed member's task that the admin removes while a meeting of its series runs is removed in that meeting, as when its organizer removes one. Between meetings it is removed outside any meeting and leaves the agenda of the series' next meeting. Either way the change is in the task's history, made by the admin.
+33. **Meetings still to come** – a removed member is taken off the meetings of the team that haven't closed, so they aren't sent those minutes. Closed meetings keep them as participants, because that is the record of who was there.

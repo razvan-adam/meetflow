@@ -51,6 +51,10 @@ public class TeamMembership implements Persistable<TeamMembership.Id> {
     return role;
   }
 
+  public void changeRole(Role role) {
+    this.role = role;
+  }
+
   @Override
   public boolean isNew() {
     return isNew;

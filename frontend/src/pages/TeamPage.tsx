@@ -1,4 +1,4 @@
-import { useParams } from 'react-router'
+import { Link, useParams } from 'react-router'
 import { ApiError } from '../api/client.ts'
 import { useTeam } from '../api/teams.ts'
 import { TeamInvitations } from './TeamInvitations.tsx'
@@ -29,7 +29,12 @@ export function TeamPage() {
     <main className={styles.page}>
       <div>
         <h1 className={styles.title}>{team.data.name}</h1>
-        <p className={styles.sub}>{isAdmin ? 'You are an admin' : 'You are a member'}</p>
+        <p className={styles.sub}>
+          {isAdmin ? 'You are an admin' : 'You are a member'} ·{' '}
+          <Link to={`/teams/${team.data.id}/members`}>
+            {isAdmin ? 'Manage members' : 'Members'}
+          </Link>
+        </p>
       </div>
       <TeamSeries teamId={team.data.id} />
       {isAdmin && <TeamInvitations teamId={team.data.id} />}

@@ -120,7 +120,7 @@ describe('inviting colleagues from the team page', () => {
     })
     renderApp(`/teams/${OPS.id}`)
 
-    expect(await screen.findByText('You are a member')).toBeInTheDocument()
+    expect(await screen.findByText(/^You are a member/)).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Invite colleagues' })).not.toBeInTheDocument()
   })
 })
@@ -152,7 +152,7 @@ describe('joining from an invitation link', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Create account and join' }))
 
-    expect(await screen.findByText('You are a member')).toBeInTheDocument()
+    expect(await screen.findByText(/^You are a member/)).toBeInTheDocument()
     expect(router.state.location.pathname).toBe(`/teams/${OPS.id}`)
     expect(requestBody(fetchMock, 'POST /api/users')).toEqual({
       name: 'Sofia Martin',
@@ -183,7 +183,7 @@ describe('joining from an invitation link', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Log in and join' }))
 
-    expect(await screen.findByText('You are a member')).toBeInTheDocument()
+    expect(await screen.findByText(/^You are a member/)).toBeInTheDocument()
     expect(requestBody(fetchMock, 'POST /api/session')).toEqual({
       email: 'sofia@example.com',
       password: 'correct horse battery',
@@ -203,7 +203,7 @@ describe('joining from an invitation link', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Join Ops team' }))
 
-    expect(await screen.findByText('You are a member')).toBeInTheDocument()
+    expect(await screen.findByText(/^You are a member/)).toBeInTheDocument()
   })
 
   it('explains when logged in with another address', async () => {

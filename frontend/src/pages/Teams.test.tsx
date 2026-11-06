@@ -45,7 +45,7 @@ describe('creating a team', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create team' }))
 
     expect(await screen.findByRole('heading', { name: 'Ops team' })).toBeInTheDocument()
-    expect(screen.getByText('You are an admin')).toBeInTheDocument()
+    expect(screen.getByText(/^You are an admin/)).toBeInTheDocument()
     expect(router.state.location.pathname).toBe(`/teams/${OPS.id}`)
     expect(requestBody(fetchMock, 'POST /api/teams')).toEqual({ name: 'Ops team' })
     // The new team shows up in the switcher.
@@ -87,7 +87,7 @@ describe('switching teams', () => {
     fireEvent.change(switcher, { target: { value: LEADERSHIP.id } })
 
     expect(await screen.findByRole('heading', { name: 'Leadership' })).toBeInTheDocument()
-    expect(screen.getByText('You are a member')).toBeInTheDocument()
+    expect(screen.getByText(/^You are a member/)).toBeInTheDocument()
     expect(router.state.location.pathname).toBe(`/teams/${LEADERSHIP.id}`)
   })
 

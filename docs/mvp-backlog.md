@@ -30,7 +30,7 @@ Stories and their acceptance criteria live in Jira (project MF). The flow they i
 | 20 | MF-43 | Bug: some text in light mode has too little contrast to read easily | MF-5 Core | Done |
 | 21 | MF-44 | Bug: some text in dark mode has too little contrast to read easily | MF-5 Core | Done |
 | 22 | MF-23 | Browse and search meeting history | MF-7 Minutes and history | Done |
-| 23 | MF-11 | Manage team members and admins | MF-5 Core | To Do |
+| 23 | MF-11 | Manage team members and admins | MF-5 Core | Done |
 
 ## Rationale
 

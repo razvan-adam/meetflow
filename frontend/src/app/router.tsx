@@ -5,6 +5,7 @@ import { EditMeetingPage } from '../pages/EditMeetingPage.tsx'
 import { HistoryPage } from '../pages/HistoryPage.tsx'
 import { JoinPage } from '../pages/JoinPage.tsx'
 import { LogInPage } from '../pages/LogInPage.tsx'
+import { MembersPage } from '../pages/MembersPage.tsx'
 import { MeetingPage } from '../pages/MeetingPage.tsx'
 import { MinutesPage } from '../pages/MinutesPage.tsx'
 import { ScheduleMeetingPage } from '../pages/ScheduleMeetingPage.tsx'
@@ -36,6 +37,7 @@ export const routes: RouteObject[] = [
           { path: '/teams/new', element: <CreateTeamPage /> },
           { path: '/teams/:teamId', element: <TeamPage /> },
           { path: '/teams/:teamId/history', element: <HistoryPage /> },
+          { path: '/teams/:teamId/members', element: <MembersPage /> },
           { path: '/series/:seriesId', element: <SeriesPage /> },
           { path: '/series/:seriesId/schedule', element: <ScheduleMeetingPage /> },
           { path: '/meetings/:meetingId', element: <MeetingPage /> },

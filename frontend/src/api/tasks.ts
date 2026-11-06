@@ -230,3 +230,21 @@ export function useAddTask(context: AgendaContext) {
     },
   })
 }
+
+// A task of the team that isn't done or removed, as the members page lists it per owner (MF-11).
+export interface OpenTask {
+  id: string
+  description: string
+  ownerId: string
+  // A calendar date: YYYY-MM-DD.
+  deadline: string
+  status: TaskStatus
+}
+
+// The team's open tasks, soonest deadline first.
+export function useTeamOpenTasks(teamId: string) {
+  return useQuery({
+    queryKey: ['teams', teamId, 'open-tasks'],
+    queryFn: () => apiFetch<OpenTask[]>(`/teams/${encodeURIComponent(teamId)}/open-tasks`),
+  })
+}

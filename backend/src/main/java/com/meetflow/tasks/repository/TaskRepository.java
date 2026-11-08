@@ -1,6 +1,7 @@
 package com.meetflow.tasks.repository;
 
 import com.meetflow.tasks.domain.Task;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -53,6 +54,16 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
       """)
   List<Task> findOpenInTeam(UUID teamId);
 
+  /** What the member still has to do in this team, whatever they have to do in others. */
+  @Query(
+      """
+      SELECT t FROM Task t
+      WHERE t.teamId = :teamId AND t.ownerId = :ownerId
+        AND t.status <> com.meetflow.tasks.domain.TaskStatus.DONE
+        AND t.deletedAt IS NULL
+      """)
+  List<Task> findOpenInTeamOwnedBy(UUID teamId, UUID ownerId);
+
   /** What the user still has to do, soonest deadline first. */
   @Query(
       """
@@ -103,8 +114,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
   @Modifying
   @Query(
       nativeQuery = true,
-      value = "DELETE FROM meeting_task_review WHERE meeting_id = :meetingId AND task_id = :taskId")
-  void removeFromReview(UUID meetingId, UUID taskId);
+      value =
+          "DELETE FROM meeting_task_review WHERE meeting_id = :meetingId AND task_id IN (:taskIds)")
+  void removeFromReview(UUID meetingId, Collection<UUID> taskIds);
 
   /** Keeps the status of the meeting's carried-over tasks as they were when it closed. */
   @Modifying

@@ -7,8 +7,10 @@ import static org.awaitility.Awaitility.await;
 import com.jayway.jsonpath.JsonPath;
 import com.meetflow.IntegrationTest;
 import com.meetflow.RecordingEmailSender;
+import jakarta.persistence.EntityManagerFactory;
 import jakarta.servlet.http.Cookie;
 import java.io.UnsupportedEncodingException;
+import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -21,6 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +46,8 @@ class MemberManagementTests {
 
   private static final Duration PATIENCE = Duration.ofSeconds(10);
 
+  private static final Instant CLASS_STARTED = Instant.now();
+
   @Autowired MockMvcTester mvc;
 
   @Autowired JdbcTemplate jdbc;
@@ -50,6 +55,8 @@ class MemberManagementTests {
   @Autowired TransactionTemplate transaction;
 
   @Autowired RecordingEmailSender emails;
+
+  @Autowired EntityManagerFactory entityManagerFactory;
 
   final ExecutorService otherThreads = Executors.newCachedThreadPool();
 
@@ -321,6 +328,75 @@ class MemberManagementTests {
     assertThat(latest.<String>read("$[0].changedByName")).isEqualTo("Ana Costa");
     assertThat(latest.<Boolean>read("$[0].duringMeeting")).isTrue();
     assertThat(latest.<Boolean>read("$[0].deleted")).isTrue();
+  }
+
+  @Test
+  void handingOverMoreTasksOfASeriesAddsOnlyTheirOwnChanges() {
+    assertThat(setStatus(bo, doneTask, "OPEN")).hasStatusOk();
+    String edId = userId(signUp("Ed Novak"));
+    join(teamId, edId);
+    assertThat(changeOwner(bo, budgetTask, diId)).hasStatusOk();
+    assertThat(changeOwner(bo, hiringTask, edId)).hasStatusOk();
+    assertThat(changeOwner(bo, doneTask, edId)).hasStatusOk();
+
+    long forOneTask =
+        statementsDuring(
+            () ->
+                assertThat(remove(ana, diId, handover(List.of(removal(budgetTask)), List.of())))
+                    .hasStatus(HttpStatus.NO_CONTENT));
+    long forTwoTasks =
+        statementsDuring(
+            () ->
+                assertThat(
+                        remove(
+                            ana,
+                            edId,
+                            handover(List.of(removal(hiringTask), removal(doneTask)), List.of())))
+                    .hasStatus(HttpStatus.NO_CONTENT));
+
+    // The second task only adds its own update and the line in its history.
+    assertThat(forTwoTasks - forOneTask).isEqualTo(2);
+    assertThat(get(ana, "/api/meetings/" + nextMeeting + "/carried-over-tasks"))
+        .bodyJson()
+        .extractingPath("$[*].id")
+        .isEqualTo(List.of());
+  }
+
+  @Test
+  void removalLeavesTheMembersWorkInOtherTeamsAlone() {
+    String otherTeam = idOf(post(cy, "/api/teams", "{\"name\": \"Cy's team\"}"));
+    join(otherTeam, boId);
+    String otherSeries =
+        idOf(post(bo, "/api/teams/" + otherTeam + "/meeting-series", "{\"name\": \"Other\"}"));
+    String otherMeeting =
+        idOf(
+            post(
+                bo,
+                "/api/meeting-series/" + otherSeries + "/meetings",
+                "{\"scheduledAt\": \"2026-11-03T09:00:00Z\", \"participantIds\": [\"%s\"]}"
+                    .formatted(boId)));
+    assertThat(post(bo, "/api/meetings/" + otherMeeting + "/start", "")).hasStatusOk();
+    String item =
+        idOf(post(bo, "/api/meetings/" + otherMeeting + "/agenda-items", "{\"title\": \"Plan\"}"));
+    String otherTask = addTask(item, "Elsewhere", "2026-11-30");
+
+    assertThat(
+            remove(
+                ana,
+                boId,
+                handover(
+                    List.of(reassign(budgetTask, diId), reassign(hiringTask, diId)),
+                    List.of(organizer(boSeries, anaId)))))
+        .hasStatus(HttpStatus.NO_CONTENT);
+
+    assertThat(get(bo, "/api/tasks/" + otherTask))
+        .bodyJson()
+        .extractingPath("$.ownerName")
+        .isEqualTo("Bo Lind");
+    assertThat(get(bo, "/api/meeting-series/" + otherSeries))
+        .bodyJson()
+        .extractingPath("$.organizerId")
+        .isEqualTo(boId);
   }
 
   @Test
@@ -596,6 +672,34 @@ class MemberManagementTests {
     return requireNonNull(started.get()).get(PATIENCE.toSeconds(), TimeUnit.SECONDS);
   }
 
+  /**
+   * How many statements Hibernate sends during the action, once the emails of this class' closed
+   * meetings, which go out in the background, can't be counted with them. Other classes' are left
+   * out: those that make delivery fail on purpose leave theirs unfinished.
+   */
+  private long statementsDuring(Runnable action) {
+    await()
+        .atMost(PATIENCE)
+        .until(
+            () ->
+                Long.valueOf(0)
+                    .equals(
+                        jdbc.queryForObject(
+                            "SELECT count(*) FROM event_publication"
+                                + " WHERE completion_date IS NULL AND publication_date >= ?",
+                            Long.class,
+                            Timestamp.from(CLASS_STARTED))));
+    var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+    statistics.clear();
+    statistics.setStatisticsEnabled(true);
+    try {
+      action.run();
+      return statistics.getPrepareStatementCount();
+    } finally {
+      statistics.setStatisticsEnabled(false);
+    }
+  }
+
   private static String newTask(String ownerId) {
     return "{\"description\": \"Book the venue\", \"ownerId\": \"%s\", \"deadline\": \"2026-11-30\"}"
         .formatted(ownerId);
@@ -686,10 +790,14 @@ class MemberManagementTests {
   }
 
   private void join(String userId) {
+    join(teamId, userId);
+  }
+
+  private void join(String team, String userId) {
     jdbc.update(
         "INSERT INTO team_membership (team_id, user_id, role, joined_at)"
             + " VALUES (?::uuid, ?::uuid, 'MEMBER', now())",
-        teamId,
+        team,
         userId);
   }
 

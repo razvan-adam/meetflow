@@ -62,10 +62,13 @@ public class InvitationService {
 
   /**
    * Invites the email to the team and sends the link, replacing an earlier invitation to the same
-   * address that wasn't used. If the email can't be sent, nothing is saved.
+   * address that wasn't used. If the email can't be sent, nothing is saved. Holds the team's
+   * membership first, so the invitation can't slip past the cancellation when its sender stops
+   * being an admin or is removed.
    */
   @Transactional
   public InvitationResponse invite(UUID adminId, UUID teamId, String email) {
+    access.holdMembership(teamId);
     access.requireAdmin(adminId, teamId);
     var address = UserDirectory.normalizeEmail(email);
     var existingUser = users.findIdByEmail(address);

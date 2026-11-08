@@ -534,6 +534,20 @@ class MemberManagementTests {
   }
 
   @Test
+  void takingAdminRightsCancelsTheInvitationsTheySent() {
+    assertThat(changeRole(ana, boId, "ADMIN")).hasStatusOk();
+    invite(ana, "fay@example.com");
+    invite(bo, "gus@example.com");
+
+    assertThat(changeRole(ana, boId, "MEMBER")).hasStatusOk();
+
+    assertThat(get(ana, "/api/teams/" + teamId + "/invitations"))
+        .bodyJson()
+        .extractingPath("$[*].email")
+        .isEqualTo(List.of("fay@example.com"));
+  }
+
+  @Test
   void aTaskRemovedAsTheMeetingClosesIsNotRemovedInThatMeeting() throws Exception {
     assertThat(post(bo, "/api/meetings/" + nextMeeting + "/start", "")).hasStatusOk();
     var removing = new AtomicReference<CompletableFuture<MvcTestResult>>();
@@ -658,19 +672,56 @@ class MemberManagementTests {
         .isEqualTo(List.of("Bo's sync"));
   }
 
+  @Test
+  void anAdminLosingTheirRightsCantInviteMeanwhile() throws Exception {
+    assertThat(changeRole(ana, boId, "ADMIN")).hasStatusOk();
+
+    assertThat(
+            whileTheTeamIsHeld(
+                () ->
+                    jdbc.update(
+                        "UPDATE team_membership SET role = 'MEMBER'"
+                            + " WHERE team_id = ?::uuid AND user_id = ?::uuid",
+                        teamId,
+                        boId),
+                () ->
+                    post(
+                        bo,
+                        "/api/teams/" + teamId + "/invitations",
+                        "{\"email\": \"gus@example.com\"}")))
+        .hasStatus(HttpStatus.FORBIDDEN);
+    assertThat(get(ana, "/api/teams/" + teamId + "/invitations"))
+        .bodyJson()
+        .extractingPath("$[*].email")
+        .isEqualTo(List.of());
+  }
+
   /**
    * Runs {@code change} on another thread while Di's removal holds the team, as a removal does, and
    * has taken Di's membership, but hasn't committed. The change must wait for it, then see Di gone.
    */
   private MvcTestResult whileDiIsBeingRemoved(Supplier<MvcTestResult> change) throws Exception {
+    return whileTheTeamIsHeld(
+        () ->
+            jdbc.update(
+                "DELETE FROM team_membership WHERE team_id = ?::uuid AND user_id = ?::uuid",
+                teamId,
+                diId),
+        change);
+  }
+
+  /**
+   * Runs {@code change} on another thread while a transaction holds the team, as a removal or role
+   * change does, and has made {@code membershipChange}, but hasn't committed. The change must wait
+   * for it, then see the new membership.
+   */
+  private MvcTestResult whileTheTeamIsHeld(
+      Runnable membershipChange, Supplier<MvcTestResult> change) throws Exception {
     var started = new AtomicReference<CompletableFuture<MvcTestResult>>();
     transaction.executeWithoutResult(
         status -> {
           jdbc.queryForList("SELECT id FROM team WHERE id = ?::uuid FOR UPDATE", teamId);
-          jdbc.update(
-              "DELETE FROM team_membership WHERE team_id = ?::uuid AND user_id = ?::uuid",
-              teamId,
-              diId);
+          membershipChange.run();
           var other = CompletableFuture.supplyAsync(change, otherThreads);
           started.set(other);
           assertWaitsForALock(other);

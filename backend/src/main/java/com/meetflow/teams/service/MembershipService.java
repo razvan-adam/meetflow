@@ -53,7 +53,8 @@ public class MembershipService {
 
   /**
    * Makes a member an admin or takes their admin rights, their own included. 409 if that would
-   * leave the team without an admin.
+   * leave the team without an admin. Someone who stops being an admin has the invitations they sent
+   * that weren't accepted cancelled, since only admins may bring people in.
    */
   @Transactional
   public MemberResponse changeRole(UUID adminId, UUID teamId, UUID memberId, Role role) {
@@ -61,6 +62,7 @@ public class MembershipService {
     if (member.getRole() != role) {
       if (role != Role.ADMIN) {
         requireAnotherAdmin(teamId);
+        invitations.deleteUnacceptedSentBy(teamId, memberId);
       }
       member.changeRole(role);
     }

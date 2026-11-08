@@ -76,6 +76,7 @@ Sessions are stored in the standard Spring Session JDBC tables (`spring_session`
 | `joined_at` | timestamptz | |
 
 - Removing a member deletes the row, takes them off the participants of meetings that haven't started, and deletes the invitations to the team they sent that weren't accepted. Their participations in running and closed meetings, their decisions and their task history stay, because those reference `app_user`, not the membership.
+- Taking away a member's admin rights also deletes the invitations to the team they sent that weren't accepted.
 - "A team always has at least one admin" is checked in the service when a role changes or a member is removed.
 
 **`invitation`** – a single-use invitation sent by email.

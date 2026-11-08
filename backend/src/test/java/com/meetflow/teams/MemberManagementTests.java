@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,7 @@ class MemberManagementTests {
 
   private static final Duration PATIENCE = Duration.ofSeconds(10);
 
-  private static final Instant CLASS_STARTED = Instant.now();
+  private static Instant classStarted;
 
   @Autowired MockMvcTester mvc;
 
@@ -94,6 +95,11 @@ class MemberManagementTests {
   String hiringTask;
 
   String doneTask;
+
+  @BeforeAll
+  static void recordClassStart() {
+    classStarted = Instant.now();
+  }
 
   @BeforeEach
   void setUp() {
@@ -688,7 +694,7 @@ class MemberManagementTests {
                             "SELECT count(*) FROM event_publication"
                                 + " WHERE completion_date IS NULL AND publication_date >= ?",
                             Long.class,
-                            Timestamp.from(CLASS_STARTED))));
+                            Timestamp.from(classStarted))));
     var statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
     statistics.clear();
     statistics.setStatisticsEnabled(true);

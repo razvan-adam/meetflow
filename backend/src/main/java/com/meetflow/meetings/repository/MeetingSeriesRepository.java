@@ -12,6 +12,8 @@ public interface MeetingSeriesRepository extends JpaRepository<MeetingSeries, UU
 
   List<MeetingSeries> findByTeamId(UUID teamId);
 
+  List<MeetingSeries> findByTeamIdAndOrganizerId(UUID teamId, UUID organizerId);
+
   /** Holds the series' row until the transaction ends. */
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   Optional<MeetingSeries> findForUpdateById(UUID id);

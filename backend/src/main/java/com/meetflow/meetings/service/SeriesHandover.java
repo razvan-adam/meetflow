@@ -40,10 +40,7 @@ class SeriesHandover {
 
   @EventListener
   void on(MemberRemovalEvent event) {
-    var organized =
-        series.findByTeamId(event.teamId()).stream()
-            .filter(found -> found.getOrganizerId().equals(event.memberId()))
-            .toList();
+    var organized = series.findByTeamIdAndOrganizerId(event.teamId(), event.memberId());
     var organizedIds = organized.stream().map(MeetingSeries::getId).collect(Collectors.toSet());
     if (!organizedIds.equals(event.seriesOrganizers().keySet())) {
       throw new UnresolvedSeriesException();

@@ -236,7 +236,7 @@ public class TaskService {
     if (status == TaskStatus.DONE) {
       meetings
           .scheduledMeetingOf(task.getSeriesId())
-          .ifPresent(meetingId -> tasks.removeFromReview(meetingId, task.getId()));
+          .ifPresent(meetingId -> tasks.removeFromReview(meetingId, List.of(task.getId())));
     } else {
       meetings
           .openMeetingOf(task.getSeriesId())

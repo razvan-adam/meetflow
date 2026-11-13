@@ -1,16 +1,40 @@
 # meetflow
 Web App that manages meetings, agreements and pending tasks which are discussed on that meeting.
 
-## Getting started
+## Running locally
 
-Install JDK 25, Node.js 24 LTS and Docker, then:
+### Prerequisites
+
+- **JDK 25**, with `JAVA_HOME` pointing to it. Maven is not needed: the backend uses the Maven wrapper.
+- **Node.js 24 LTS** or later.
+- **Docker**, running. The local PostgreSQL database and the backend tests run in containers.
+
+### Start the app
 
 ```sh
-cd frontend && npm ci && cd ..
-npm run dev
+git clone <repository-url> meetflow
+cd meetflow
+cd frontend && npm ci && cd ..   # install frontend dependencies (once)
+npm run dev                      # from the repository root
 ```
 
-The app opens at http://localhost:5173 and the API health check is at `/api/health`. All commands (test, lint, build) are listed in `AGENTS.md`.
+`npm run dev` starts everything together:
+
+- the **backend** (Spring Boot) on http://localhost:8080. It starts PostgreSQL from `backend/compose.yaml` and creates the schema with Flyway, so no database setup is needed;
+- the **frontend** (Vite) on http://localhost:5173, which forwards `/api` calls to the backend.
+
+The first run takes a few minutes while Maven and Docker download dependencies. Open http://localhost:5173, sign up with any email and password, and create a team. `GET http://localhost:8080/api/health` checks that the backend is up. Stop both apps with `Ctrl+C`; the database container stops too and keeps its data for the next run.
+
+No configuration is needed. Locally, **no emails are sent**: links that would be emailed (team invitations, for example) are written to the backend log instead, so you can open them by hand. To change settings (port, an external database), copy `backend/.env.example` to `backend/.env`; never commit it.
+
+### Run the tests
+
+```sh
+cd backend && ./mvnw test   # backend: JUnit 5 + Testcontainers, Docker must be running
+cd frontend && npm test     # frontend: Vitest + React Testing Library
+```
+
+On Windows, use `mvnw.cmd test` (Command Prompt) or `.\mvnw test` (PowerShell). Lint, format and build commands are listed in `AGENTS.md`.
 
 ## Terminology: minutes
 
